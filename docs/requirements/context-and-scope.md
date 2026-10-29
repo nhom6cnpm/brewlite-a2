@@ -30,7 +30,7 @@ Mục tiêu của phiên bản hiện tại (MVP) là chứng minh luồng đặ
 
 ## 2. Stakeholder
 
-| Bên liên quan | Vai trò | Mục tiêu | Kỳ vọng |
+| Stakeholder | Vai trò | Mục tiêu | Kỳ vọng |
 |---------------|---------|----------|---------|
 | **Khách hàng** | Người dùng cuối: duyệt menu, chọn tùy chọn, đặt đơn, thanh toán, theo dõi đơn | Đặt đồ uống nhanh, không xếp hàng, nhận đúng món mình chọn | Menu rõ ràng, giá minh bạch; tùy chọn size/topping dễ dùng; giỏ hàng không mất khi tải lại trang; thanh toán QR đơn giản; thấy trạng thái đơn cập nhật |
 | **Nhân viên quầy/Barista)** | Nhận đơn đã thanh toán và chuẩn bị đồ uống | Nhận đủ thông tin đơn (món, tùy chọn, số lượng), pha đúng và kịp | Danh sách đơn rõ ràng, thứ tự hợp lý; cập nhật trạng thái đơn nhanh, ít thao tác (màn hình barista thuộc phạm vi mở rộng) |
