@@ -1,0 +1,86 @@
+@startuml
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam roundcorner 10
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam arrowColor #2C3E50
+skinparam actorBorderColor #2C3E50
+skinparam rectangleBorderColor #BDC3C7
+skinparam usecaseBackgroundColor #ECF0F1
+skinparam usecaseBorderColor #34495E
+
+title Sơ đồ Use-case Tổng quát - Hệ thống BrewLite
+
+actor "Khách hàng\n(Customer)" as Customer
+actor "Nhân viên / Barista\n(ADMIN)" as Staff
+actor "Ngân hàng giả lập\n(Mock Bank)" as MockBank
+
+rectangle "Hệ thống Đặt đồ uống BrewLite" {
+  package "Khách hàng (Customer Flow)" {
+    usecase "UC-01: Xem danh mục đồ uống (Menu)" as UC_Menu
+    usecase "UC-02: Xem chi tiết & tùy chọn (Size/Topping)" as UC_Detail
+    usecase "UC-03: Quản lý giỏ hàng" as UC_Cart
+    usecase "UC-04: Đăng ký & Đăng nhập (JWT)" as UC_Auth
+    usecase "UC-05: Đặt đơn hàng (Giữ nguyên liệu 15p)" as UC_Order
+    usecase "UC-06: Chuyển khoản qua Ngân hàng giả lập (QR)" as UC_Pay
+    usecase "UC-07: Theo dõi trạng thái đơn & Lịch sử" as UC_Track
+    usecase "UC-08: Hủy đơn hàng / Gửi yêu cầu hủy" as UC_Cancel
+  }
+
+  package "Nghiệp vụ cốt lõi (Core Business)" {
+    usecase "UC-09: Quản lý & giữ tồn kho theo nguyên liệu" as UC_Inventory
+    usecase "UC-10: Ghi nhận sao kê & Tự động hoàn tiền" as UC_Statement
+  }
+
+  package "Trang quản trị (Admin / Barista Flow)" {
+    usecase "UC-11: Đối chiếu sao kê & Xác nhận thanh toán" as UC_ConfirmPay
+    usecase "UC-12: Duyệt yêu cầu hủy đơn & Hoàn tiền" as UC_ApproveCancel
+    usecase "UC-13: Cập nhật tiến trình pha chế\n(PAID -> PREPARING -> READY -> COMPLETED)" as UC_Brewing
+    usecase "UC-14: Theo dõi tồn kho nguyên liệu & Cảnh báo" as UC_StockView
+    usecase "UC-15: Tra cứu lịch sử mọi đơn & Sao kê" as UC_AdminHistory
+  }
+
+  package "Phạm vi mở rộng (Out of MVP)" {
+    usecase "UC-16: Quản lý menu, giá & nhập kho nguyên liệu" as UC_AdminManage <<Won't>>
+    usecase "UC-17: Đổi điểm thưởng lấy voucher / đồ uống" as UC_Redeem <<Won't>>
+  }
+}
+
+Customer --> UC_Menu
+Customer --> UC_Detail
+Customer --> UC_Cart
+Customer --> UC_Auth
+Customer --> UC_Order
+Customer --> UC_Pay
+Customer --> UC_Track
+Customer --> UC_Cancel
+
+UC_Order ..> UC_Inventory : <<include>>
+UC_Pay ..> MockBank : <<mở trang chuyển tiền QR>>
+MockBank --> UC_Statement : <<ghi tiền vào sao kê>>
+
+Staff --> UC_Auth
+Staff --> UC_ConfirmPay
+Staff --> UC_ApproveCancel
+Staff --> UC_Brewing
+Staff --> UC_StockView
+Staff --> UC_AdminHistory
+
+UC_ConfirmPay ..> UC_Statement : <<đối chiếu sao kê / hoàn tiền khi từ chối>>
+UC_ApproveCancel ..> UC_Statement : <<hoàn tiền khi duyệt hủy>>
+UC_ApproveCancel ..> UC_Inventory : <<hoàn lại nguyên liệu>>
+
+note bottom of UC_Inventory
+  - Trừ theo công thức: Size M x1.25, Size L x1.5, Topping riêng.
+  - Giữ chỗ 15 phút; hoàn lại nguyên liệu khi hủy hoặc hết hạn.
+  - Chống race condition (Transaction + Optimistic Locking).
+end note
+
+note bottom of UC_ConfirmPay
+  - Quán không tự động đánh dấu PAID (yêu cầu của giảng viên).
+  - Nhân viên đối chiếu số tiền và mã đơn trên sao kê để xác nhận.
+  - Bấm từ chối -> hệ thống tự hoàn tiền trên sao kê.
+end note
+
+@enduml
