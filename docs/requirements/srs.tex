@@ -33,18 +33,19 @@ FR-02 & Chi tiết sản phẩm \& tùy chọn
       \item Gọi \texttt{GET /products/:id} trả về HTTP 200 với ID hợp lệ; trả về HTTP 404 nếu ID không tồn tại.
       \item Phụ phí chuẩn: size S (+0đ), size M (+5.000đ), size L (+10.000đ); mỗi topping (+5.000đ).
       \item Hiển thị số ly còn bán được tính theo nguyên liệu còn lại ứng với đúng tùy chọn đang chọn.
-      \item Tự động vô hiệu hóa tùy chọn size hoặc topping nếu nguyên liệu tương ứng trong kho không còn đủ.
+      \item Không khóa từng tùy chọn riêng lẻ; giao diện hiển thị số ly còn bán theo lựa chọn hiện tại và tự động vô hiệu hóa (chặn) nút ``Thêm vào giỏ hàng'' nếu tồn kho nguyên liệu không đủ để đáp ứng lựa chọn đó.
     \end{itemize} \\
 \addlinespace
 
 FR-03 & Quản lý giỏ hàng (Cart)
-  & Thêm món, sửa số lượng, xóa từng món, xóa toàn bộ giỏ; tự tính tổng tiền; badge số lượng; lưu trữ qua \texttt{localStorage}.
+  & Thêm món, sửa số lượng, xóa từng món; tự tính tổng tiền; badge số lượng; lưu trữ qua \texttt{localStorage}.
   & Must
   & \begin{itemize}[leftmargin=*]
       \item Món cùng sản phẩm và cùng tùy chọn (size, topping) được gộp dòng và cộng dồn số lượng; khác tùy chọn tạo dòng riêng.
       \item Tổng tiền giỏ hàng tự động tính lại ngay lập tức khi thay đổi số lượng.
       \item Giữ nguyên trạng thái giỏ hàng khi người dùng tải lại trang (F5) qua \texttt{localStorage}.
       \item Chặn không cho tăng số lượng vượt quá số ly tối đa mà kho nguyên liệu hiện có thể đáp ứng.
+      \item Hỗ trợ xóa từng dòng món trong giỏ hàng (chức năng xóa toàn bộ giỏ bằng một nút được xem xét ở đợt cải tiến giao diện tiếp theo).
       \item Giỏ hàng \textbf{không bị xóa} khi bấm tạo đơn; chỉ xóa khi đơn hàng tương ứng đã thanh toán thành công (\texttt{PAID}).
     \end{itemize} \\
 \addlinespace
@@ -67,15 +68,16 @@ FR-05 & Đặt đơn hàng (Create Order)
   & Must
   & \begin{itemize}[leftmargin=*]
       \item Chưa đăng nhập gọi API tạo đơn trả về HTTP 401; client điều hướng sang \texttt{/login?redirect=/cart}.
-      \item Bắt buộc có header \texttt{Idempotency-Key}; gửi lại cùng key trong 15 phút trả đúng đơn cũ, không tạo đơn mới.
+      \item Bắt buộc có header \texttt{Idempotency-Key}; key được lưu vĩnh viễn theo từng tài khoản (không giới hạn 15 phút), gửi lại cùng key với cùng dữ liệu giỏ hàng sẽ trả về đúng đơn cũ mà không tạo đơn mới.
+      \item Gửi lại cùng \texttt{Idempotency-Key} nhưng khác dữ liệu giỏ hàng (payload khác): hệ thống từ chối với HTTP 409 Conflict.
       \item Giỏ hàng rỗng (\texttt{items: []}) trả về HTTP 400 BadRequest.
       \item Backend tự tính lại đơn giá và tổng tiền từ cơ sở dữ liệu, không tin giá từ client.
       \item Tạo đơn thành công trả về HTTP 201 Created kèm \texttt{orderId}, \texttt{total}, \texttt{status = PENDING}, thời hạn thanh toán (15 phút); giỏ hàng được giữ nguyên.
     \end{itemize} \\
 \addlinespace
 
-FR-06 & Tồn kho theo nguyên liệu \& công thức
-  & Mỗi món có định lượng nguyên liệu thô theo size và topping. Giữ nguyên liệu khi tạo đơn; hoàn lại khi đơn bị hủy hoặc quá hạn.
+FR-06 & Tồn kho theo nguyên liệu, công thức \& Bảng kho nhân viên
+  & Mỗi món có định lượng nguyên liệu thô theo size và topping. Giữ nguyên liệu khi tạo đơn; hoàn lại khi đơn bị hủy; nhân viên xem bảng tồn kho.
   & Must
   & \begin{itemize}[leftmargin=*]
       \item Định lượng: size M tốn $\times 1{,}25$, size L tốn $\times 1{,}5$ nguyên liệu so với size S; mỗi topping trừ nguyên liệu riêng.
@@ -83,6 +85,7 @@ FR-06 & Tồn kho theo nguyên liệu \& công thức
       \item Nếu thiếu bất kỳ nguyên liệu nào: từ chối tạo đơn với HTTP 400 (``Không đủ nguyên liệu''), giỏ hàng giữ nguyên; đảm bảo không bán vượt khi nhiều khách đặt cùng lúc.
       \item Đơn bị hủy hoặc hết hạn thanh toán (\texttt{CANCELLED}): hệ thống tự động hoàn trả đầy đủ nguyên liệu về kho đúng một lần.
       \item Khi thanh toán thành công (\texttt{PAID}) hoặc thất bại (\texttt{PAYMENT\_FAILED}): \textbf{không trừ/hoàn thêm} nguyên liệu.
+      \item Nhân viên (\texttt{ADMIN}) xem được bảng nguyên liệu qua \texttt{GET /admin/ingredients} (chỉ xem): số lượng còn trong kho, lượng đang giữ cho đơn chờ thanh toán, đủ cho bao nhiêu ly, cảnh báo \emph{sắp hết} khi dưới 10 ly, và số ly còn bán của từng món; người dùng thông thường gọi API này bị từ chối với HTTP 403 Forbidden.
     \end{itemize} \\
 \addlinespace
 
@@ -106,7 +109,7 @@ FR-08 & Đối chiếu sao kê \& Xác nhận thanh toán (Nhân viên)
       \item Trang quản trị tab Thanh toán tự làm mới bằng polling mỗi 4 giây, có thông báo và âm báo khi có tiền về; đưa đơn có tiền về lên đầu.
       \item Nhân viên bấm ``Xác nhận'' $\rightarrow$ phiên thành \texttt{SUCCESS}, đơn thành \texttt{PAID}, client khách hàng xóa giỏ hàng.
       \item Nhân viên bấm ``Từ chối'' $\rightarrow$ phiên thành \texttt{FAILED}, đơn thành \texttt{PAYMENT\_FAILED}, hệ thống tự động hoàn tiền trên sao kê; giỏ hàng giữ nguyên để khách thử lại.
-      \item Khóa dòng (locking) chống hai nhân viên cùng thao tác hoặc xử lý lặp một phiên.
+      \item Khóa dòng (pessimistic locking) chống hai nhân viên cùng thao tác hoặc xử lý lặp một phiên.
     \end{itemize} \\
 \addlinespace
 
@@ -127,7 +130,7 @@ FR-10 & Máy trạng thái đơn \& Tự hủy quá hạn
   & \begin{itemize}[leftmargin=*]
       \item Vòng đời hợp lệ: $\texttt{PENDING} \rightarrow \texttt{PAID} \rightarrow \texttt{PREPARING} \rightarrow \texttt{READY} \rightarrow \texttt{COMPLETED}$.
       \item Nhánh lỗi \& thử lại: $\texttt{PENDING} \rightarrow \texttt{PAYMENT\_FAILED} \rightarrow$ (khách thử lại) $\texttt{PENDING} \rightarrow \texttt{PAID}$. Tuyệt đối không chuyển thẳng $\texttt{PAYMENT\_FAILED} \rightarrow \texttt{PAID}$.
-      \item Nhánh hủy: $\texttt{PENDING} \rightarrow \texttt{CANCELLED}$ hoặc $\texttt{PAID} \rightarrow \texttt{CANCELLED}$ (qua duyệt hủy).
+      \item Nhánh hủy: $\texttt{PENDING} \rightarrow \texttt{CANCELLED}$, $\texttt{PAYMENT\_FAILED} \rightarrow \texttt{CANCELLED}$ (khách chủ động bấm hủy hoặc hết hạn sau khi bị từ chối) hoặc $\texttt{PAID} \rightarrow \texttt{CANCELLED}$ (qua quy trình nhân viên duyệt hủy).
       \item Tự động hủy đơn sau 15 phút không thanh toán: chuyển \texttt{CANCELLED} và hoàn nguyên liệu; \textbf{không tự hủy} đơn đã có tiền về (\texttt{TRANSFER\_RECEIVED}).
       \item Mọi chuyển trạng thái sai quy tắc đều bị chặn bởi \texttt{assertTransition} và trả về HTTP 400.
     \end{itemize} \\
@@ -139,7 +142,7 @@ FR-11 & Bảng pha chế Barista
   & \begin{itemize}[leftmargin=*]
       \item Bảng pha chế hiển thị danh sách đơn đã \texttt{PAID} với đầy đủ thông tin món, kích cỡ, topping.
       \item Nhân viên cập nhật trạng thái: $\texttt{PAID} \rightarrow \texttt{PREPARING} \rightarrow \texttt{READY} \rightarrow \texttt{COMPLETED}$.
-      \item Khách hàng theo dõi thấy trạng thái đơn thay đổi theo thời gian thực (báo khi đồ uống sẵn sàng).
+      \item Khách hàng và nhân viên theo dõi tiến trình đơn hàng thông qua cơ chế tự làm mới định kỳ (polling mỗi vài giây), hiển thị thông báo khi đồ uống sẵn sàng (công nghệ realtime qua WebSocket/SSE được xếp vào phạm vi mở rộng).
     \end{itemize} \\
 \addlinespace
 
@@ -147,7 +150,7 @@ FR-12 & Tra cứu lịch sử đơn \& Theo dõi đơn
   & Khách hàng xem lịch sử đơn cá nhân; nhân viên tra cứu toàn bộ đơn và sao kê cửa hàng.
   & Must
   & \begin{itemize}[leftmargin=*]
-      \item Khách hàng: \texttt{GET /orders/me} chỉ xem đơn của mình; \texttt{GET /orders/:id} xem chi tiết món, giá, trạng thái và số tiền đã hoàn; xem đơn người khác bị từ chối với HTTP 403.
+      \item Khách hàng: \texttt{GET /orders/me} chỉ xem đơn của chính mình; \texttt{GET /orders/:id} xem chi tiết món, giá, trạng thái và số tiền đã hoàn; xem đơn của người khác bị trả về HTTP 404 Not Found (chủ đích bảo mật, tránh làm lộ sự tồn tại của đơn hàng).
       \item Nhân viên: Tab Lịch sử đơn xem mọi đơn ở mọi trạng thái, lọc theo trạng thái, tìm theo mã đơn/email khách, phân trang; xem chi tiết phiên thanh toán (ai duyệt/từ chối, lý do) và sao kê tiền vào/hoàn tiền.
     \end{itemize} \\
 \addlinespace
@@ -185,11 +188,12 @@ FR-15 & Đổi điểm thưởng \& Tích hợp cổng thanh toán thật
 \endhead
 
 NFR-01 & Hiệu năng (Performance)
-  & Tốc độ xử lý yêu cầu và khả năng đáp ứng đồng thời trong giờ cao điểm.
+  & Tốc độ xử lý yêu cầu và khả năng kiểm soát giao dịch đồng thời trong giờ cao điểm.
   & Must
   & \begin{itemize}[leftmargin=*]
       \item Thời gian phản hồi API (GET/POST với dữ liệu mẫu) dưới 500ms.
-      \item Hệ thống đáp ứng đồng thời tối thiểu 50 người dùng mà không xảy ra lỗi sập dịch vụ.
+      \item Xử lý đồng thời có kiểm chứng: khi có 20 yêu cầu đặt hàng đồng thời cho món chỉ còn đủ nguyên liệu cho 1 ly $\rightarrow$ chỉ duy nhất 1 đơn thành công, các đơn còn lại bị từ chối do thiếu nguyên liệu, tuyệt đối không bán vượt tồn kho.
+      \item Gửi 10 request đồng thời với cùng \texttt{Idempotency-Key} $\rightarrow$ chỉ tạo đúng 1 đơn hàng (đã có bộ kiểm thử tích hợp tự động với PostgreSQL thật chứng minh).
     \end{itemize} \\
 \addlinespace
 
@@ -200,7 +204,7 @@ NFR-02 & Bảo mật (Security)
       \item Mật khẩu băm một chiều với \texttt{bcrypt} ($\text{salt rounds} \ge 10$).
       \item Xác thực và phân quyền qua JWT; secret không xuất hiện trên repository hay log CI.
       \item Phân quyền chặt chẽ \texttt{CUSTOMER}/\texttt{ADMIN} ở backend (từ chối 403 Forbidden).
-      \item Áp dụng transaction và optimistic locking để chống trừ nguyên liệu/tiền hai lần.
+      \item Áp dụng transaction kết hợp \emph{optimistic locking} để chống trừ lặp nguyên liệu tồn kho; áp dụng \emph{pessimistic locking} (khóa dòng cơ sở dữ liệu) kèm kiểm tra số dư đơn hàng để chống xác nhận hoặc hoàn tiền hai lần.
     \end{itemize} \\
 \addlinespace
 
@@ -208,9 +212,9 @@ NFR-03 & Tính khả dụng (Usability \& PWA)
   & Trải nghiệm người dùng thân thiện, tối ưu cho thiết bị di động.
   & Must
   & \begin{itemize}[leftmargin=*]
-      \item Thiết kế theo chuẩn mobile-first; tương thích tốt trên màn hình từ 360px trở lên.
-      \item Đầy đủ trạng thái giao diện: loading, empty, error.
-      \item Hỗ trợ cài đặt PWA lên màn hình chính điện thoại, mở ở chế độ standalone.
+      \item Thiết kế theo chuẩn mobile-first; tương thích và hiển thị tốt trên màn hình từ 360px trở lên.
+      \item Giao diện có đầy đủ các trạng thái người dùng: \emph{loading} (skeleton/spinner), \emph{empty} (dữ liệu trống) và \emph{error} (báo lỗi kèm nút Thử lại).
+      \item Tính năng PWA ở mức tối thiểu: có web manifest (tên ứng dụng, icon, màu sắc thương hiệu), cài đặt được lên màn hình chính thiết bị di động, mở được ở chế độ \emph{standalone}. Không yêu cầu hỗ trợ offline hoàn toàn hay push notification (đưa vào mở rộng). Việc hoàn thiện PWA được lập kế hoạch trong backlog Sprint~2 (Task~5.1).
     \end{itemize} \\
 \addlinespace
 
@@ -232,7 +236,7 @@ Hình~\ref{fig:usecase-overview} mô tả toàn bộ các ca sử dụng (use-ca
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.98\textwidth]{docs/requirements/usecase-overview.svg}
+  \includegraphics[width=0.88\textwidth]{docs/diagrams/usecase-overview.png}
   \caption{Sơ đồ use-case tổng quát hệ thống BrewLite}
   \label{fig:usecase-overview}
 \end{figure}
@@ -241,7 +245,7 @@ Trong sơ đồ:
 \begin{itemize}
   \item \textbf{Khách hàng} thực hiện luồng nghiệp vụ mua hàng: Xem menu $\rightarrow$ Xem chi tiết \& tùy chọn $\rightarrow$ Quản lý giỏ hàng $\rightarrow$ Đăng ký/Đăng nhập $\rightarrow$ Đặt đơn hàng $\rightarrow$ Chuyển khoản qua Ngân hàng giả lập $\rightarrow$ Theo dõi trạng thái đơn (hoặc Gửi yêu cầu hủy đơn).
   \item Use-case \textbf{Đặt đơn hàng} bắt buộc bao gồm (\texttt{<<include>>}) use-case \textbf{Quản lý \& giữ tồn kho theo nguyên liệu} nhằm đảm bảo tính toàn vẹn tồn kho theo công thức và chống bán vượt khi nhiều khách đặt cùng lúc.
-  \item \textbf{Ngân hàng giả lập} tiếp nhận yêu cầu chuyển khoản (quét mã QR) từ khách hàng, tự động ghi nhận tiền vào \textbf{Sao kê của quán} và xử lý hoàn tiền khi đơn bị từ chối/hủy.
+  \item \textbf{Ngân hàng giả lập} là actor phụ kết nối với use-case \textbf{Chuyển khoản qua Ngân hàng giả lập (QR)}; các use-case thanh toán, xác nhận và duyệt hủy đều bao gồm (\texttt{<<include>>}) use-case \textbf{Ghi nhận sao kê \& Tự động hoàn tiền}.
   \item \textbf{Nhân viên / Barista (\texttt{ADMIN})} thao tác trên trang quản trị: Đối chiếu sao kê để \emph{Xác nhận} (chuyển đơn sang \texttt{PAID}) hoặc \emph{Từ chối} thanh toán (kích hoạt tự hoàn tiền); Duyệt yêu cầu hủy đơn; Cập nhật bảng pha chế (\texttt{PAID} $\rightarrow$ \texttt{PREPARING} $\rightarrow$ \texttt{READY} $\rightarrow$ \texttt{COMPLETED}); Theo dõi tồn kho nguyên liệu và Tra cứu lịch sử đơn.
   \item Các use-case \textbf{Quản lý menu, giá, nhập kho nguyên liệu} và \textbf{Đổi điểm thưởng} được đánh dấu mức \emph{Won't} do thuộc phạm vi mở rộng sau MVP.
 \end{itemize}

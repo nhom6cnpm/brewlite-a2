@@ -1,9 +1,10 @@
 @startuml
+left to right direction
 skinparam actorStyle awesome
 skinparam packageStyle rectangle
 skinparam roundcorner 10
 skinparam defaultFontName Arial
-skinparam defaultFontSize 12
+skinparam defaultFontSize 11
 skinparam arrowColor #2C3E50
 skinparam actorBorderColor #2C3E50
 skinparam rectangleBorderColor #BDC3C7
@@ -13,10 +14,9 @@ skinparam usecaseBorderColor #34495E
 title Sơ đồ Use-case Tổng quát - Hệ thống BrewLite
 
 actor "Khách hàng\n(Customer)" as Customer
-actor "Nhân viên / Barista\n(ADMIN)" as Staff
-actor "Ngân hàng giả lập\n(Mock Bank)" as MockBank
 
 rectangle "Hệ thống Đặt đồ uống BrewLite" {
+  
   package "Khách hàng (Customer Flow)" {
     usecase "UC-01: Xem danh mục đồ uống (Menu)" as UC_Menu
     usecase "UC-02: Xem chi tiết & tùy chọn (Size/Topping)" as UC_Detail
@@ -47,40 +47,44 @@ rectangle "Hệ thống Đặt đồ uống BrewLite" {
   }
 }
 
-Customer --> UC_Menu
-Customer --> UC_Detail
-Customer --> UC_Cart
-Customer --> UC_Auth
-Customer --> UC_Order
-Customer --> UC_Pay
-Customer --> UC_Track
-Customer --> UC_Cancel
+actor "Ngân hàng giả lập\n(Mock Bank)" as MockBank
+actor "Nhân viên / Barista\n(ADMIN)" as Staff
 
-UC_Order ..> UC_Inventory : <<include>>
-UC_Pay ..> MockBank : <<mở trang chuyển tiền QR>>
-MockBank --> UC_Statement : <<ghi tiền vào sao kê>>
+' Customer on LEFT
+Customer -- UC_Menu
+Customer -- UC_Detail
+Customer -- UC_Cart
+Customer -- UC_Auth
+Customer -- UC_Order
+Customer -- UC_Pay
+Customer -- UC_Track
+Customer -- UC_Cancel
 
-Staff --> UC_Auth
-Staff --> UC_ConfirmPay
-Staff --> UC_ApproveCancel
-Staff --> UC_Brewing
-Staff --> UC_StockView
-Staff --> UC_AdminHistory
+' MockBank and Staff on RIGHT
+UC_Pay -- MockBank
+UC_ConfirmPay -- Staff
+UC_ApproveCancel -- Staff
+UC_Brewing -- Staff
+UC_StockView -- Staff
+UC_AdminHistory -- Staff
 
-UC_ConfirmPay ..> UC_Statement : <<đối chiếu sao kê / hoàn tiền khi từ chối>>
-UC_ApproveCancel ..> UC_Statement : <<hoàn tiền khi duyệt hủy>>
-UC_ApproveCancel ..> UC_Inventory : <<hoàn lại nguyên liệu>>
+' Include relationships between use-cases
+UC_Order .> UC_Inventory : <<include>>
+UC_Pay .> UC_Statement : <<include>>
+UC_ConfirmPay .> UC_Statement : <<include>>
+UC_ApproveCancel .> UC_Statement : <<include>>
+UC_ApproveCancel .> UC_Inventory : <<include>>
 
-note bottom of UC_Inventory
-  - Trừ theo công thức: Size M x1.25, Size L x1.5, Topping riêng.
-  - Giữ chỗ 15 phút; hoàn lại nguyên liệu khi hủy hoặc hết hạn.
+note right of UC_Inventory
+  - Định lượng: Size M x1.25, Size L x1.5, Topping riêng.
+  - Giữ chỗ 15 phút; hoàn lại khi hủy hoặc hết hạn.
   - Chống race condition (Transaction + Optimistic Locking).
 end note
 
-note bottom of UC_ConfirmPay
-  - Quán không tự động đánh dấu PAID (yêu cầu của giảng viên).
-  - Nhân viên đối chiếu số tiền và mã đơn trên sao kê để xác nhận.
-  - Bấm từ chối -> hệ thống tự hoàn tiền trên sao kê.
+note right of UC_ConfirmPay
+  - Quán không tự động đánh dấu PAID (yêu cầu GV).
+  - Nhân viên đối chiếu sao kê để xác nhận (PAID).
+  - Từ chối -> hệ thống tự hoàn tiền trên sao kê.
 end note
 
 @enduml
