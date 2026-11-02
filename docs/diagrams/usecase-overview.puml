@@ -1,5 +1,4 @@
 @startuml
-left to right direction
 skinparam actorStyle awesome
 skinparam packageStyle rectangle
 skinparam roundcorner 10
@@ -10,6 +9,8 @@ skinparam actorBorderColor #2C3E50
 skinparam rectangleBorderColor #BDC3C7
 skinparam usecaseBackgroundColor #ECF0F1
 skinparam usecaseBorderColor #34495E
+
+left to right direction
 
 title Sơ đồ Use-case Tổng quát - Hệ thống BrewLite
 
@@ -50,7 +51,7 @@ rectangle "Hệ thống Đặt đồ uống BrewLite" {
 actor "Ngân hàng giả lập\n(Mock Bank)" as MockBank
 actor "Nhân viên / Barista\n(ADMIN)" as Staff
 
-' Customer on LEFT
+' Cột 1 (TRÁI): Khách hàng
 Customer -- UC_Menu
 Customer -- UC_Detail
 Customer -- UC_Cart
@@ -60,29 +61,47 @@ Customer -- UC_Pay
 Customer -- UC_Track
 Customer -- UC_Cancel
 
-' MockBank and Staff on RIGHT
-UC_Pay -- MockBank
-UC_Auth -- Staff
-UC_ConfirmPay -- Staff
-UC_ApproveCancel -- Staff
-UC_Brewing -- Staff
-UC_StockView -- Staff
-UC_AdminHistory -- Staff
+' Cột cuối (PHẢI): Nhân viên và Ngân hàng giả lập.
+' Dùng "---" (đường dài) để đẩy 2 actor này ra sau cột Nghiệp vụ cốt lõi.
+UC_Pay --- MockBank
+UC_Auth --- Staff
+UC_ConfirmPay --- Staff
+UC_ApproveCancel --- Staff
+UC_Brewing --- Staff
+UC_StockView --- Staff
+UC_AdminHistory --- Staff
 
-' Include relationships between use-cases
+' Giữ thứ tự từ trên xuống: UC-01..08, rồi 11..15, cuối cùng 16..17 (Out of MVP)
+UC_Menu -[hidden]right- UC_Detail
+UC_Detail -[hidden]right- UC_Cart
+UC_Cart -[hidden]right- UC_Auth
+UC_Auth -[hidden]right- UC_Order
+UC_Order -[hidden]right- UC_Pay
+UC_Pay -[hidden]right- UC_Track
+UC_Track -[hidden]right- UC_Cancel
+UC_Cancel -[hidden]right- UC_ConfirmPay
+UC_ConfirmPay -[hidden]right- UC_ApproveCancel
+UC_ApproveCancel -[hidden]right- UC_Brewing
+UC_Brewing -[hidden]right- UC_StockView
+UC_StockView -[hidden]right- UC_AdminHistory
+UC_AdminHistory -[hidden]right- UC_AdminManage
+UC_AdminManage -[hidden]right- UC_Redeem
+UC_Inventory -[hidden]right- UC_Statement
+
+' Include
 UC_Order ..> UC_Inventory : <<include>>
 UC_Pay ..> UC_Statement : <<include>>
 UC_ConfirmPay ..> UC_Statement : <<include>>
 UC_ApproveCancel ..> UC_Statement : <<include>>
 UC_ApproveCancel ..> UC_Inventory : <<include>>
 
-note right of UC_Inventory
+' Ghi chú để ở góc dưới, không đè lên use-case
+note as N_Rules
+  <b>UC-09 Tồn kho</b>
   - Định lượng: Size M x1.25, Size L x1.5, Topping riêng.
   - Giữ chỗ 15 phút; hoàn lại khi hủy hoặc hết hạn.
   - Chống race condition (Transaction + Optimistic Locking).
-end note
-
-note right of UC_ConfirmPay
+  <b>UC-11 Xác nhận thanh toán</b>
   - Quán không tự động đánh dấu PAID (yêu cầu GV).
   - Nhân viên đối chiếu sao kê để xác nhận (PAID).
   - Từ chối -> hệ thống tự hoàn tiền trên sao kê.
