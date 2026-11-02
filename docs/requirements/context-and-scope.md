@@ -20,7 +20,7 @@ BrewLite cần giúp khách hàng **tự đặt đồ uống và thanh toán tr�
 
 > menu → tùy chọn → giỏ hàng → đặt đơn → thanh toán → theo dõi đơn
 
-và kiểm soát tồn kho **theo nguyên liệu và công thức** (mỗi món tiêu hao một lượng nguyên liệu xác định; khi nguyên liệu không đủ thì món không thể đặt).  Việc xác nhận thanh toán thuộc về nhân viên cửa hàng, khách không được tự đánh dấu đơn đã thanh toán.
+và kiểm soát tồn kho **theo nguyên liệu và công thức** (mỗi món tiêu hao một lượng nguyên liệu xác định; khi nguyên liệu không đủ thì món không thể đặt). Việc xác nhận thanh toán thuộc về nhân viên cửa hàng, khách không được tự đánh dấu đơn đã thanh toán.
 
 ### 1.3. Tầm nhìn sản phẩm
 
