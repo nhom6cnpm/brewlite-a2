@@ -76,12 +76,6 @@ UC_ConfirmPay ..> UC_Statement : <<include>>
 UC_ApproveCancel ..> UC_Statement : <<include>>
 UC_ApproveCancel ..> UC_Inventory : <<include>>
 
-' Layout only (not part of the model): customer flow -> core -> admin flow,
-' extension package last
-UC_Cancel -[hidden]- UC_Inventory
-UC_Statement -[hidden]- UC_ConfirmPay
-UC_AdminHistory -[hidden]- UC_AdminManage
-
 note right of UC_Inventory
   - Định lượng: Size M x1.25, Size L x1.5, Topping riêng.
   - Giữ chỗ 15 phút; hoàn lại khi hủy hoặc hết hạn.
