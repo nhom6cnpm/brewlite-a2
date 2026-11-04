@@ -57,12 +57,12 @@ repeat
   |kh|
   :Quét QR; mở mock-bank;\nbấm Chuyển tiền [FR-07 / UC-06];
   |ht|
-  if (Tiền về trước hạn?) then (Có)
+  if (Khách chuyển tiền\ntrước hạn?) then (Có)
   else (Hết 15 phút)
     :CANCELLED; hoàn nguyên liệu,\nvoucher; giữ giỏ [FR-06, FR-10];
     stop
   endif
-  :IN; TRANSFER_RECEIVED;\nđơn PENDING [FR-07 / UC-10];
+  :Ghi tiền vào sao kê;\nphiên TRANSFER_RECEIVED;\nđơn vẫn PENDING [FR-07 / UC-10];
   |nv|
   if (Đối chiếu: xác nhận?\n[FR-08 / UC-11]) then (Có)
     |ht|
@@ -76,5 +76,7 @@ repeat
   :FAILED; PAYMENT_FAILED;\ntự REFUND tiền đã nhận;\ngiữ nguyên liệu và giỏ [FR-08];
   |kh|
 repeat while (Khách thử lại cùng đơn?) is (Có) not (Không)
+|ht|
+:Đến hạn: CANCELLED;\nhoàn nguyên liệu, voucher;\ngiữ giỏ [FR-06, FR-10];
 stop
 @enduml

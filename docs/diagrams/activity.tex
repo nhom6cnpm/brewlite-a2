@@ -39,6 +39,9 @@ và quyết định:
     \texttt{Idempotency-Key} mới. Hạn vẫn tính từ lúc tạo đơn;
     không giữ nguyên liệu lần hai, không chuyển thẳng
     \texttt{PAYMENT\_FAILED} $\rightarrow$ \texttt{PAID}.
+    Nếu khách không thử lại, đơn vẫn \texttt{PAYMENT\_FAILED}
+    đến hạn cũ; khi đến hạn, hệ thống tự hủy và hoàn nguyên liệu,
+    lượt voucher, giữ giỏ.
   \item \textbf{Quá hạn khi chưa nhận tiền}: tác vụ nền tự chuyển đơn
     sang \texttt{CANCELLED}, hoàn nguyên liệu và lượt voucher
     đúng một lần, giữ giỏ. Nhánh hết hạn được xử lý cả khi khách
