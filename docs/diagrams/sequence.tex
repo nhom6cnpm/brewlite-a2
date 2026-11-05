@@ -34,6 +34,7 @@ Backend thực hiện:
 
 \paragraph{Giai đoạn 2: Khởi tạo thanh toán \& Quét QR (\texttt{POST /payments})}
 Khách hàng chọn phương thức \emph{Chuyển khoản / Ví} (\texttt{WALLET}) trên trang \texttt{/checkout/:orderId}. Giao diện gửi yêu cầu \texttt{POST /payments}. Backend xác thực đơn hàng thuộc quyền sở hữu của khách, đang ở trạng thái \texttt{PENDING} và còn hiệu lực trong 15 phút. Hệ thống ghi nhận khóa yêu cầu thanh toán vào bảng \texttt{payment\_request\_keys} và tạo bản ghi phiên thanh toán ở trạng thái \texttt{PENDING} với số tiền lấy từ đơn hàng, sinh đường dẫn QR và chuyển hướng khách sang màn hình thanh toán \texttt{/pay/:paymentId}.
+Nếu client gửi lại cùng \texttt{Idempotency-Key} (ví dụ do mạng chậm hoặc bấm đúp) cho cùng đơn và cùng phương thức, backend trả lại phiên thanh toán cũ, không tạo phiên mới; nếu key đã dùng cho đơn hoặc phương thức khác thì trả HTTP 400.
 
 \paragraph{Giai đoạn 3: Chuyển tiền qua Ngân hàng giả lập \& Kiểm tra thời hạn 15 phút}
 Khách hàng quét mã QR để mở trang ngân hàng giả lập (\texttt{/mock-bank/:paymentId}, trang mở không yêu cầu đăng nhập) và bấm \emph{Chuyển tiền}. Ngân hàng giả lập gọi \texttt{POST /mock-bank/payments/:id/transfer} sang API. Tùy theo thời điểm thực tế, hệ thống rẽ nhánh xử lý:

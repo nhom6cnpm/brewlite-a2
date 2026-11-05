@@ -9,6 +9,8 @@ skinparam ArrowColor #2C3E50
 skinparam LifeLineBorderColor #2C3E50
 skinparam LifeLineBackgroundColor #EAF2F8
 skinparam BoxPadding 10
+' plantuml.com cuts PNG output above 4096 px; scale keeps the whole diagram
+scale 0.9
 
 skinparam sequence {
   GroupBorderColor #7F8C8D
@@ -70,7 +72,7 @@ alt Gửi lặp cùng Idempotency-Key
   alt Cùng payload / items
     db --> api : Bản ghi đơn hàng cũ
     api -> db : ROLLBACK
-    api --> ui : 200 OK (Trả lại đơn hàng cũ, không tạo mới)
+    api --> ui : 201 (Trả lại đơn hàng cũ, không tạo mới)
   else Khác payload / items
     api -> db : ROLLBACK
     api --> ui : 409 Conflict ("Idempotency key mismatch")
@@ -103,13 +105,25 @@ activate ui
 ui -> api : POST /payments { orderId, method: "WALLET" }\nHeader: Idempotency-Key, Authorization: Bearer <jwt>
 activate api
 
-api -> db : SELECT * FROM orders WHERE id=orderId (Kiểm tra PENDING & còn hạn 15m)
+api -> db : BEGIN TRANSACTION (khóa dòng đơn hàng)
 activate db
-db --> api : Order info hợp lệ
+api -> db : Tìm Idempotency-Key trong bảng payment_request_keys
+alt Gửi lặp cùng Idempotency-Key
+  alt Cùng đơn hàng & cùng phương thức
+    db --> api : Phiên thanh toán cũ
+    api -> db : COMMIT (không ghi thêm gì)
+    api --> ui : 201 { paymentId cũ, status } (Trả lại phiên cũ, không tạo phiên mới)
+  else Khác đơn hàng / khác phương thức
+    api -> db : ROLLBACK
+    api --> ui : 400 Bad Request ("Idempotency-Key đã được dùng cho yêu cầu thanh toán khác")
+  end
+else Idempotency-Key mới
+  api -> db : Kiểm tra đơn PENDING / PAYMENT_FAILED & còn hạn 15m
+  api -> db : INSERT INTO payment_request_keys\nINSERT INTO payments (orderId, amount, status='PENDING', method='WALLET')
+  api -> db : COMMIT TRANSACTION
+  api --> ui : 201 Created { paymentId, amount, status: "PENDING", qrUrl }
+end
 deactivate db
-
-api -> db : INSERT INTO payment_request_keys (...) \nINSERT INTO payments (orderId, amount, status='PENDING', method='WALLET')
-api --> ui : 201 Created { paymentId, amount, status: "PENDING", qrUrl }
 deactivate api
 ui --> c : Chuyển sang /pay/:paymentId (Hiển thị mã QR ngân hàng kèm số tiền & mã đơn)
 deactivate ui
@@ -142,8 +156,8 @@ alt Khách chuyển tiền trước hạn (expiresAt > NOW())
 
 else Hết 15 phút chưa chuyển / Quá hạn (expiresAt < NOW() và chưa nhận tiền) [E4]
   note over api, db #FADBD8
-    Tác vụ nền (Background Job) định kỳ kiểm tra đơn hết hạn 15m mà chưa nhận tiền:
-    - Status đơn vẫn là PENDING và KHÔNG có phiên TRANSFER_RECEIVED
+    API kiểm tra hạn ngay khi nhận chuyển khoản; tác vụ nền cũng tự hủy đơn quá hạn mỗi 5 giây.
+    Điều kiện: đơn PENDING / PAYMENT_FAILED, quá 15 phút và KHÔNG có phiên TRANSFER_RECEIVED
   end note
   api -> db : BEGIN TRANSACTION
   activate db
