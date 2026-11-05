@@ -9,7 +9,7 @@ Chi tiết quyết định xem tại \texttt{docs/architecture/adr/008-nen-tang-
 
 \subsubsection{Deployment diagram}
 
-\begin{figure}[H]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{docs/diagrams/deployment.png}
   \caption{UML Deployment diagram -- BrewLite trên Render (Production)}
@@ -35,7 +35,7 @@ Kế tiếp, CI kích hoạt Render Deploy Hook qua \texttt{curl} để Render t
 \begin{itemize}
   \item \textbf{Render CDN / Edge}: tiếp nhận yêu cầu HTTPS :443 từ người dùng (Browser/PWA), cấp chứng chỉ TLS tự động (Let's Encrypt). CDN định tuyến trực tiếp traffic giao diện người dùng tới \texttt{brewlite-web} (HTTP :3000), đồng thời định tuyến traffic gọi REST API và endpoint kiểm tra sức khỏe (\texttt{/health}) tới \texttt{brewlite-api} (HTTP :3001) với cấu hình CORS.
   \item \textbf{brewlite-web} (Render Web Service, Node.js 20): phục vụ ứng dụng Next.js PWA, lắng nghe PORT=3000.
-    Ngoài việc phục vụ client, web service có thể gọi trực tiếp backend qua mạng nội bộ Render (\texttt{API\_INTERNAL\_URL=http://api\_prod:3001}) cho các tác vụ SSR hoặc Server proxy.
+    Ngoài việc phục vụ client, web service có thể gọi trực tiếp backend qua mạng nội bộ Render (\texttt{API\_INTERNAL\_URL=http://brewlite-api:3001}) cho các tác vụ SSR hoặc Server proxy.
     Health check: \texttt{GET /menu}.
     Biến môi trường: \texttt{NEXT\_PUBLIC\_API\_URL}, \texttt{PORT}, \texttt{NEXT\_PUBLIC\_APP\_URL}, \texttt{API\_INTERNAL\_URL}.
   \item \textbf{brewlite-api} (Render Web Service, Node.js 20): phục vụ NestJS API, lắng nghe PORT=3001.
