@@ -33,13 +33,28 @@ brewlite-a2/
 ## Tiến độ
 | Task | Nội dung | Trạng thái |
 |---|---|---|
-| 1 | Khai thác và đặc tả yêu cầu | ⏳ Đang làm |
-| 2 | Mô hình hóa hệ thống | ⬜ |
-| 3 | Thiết kế kiến trúc | ⬜ |
-| 4 | Triển khai Sprint 1 | ⬜ |
+| 1 | Khai thác và đặc tả yêu cầu | ✅ Xong |
+| 2 | Mô hình hóa hệ thống | ✅ Xong |
+| 3 | Thiết kế kiến trúc | ⏳ Đang làm (#14, #15) |
+| 4 | Triển khai Sprint 1 | ⏳ Đang làm ([milestone Sprint 1](https://github.com/nhom6cnpm/brewlite-a2/milestone/1)) |
 | 5 | Triển khai Sprint 2, CI/CD và Delivery | ⬜ |
 
 > Các task phải hoàn thành **theo đúng thứ tự**; task sau chỉ được nghiệm thu khi tạo phẩm của task trước đã có trên repository.
+
+## Tài liệu
+| Task | Nội dung | File |
+|---|---|---|
+| 1.1 | Bối cảnh, stakeholder và phạm vi | [context-and-scope.md](docs/requirements/context-and-scope.md) · [.tex](docs/requirements/context-and-scope.tex) |
+| 1.2 | SRS (FR/NFR, MoSCoW) và use-case tổng quát | [srs.tex](docs/requirements/srs.tex) · [sơ đồ use-case](docs/diagrams/usecase-overview.svg) ([.puml](docs/diagrams/usecase-overview.puml)) |
+| 1.3 | Đặc tả use-case "Đặt và thanh toán đơn hàng" | [uc-checkout.tex](docs/requirements/uc-checkout.tex) · [sơ đồ](docs/diagrams/usecase-checkout.svg) ([.puml](docs/diagrams/usecase-checkout.puml)) |
+| 2.1 | Activity diagram (Activity-01) | [activity.tex](docs/diagrams/activity.tex) · [sơ đồ](docs/diagrams/activity-checkout.svg) ([.puml](docs/diagrams/activity-checkout.puml)) |
+| 2.2 | Sequence diagram (Sequence-01) | [sequence.tex](docs/diagrams/sequence.tex) · [sơ đồ](docs/diagrams/sequence-checkout.svg) ([.puml](docs/diagrams/sequence-checkout.puml)) |
+| 2.3 | Class diagram (Class-01) | [class.tex](docs/diagrams/class.tex) · [sơ đồ lớp](docs/diagrams/class-domain.svg) · [enum](docs/diagrams/class-domain-enums.svg) ([.puml](docs/diagrams/class-domain.puml)) |
+| 3.1 | Kiến trúc hệ thống và ADR | Đang làm (#14) — `docs/architecture/`, `docs/architecture/adr/` |
+| 3.2 | Deployment diagram | Đang làm (#15) — `docs/architecture/`, `docs/deployment.md` |
+| — | Ma trận truy vết | [traceability-matrix.md](docs/traceability-matrix.md) |
+
+Mỗi khi một task được merge, cập nhật dòng tương ứng trong bảng này.
 
 ## Quy ước làm việc (Git)
 - `main`: bản ổn định, **không push trực tiếp**.
