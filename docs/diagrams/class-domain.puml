@@ -1,0 +1,263 @@
+' Task 2.3 / Issue #9. Domain associations are not a physical FK diagram.
+' Sources: A2 f759cd1 (SRS + UC-CK); A1 da046a7 (entities + services).
+' Two views from one source: domain structure, then enumeration reference.
+' Default Graphviz engine; hidden edges constrain a three-column layout.
+' Association captions are omitted; multiplicities are unchanged.
+' NBSP (U+00A0) inside quoted multiplicities adds visual spacing only.
+' Horizontal endpoints use an empty second line (\n + NBSP) to lift text off the stroke.
+' Keep these spaces when editing; they are not part of the multiplicity value.
+@startuml class-domain
+hide methods
+hide circle
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam classAttributeIconSize 0
+skinparam roundcorner 8
+skinparam nodesep 70
+skinparam sameClassWidth true
+skinparam linetype ortho
+skinparam ranksep 50
+skinparam class {
+  BackgroundColor #F8FAFC
+  BorderColor #475569
+  ArrowColor #475569
+  FontColor #0F172A
+  HeaderBackgroundColor #E2E8F0
+  BackgroundColor<<derived>> #FFF7ED
+  BorderColor<<derived>> #C2410C
+}
+skinparam note {
+  BackgroundColor #FFFBEB
+  BorderColor #B45309
+}
+
+title BrewLite — Class-01: mô hình lớp nghiệp vụ
+
+class User {
+  id: String
+  email: String
+  role: UserRole
+  loyaltyPoints: Integer
+}
+class Order {
+  id: String
+  status: OrderStatus
+  subtotal: Integer
+  discount: Integer
+  total: Integer
+  voucherCode: String?
+  createdAt: DateTime
+  expiresAt: DateTime
+  pointsEarned: Integer
+  pointsReversed: Integer
+}
+class OrderItem {
+  id: String
+  productName: String?
+  size: ProductSize
+  toppingIds: ToppingId[]
+  qty: Integer
+  unitPrice: Integer
+  lineTotal: Integer
+}
+class Product {
+  id: String
+  name: String
+  price: Integer
+  /stock: Integer
+}
+class RecipeItem {
+  productId: String
+  ingredientId: String
+  amount: Integer
+}
+class Ingredient {
+  id: String
+  name: String
+  unit: String
+  quantity: Integer
+  version: Integer
+}
+class Payment {
+  id: String
+  idempotencyKey: String
+  amount: Integer
+  method: PaymentMethod
+  status: PaymentStatus
+  receivedAt: DateTime?
+  reviewedAt: DateTime?
+  reviewedBy: String?
+}
+class BankTransaction {
+  id: String
+  type: BankTransactionType
+  amount: Integer
+  paymentId: String?
+  createdAt: DateTime
+}
+class Promotion {
+  code: String
+  title: String
+  discountType: DiscountType
+  discountValue: Integer
+  minSubtotal: Integer
+  maxDiscount: Integer?
+  startsAt: DateTime
+  endsAt: DateTime
+  isPublic: Boolean
+  maxUsesPerUser: Integer
+}
+class VoucherUsage {
+  orderId: String
+  userId: String
+  voucherCode: String
+  status: VoucherUsageStatus
+  reservedAt: DateTime
+  usedAt: DateTime?
+  releasedAt: DateTime?
+}
+class LoyaltyTransaction <<derived>> {
+  orderId: String
+  userId: String
+  kind: LoyaltyTransactionType
+  pointsDelta: Integer
+  occurredAt: DateTime
+}
+
+' Only the ownership of OrderItem is composition. Other lines are associations.
+' User ownership of Payment/Usage/Loyalty is also constrained by Order.userId.
+User "1    " -[norank]- "0..*    " Order
+Order "1    " *-[norank]- "1..*\n " OrderItem
+OrderItem "0..*    " -[norank]- "1    " Product
+Product "1    " -[norank]- "0..*    " RecipeItem
+RecipeItem "0..*    " -[norank]- "1    " Ingredient
+Order "1    " -[norank]- "0..*    " Payment
+Payment "0..1    " -[norank]- "0..*    " BankTransaction
+BankTransaction "0..*\n " -[norank]- "1\n " Order
+Order "1\n " -[norank]- "0..1\n " VoucherUsage
+VoucherUsage "0..*    " -[norank]- "1    " Promotion
+Order "1    " -[norank]- "0..2\n " LoyaltyTransaction
+
+' Explicit layout grid; all hidden links are layout constraints only.
+LoyaltyTransaction -[hidden]right- User
+User -[hidden]right- OrderItem
+VoucherUsage -[hidden]right- Order
+Order -[hidden]right- Product
+Promotion -[hidden]right- Payment
+Payment -[hidden]right- RecipeItem
+BankTransaction -[hidden]right- Ingredient
+LoyaltyTransaction -[hidden]down- VoucherUsage
+VoucherUsage -[hidden]down- Promotion
+User -[hidden]down- Order
+Order -[hidden]down- Payment
+Payment -[hidden]down- BankTransaction
+OrderItem -[hidden]down- Product
+Product -[hidden]down- RecipeItem
+RecipeItem -[hidden]down- Ingredient
+
+legend bottom left
+  **Cách đọc**
+  1 / 0..1 / 0..* / 1..* : bội số ở đầu liên kết.
+  Hình thoi đặc: OrderItem thuộc vòng đời của Order.
+  / : dữ liệu suy ra; ? : nullable; [] : danh sách; tiền: Integer VND.
+  Promotion ánh xạ entity Voucher. LoyaltyTransaction chưa có bảng riêng.
+  /stock: size S, không topping; các lựa chọn khác dùng availability.
+  Giá trị enum xem hình Class-01b; các FK phụ được lược khỏi hình.
+endlegend
+@enduml
+
+@startuml class-domain-enums
+skinparam sameClassWidth true
+hide methods
+hide circle
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam classAttributeIconSize 0
+skinparam nodesep 30
+skinparam ranksep 30
+skinparam class {
+  BackgroundColor #F8FAFC
+  BorderColor #475569
+  HeaderBackgroundColor #E2E8F0
+  BackgroundColor<<proposed>> #FFF7ED
+  BorderColor<<proposed>> #C2410C
+}
+title BrewLite — Class-01b: enum và kiểu giá trị
+
+enum OrderStatus <<enumeration>> {
+  PENDING
+  PAID
+  PAYMENT_FAILED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+enum PaymentStatus <<enumeration>> {
+  PENDING
+  TRANSFER_RECEIVED
+  SUCCESS
+  FAILED
+}
+enum PaymentMethod <<enumeration>> {
+  WALLET
+  CARD
+}
+enum UserRole <<enumeration>> {
+  CUSTOMER
+  ADMIN
+}
+enum VoucherUsageStatus <<enumeration>> {
+  RESERVED
+  USED
+  RELEASED
+}
+enum DiscountType <<enumeration>> {
+  FIXED
+  PERCENT
+}
+enum BankTransactionType <<enumeration>> {
+  IN
+  REFUND
+}
+enum ProductSize <<enumeration>> {
+  S
+  M
+  L
+}
+enum ToppingId <<enumeration>> {
+  cream
+  pearls
+}
+enum LoyaltyTransactionType <<enumeration>> <<proposed>> {
+  EARN
+  REVERSAL
+}
+
+' Hidden links only arrange the reference; they carry no UML association.
+OrderStatus -[hidden]right- PaymentStatus
+PaymentStatus -[hidden]right- PaymentMethod
+OrderStatus -[hidden]down- UserRole
+PaymentStatus -[hidden]down- VoucherUsageStatus
+PaymentMethod -[hidden]down- DiscountType
+UserRole -[hidden]right- VoucherUsageStatus
+VoucherUsageStatus -[hidden]right- DiscountType
+UserRole -[hidden]down- BankTransactionType
+VoucherUsageStatus -[hidden]down- ProductSize
+DiscountType -[hidden]down- ToppingId
+BankTransactionType -[hidden]right- ProductSize
+ProductSize -[hidden]right- ToppingId
+ProductSize -[hidden]down- LoyaltyTransactionType
+
+legend bottom left
+  Năm enum bắt buộc: OrderStatus, PaymentStatus, PaymentMethod,
+  UserRole, VoucherUsageStatus. Các kiểu còn lại hỗ trợ thuộc tính.
+  Trong A1, một số kiểu được khai báo bằng union literal / const array.
+  LoyaltyTransactionType là kiểu đề xuất cho lớp suy ra, chưa có trong code.
+  TRANSFER_RECEIVED thuộc Payment; chỉ nhân viên mới xác nhận Order PAID.
+endlegend
+@enduml
