@@ -1,0 +1,108 @@
+@startuml deployment
+title Deployment-01 · UML Deployment Diagram (BrewLite Production & Environments)
+
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundcorner 6
+skinparam linetype ortho
+
+skinparam node {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  FontColor #0F172A
+}
+
+skinparam database {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  FontColor #1E3A8A
+}
+
+skinparam cloud {
+  BackgroundColor #F0FDF4
+  BorderColor #16A34A
+  FontColor #14532D
+}
+
+skinparam rectangle {
+  BorderColor #64748B
+  FontColor #1E293B
+}
+
+skinparam component {
+  BackgroundColor #FEF3C7
+  BorderColor #D97706
+  FontColor #78350F
+}
+
+skinparam note {
+  BackgroundColor #FFFBEB
+  BorderColor #B45309
+  FontSize 11
+}
+
+actor "User\n(Browser / PWA)" as user
+
+rectangle "Local (docker-compose)" as local #F1F5F9 {
+  node "brewlite-web\n(Next.js :3000)" as web_local
+  node "brewlite-api\n(NestJS :3001)" as api_local
+  database "brewlite-db\n(PostgreSQL :5432)\n[Volume: pgdata]" as db_local
+  
+  web_local --> api_local : HTTP :3001
+  api_local --> db_local : PostgreSQL :5432
+}
+
+rectangle "CI (GitHub Actions)" as ci #FEF9C3 {
+  component "Runner\n(ubuntu-latest)" as runner
+  component "Docker Build\n& Test" as build
+  runner ..> build : execute
+}
+
+cloud "Render CDN / Edge\n(HTTPS :443, TLS Let's Encrypt)" as cdn
+
+rectangle "Production (Render)" as prod #F0FDF4 {
+  node "Render Web Service\nbrewlite-web\n(Next.js / Node.js 20)" as web_prod
+  node "Render Web Service\nbrewlite-api\n(NestJS / Node.js 20)" as api_prod
+  database "Render Managed PostgreSQL\nbrewlite-db\n(Private, :5432)\n[Persistent Volume]" as db_prod
+  
+  web_prod --> api_prod : HTTP :3001 (internal Render network)
+  api_prod --> db_prod : PostgreSQL :5432 (Render private)
+}
+
+user --> cdn : HTTPS :443
+cdn --> web_prod : HTTP :3000 (internal)
+runner --> web_prod : Deploy via Render API
+runner --> api_prod : Deploy via Render API
+
+note right of web_prod
+  <b>Health Check:</b> GET /menu
+  <b>Logs:</b> Render Runtime Console & Logs
+  <b>Environment Variables:</b>
+  * NEXT_PUBLIC_API_URL
+  * PORT=3000
+  * NEXT_PUBLIC_APP_URL
+  * API_INTERNAL_URL
+end note
+
+note bottom of api_prod
+  <b>Health Check:</b> GET /health (Task 5.2)
+  <b>Logs:</b> Render Runtime Console & Logs
+  <b>Environment Variables (Render Secrets):</b>
+  * DATABASE_URL (Render Internal Private URL)
+  * JWT_SECRET
+  * JWT_EXPIRES_IN
+  * FRONTEND_URL
+  * NODE_ENV=production
+  * ADMIN_EMAIL
+  * ADMIN_PASSWORD
+end note
+
+note right of db_prod
+  <b>Persistent Storage:</b> Persistent Volume
+  <b>Credentials:</b> Render Secret (never committed)
+  <b>Access Control:</b> Private (no direct public internet exposure)
+end note
+
+@enduml

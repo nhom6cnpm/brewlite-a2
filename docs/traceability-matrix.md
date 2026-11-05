@@ -22,7 +22,7 @@ Cập nhật dần theo từng task: yêu cầu → use-case / user story → th
 | NFR-01 | UC-05, UC-09: Hiệu năng hệ thống & Xử lý đồng thời có kiểm chứng; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg) | | |
 | NFR-02 | UC-04, UC-09, UC-10, UC-11: Bảo mật dữ liệu & Phân quyền (Security, Locking); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg) | | |
 | NFR-03 | UC-01..UC-08: Tính khả dụng & Mobile-first PWA tối thiểu; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg) | | |
-| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | | | |
+| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | [Deployment-01](diagrams/deployment.svg); [ADR-008](architecture/adr/008-nen-tang-trien-khai.md) | | |
 
 ### Activity-01 — Task 2.1
 
