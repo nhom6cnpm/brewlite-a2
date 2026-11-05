@@ -50,7 +50,9 @@ _(Sẽ điền chi tiết ở Task 5.3–5.4)_
 
 ### Deploy
 
-Trigger qua GitHub Actions (CI/CD pipeline) hoặc thủ công qua Render Dashboard → Manual Deploy.
+1. CI (GitHub Actions) chạy quality gate: Install → Lint → Unit Test → Build.
+2. Build và push Docker image lên GitHub Packages (`ghcr.io`).
+3. Kích hoạt Render Deploy Hook qua `curl` để Render pull image và cập nhật service (hoặc thủ công qua Render Dashboard → Manual Deploy).
 
 ### Rollback
 
@@ -64,3 +66,4 @@ Render Dashboard → Service → Events → chọn deploy trước → Rollback.
 | brewlite-web | `GET /menu` | HTTP 200 |
 
 > `GET /health` sẽ được implement ở Task 5.2.
+

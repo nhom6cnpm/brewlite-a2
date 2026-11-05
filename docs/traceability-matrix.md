@@ -60,3 +60,14 @@ Thiết kế cho Issue #9, review tại PR #12; không thay thế bằng chứng
 - Cập nhật theo review PR #12: Payment có `idempotencyKey: String` duy nhất; Promotion có `isPublic: Boolean` để phân biệt mã công khai và mã chỉ nhập trực tiếp.
 
 [Class-01]: diagrams/class-domain.svg
+
+### Deployment-01 — Task 3.2
+
+Sơ đồ triển khai UML môi trường production trên nền tảng Render, thể hiện 3 ranh giới (Local, CI, Production), container registry (GHCR), kết nối HTTPS/internal, biến môi trường và health check cho NFR-04.
+
+- [Nguồn PlantUML](diagrams/deployment.puml)
+- [Ảnh SVG](diagrams/deployment.svg) · [Ảnh PNG](diagrams/deployment.png)
+- [Thuyết minh LaTeX](architecture/deployment.tex)
+- [Quyết định kiến trúc ADR-008](architecture/adr/008-nen-tang-trien-khai.md)
+- [Tài liệu hướng dẫn triển khai](deployment.md)
+

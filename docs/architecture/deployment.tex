@@ -3,14 +3,15 @@
 \subsubsection{Nền tảng triển khai}
 
 Nhóm chọn \textbf{Render} làm nền tảng production vì hỗ trợ Docker Compose-compatible workflow,
-PostgreSQL managed không public, HTTPS tự động và tích hợp GitHub Actions qua Render Deploy Hook.
+PostgreSQL managed không public, HTTPS tự động, hỗ trợ Container Registry GitHub Packages (\texttt{ghcr.io})
+và tích hợp GitHub Actions qua Render Deploy Hook.
 Chi tiết quyết định xem tại \texttt{docs/architecture/adr/008-nen-tang-trien-khai.md}.
 
 \subsubsection{Deployment diagram}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{diagrams/deployment.png}
+  \includegraphics[width=\linewidth]{docs/diagrams/deployment.png}
   \caption{UML Deployment diagram -- BrewLite trên Render (Production)}
   \label{fig:deployment}
 \end{figure}
@@ -26,22 +27,24 @@ Ba service chạy trên máy phát triển:
 \end{itemize}
 
 \paragraph{CI (GitHub Actions)}
-Runner \texttt{ubuntu-latest} thực hiện: install $\to$ lint $\to$ test $\to$ build.
-Sau khi pipeline pass, trigger Render Deploy Hook qua \texttt{curl} để deploy lên Production.
+Runner \texttt{ubuntu-latest} thực hiện pipeline kiểm tra chất lượng: install $\to$ lint $\to$ test $\to$ build Docker image.
+Sau khi build thành công, image được gắn tag (commit SHA/semver) và push lên Container Registry GitHub Packages (\texttt{ghcr.io}).
+Kế tiếp, CI kích hoạt Render Deploy Hook qua \texttt{curl} để Render tự động pull image mới nhất từ \texttt{ghcr.io} và triển khai lên Production.
 
 \paragraph{Production (Render)}
 \begin{itemize}
-  \item \textbf{Render CDN / Edge}: tiếp nhận HTTPS :443 từ người dùng, cấp TLS tự động (Let's Encrypt).
-  \item \textbf{brewlite-web} (Render Web Service, Node.js 20): phục vụ Next.js, PORT=3000.
+  \item \textbf{Render CDN / Edge}: tiếp nhận yêu cầu HTTPS :443 từ người dùng (Browser/PWA), cấp chứng chỉ TLS tự động (Let's Encrypt). CDN định tuyến trực tiếp traffic giao diện người dùng tới \texttt{brewlite-web} (HTTP :3000), đồng thời định tuyến traffic gọi REST API và endpoint kiểm tra sức khỏe (\texttt{/health}) tới \texttt{brewlite-api} (HTTP :3001) với cấu hình CORS.
+  \item \textbf{brewlite-web} (Render Web Service, Node.js 20): phục vụ ứng dụng Next.js PWA, lắng nghe PORT=3000.
+    Ngoài việc phục vụ client, web service có thể gọi trực tiếp backend qua mạng nội bộ Render (\texttt{API\_INTERNAL\_URL=http://api\_prod:3001}) cho các tác vụ SSR hoặc Server proxy.
     Health check: \texttt{GET /menu}.
-    Biến môi trường: \texttt{NEXT\_PUBLIC\_API\_URL}, \texttt{PORT}, \texttt{NEXT\_PUBLIC\_APP\_URL}.
-  \item \textbf{brewlite-api} (Render Web Service, Node.js 20): NestJS API, PORT=3001.
+    Biến môi trường: \texttt{NEXT\_PUBLIC\_API\_URL}, \texttt{PORT}, \texttt{NEXT\_PUBLIC\_APP\_URL}, \texttt{API\_INTERNAL\_URL}.
+  \item \textbf{brewlite-api} (Render Web Service, Node.js 20): phục vụ NestJS API, lắng nghe PORT=3001.
     Health check: \texttt{GET /health} (implement ở Task 5.2).
     Biến môi trường: \texttt{DATABASE\_URL} (Render Internal URL), \texttt{JWT\_SECRET},
     \texttt{JWT\_EXPIRES\_IN}, \texttt{FRONTEND\_URL}, \texttt{NODE\_ENV=production},
     \texttt{ADMIN\_EMAIL}, \texttt{ADMIN\_PASSWORD}.
-  \item \textbf{brewlite-db} (Render Managed PostgreSQL): kết nối qua Internal URL \texttt{:5432},
-    persistent volume, không exposed ra internet.
+  \item \textbf{brewlite-db} (Render Managed PostgreSQL): kết nối qua mạng nội bộ Private URL \texttt{:5432},
+    persistent volume, hoàn toàn không mở cổng ra ngoài internet.
 \end{itemize}
 
 Mọi secret lưu trong Render Environment Variables,
@@ -60,6 +63,7 @@ và thư mục mã nguồn:
 brewlite-web & Frontend Next.js (C4 Container) & \texttt{apps/web/} \\
 brewlite-api & Backend NestJS (C4 Container) & \texttt{apps/api/} \\
 brewlite-db  & PostgreSQL + TypeORM (C4 Container) & Migration trong \texttt{apps/api/src/migrations/} \\
+ghcr.io      & Container Registry & GitHub Packages (\texttt{ghcr.io}) \\
 GitHub Actions Runner & CI Pipeline & \texttt{.github/workflows/} \\
 \bottomrule
 \end{tabular}

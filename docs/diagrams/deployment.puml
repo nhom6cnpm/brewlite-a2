@@ -57,7 +57,10 @@ rectangle "Local (docker-compose)" as local #F1F5F9 {
 rectangle "CI (GitHub Actions)" as ci #FEF9C3 {
   component "Runner\n(ubuntu-latest)" as runner
   component "Docker Build\n& Test" as build
+  component "Container Registry\nGitHub Packages (ghcr.io)" as ghcr
+
   runner ..> build : execute
+  build --> ghcr : push image (SHA/tag)
 }
 
 cloud "Render CDN / Edge\n(HTTPS :443, TLS Let's Encrypt)" as cdn
@@ -72,9 +75,11 @@ rectangle "Production (Render)" as prod #F0FDF4 {
 }
 
 user --> cdn : HTTPS :443
-cdn --> web_prod : HTTP :3000 (internal)
-runner --> web_prod : Deploy via Render API
-runner --> api_prod : Deploy via Render API
+cdn --> web_prod : HTTP :3000 (UI traffic)
+cdn --> api_prod : HTTP :3001 (API traffic & /health)
+
+runner --> web_prod : Trigger Render Deploy Hook (pull ghcr.io)
+runner --> api_prod : Trigger Render Deploy Hook (pull ghcr.io)
 
 note right of web_prod
   <b>Health Check:</b> GET /menu
