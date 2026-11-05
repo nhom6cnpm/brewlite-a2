@@ -33,7 +33,7 @@ skinparam note {
   BorderColor #B45309
 }
 
-title BrewLite — Class-01: mô hình lớp nghiệp vụ (bản nháp)
+title BrewLite — Class-01: mô hình lớp nghiệp vụ
 
 class User {
   id: String
@@ -82,6 +82,7 @@ class Ingredient {
 }
 class Payment {
   id: String
+  idempotencyKey: String
   amount: Integer
   method: PaymentMethod
   status: PaymentStatus
@@ -105,6 +106,7 @@ class Promotion {
   maxDiscount: Integer?
   startsAt: DateTime
   endsAt: DateTime
+  isPublic: Boolean
   maxUsesPerUser: Integer
 }
 class VoucherUsage {

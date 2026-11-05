@@ -30,6 +30,7 @@ Thanh toán & Payment, BankTransaction & Quản lý phiên thanh toán và sao k
 Mỗi Order thuộc một User và chứa ít nhất một OrderItem. Order--OrderItem
 là quan hệ thành phần (composition) vì dòng món thuộc vòng đời của đơn. Một đơn có thể có nhiều
 Payment qua các lần thử, nhưng tối đa một phiên đang chờ xử lý.
+Khóa \texttt{idempotencyKey} của Payment là duy nhất, ngăn tạo phiên trùng khi gửi lại yêu cầu.
 BankTransaction luôn gắn với Order và có thể không gắn trực tiếp Payment.
 RecipeItem liên kết Product với Ingredient theo định lượng size S;
 \texttt{/stock} là số ly suy ra cho size S không topping. Các bội số
@@ -45,7 +46,8 @@ Payment; nhân viên mới xác nhận Order PAID. Đơn chưa có tiền về h
 15 phút, còn đơn đã có tiền về chờ nhân viên xử lý.
 
 \subsubsection{Ánh xạ với hệ thống hiện tại}
-Promotion tương ứng với Voucher trong mã nguồn. LoyaltyTransaction là lớp
+Promotion tương ứng với Voucher trong mã nguồn; \texttt{isPublic} phân biệt
+mã có sẵn trong danh sách với mã chỉ nhập trực tiếp. LoyaltyTransaction là lớp
 nghiệp vụ suy ra từ Order, chưa có bảng hay API riêng. Với đơn áp dụng chính
 sách điểm phiên bản 1, sự kiện EARN được xác định tại pointsAwardedAt với
 số điểm bằng \texttt{pointsEarned + pointsReversed}; REVERSAL được xác định

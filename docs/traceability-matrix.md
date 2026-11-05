@@ -39,13 +39,14 @@ hoặc kiểm thử đã được triển khai.
 
 ## Class-01 (Task 2.3)
 
-Bản nháp thiết kế cho Issue #9; chưa nghiệm thu hoặc thay thế bằng chứng code/test A2.
+Thiết kế cho Issue #9, review tại PR #12; không thay thế bằng chứng code/test A2.
 
 - Nguồn: [class-domain.puml](diagrams/class-domain.puml), gồm hai view.
 - Hình lớp: [SVG](diagrams/class-domain.svg), [PNG](diagrams/class-domain.png).
 - Enum: [Class-01b](diagrams/class-domain-enums.svg), [PNG](diagrams/class-domain-enums.png).
 - Thuyết minh: [class.tex](diagrams/class.tex).
 - LoyaltyTransaction là lớp suy ra từ Order, chưa có bảng riêng trong A1.
-- Đã đối chiếu Task 1.1 và đồng bộ main c78780e. Đã đọc bản nháp sequence Task 2.2 tại 0b9a7e4; cần thống nhất tên trường/bảng trước nghiệm thu: `paymentExpiresAt` → `expiresAt`, `totalPrice` → `total`, `bank_statements` → `bank_transactions`, `committed = true` → trạng thái lượt mã `USED` theo code A1 hiện có.
+- Đã đối chiếu Task 1.1 trên main `c78780e` và sequence Task 2.2 tại `4c630e8`; các tên `expiresAt`, `total`, `bank_transactions` và trạng thái lượt mã `USED` đã thống nhất với code A1.
+- Cập nhật theo review PR #12: Payment có `idempotencyKey: String` duy nhất; Promotion có `isPublic: Boolean` để phân biệt mã công khai và mã chỉ nhập trực tiếp.
 
 [Class-01]: diagrams/class-domain.svg
