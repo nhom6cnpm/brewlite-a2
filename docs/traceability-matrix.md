@@ -59,4 +59,14 @@ Thiết kế cho Issue #9, review tại PR #12; không thay thế bằng chứng
 - Đã đối chiếu Task 1.1 trên main `c78780e` và sequence Task 2.2 tại `4c630e8`; các tên `expiresAt`, `total`, `bank_transactions` và trạng thái lượt mã `USED` đã thống nhất với code A1.
 - Cập nhật theo review PR #12: Payment có `idempotencyKey: String` duy nhất; Promotion có `isPublic: Boolean` để phân biệt mã công khai và mã chỉ nhập trực tiếp.
 
+## Architecture-01 (Task 3.1)
+
+Kiến trúc C4 (Context và Container) và các quyết định kiến trúc ADR-001 đến ADR-007; không thay thế bằng chứng code/test A2.
+
+- Nguồn PlantUML: [architecture-c4.puml](diagrams/architecture-c4.puml)
+- Ảnh: [SVG](diagrams/architecture-c4.svg) · [PNG](diagrams/architecture-c4.png)
+- Thuyết minh LaTeX: [architecture.tex](architecture/architecture.tex)
+- ADR: [ADR-001](architecture/adr/001-monorepo.md) · [ADR-002](architecture/adr/002-nestjs-modules-theo-domain.md) · [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md) · [ADR-004](architecture/adr/004-ngan-hang-gia-lap-nhan-vien-xac-nhan.md) · [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md) · [ADR-006](architecture/adr/006-jwt-va-phan-quyen-customer-admin.md) · [ADR-007](architecture/adr/007-polling-thay-websocket.md)
+- ADR-008 (nền tảng triển khai) do Task 3.2 bổ sung.
+
 [Class-01]: diagrams/class-domain.svg
