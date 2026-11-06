@@ -5,8 +5,8 @@ skinparam monochrome false
 skinparam shadowing false
 skinparam defaultFontName Arial
 skinparam defaultFontSize 12
+skinparam dpi 150
 skinparam roundcorner 6
-skinparam linetype ortho
 
 skinparam node {
   BackgroundColor #F8FAFC
@@ -20,12 +20,6 @@ skinparam database {
   FontColor #1E3A8A
 }
 
-skinparam cloud {
-  BackgroundColor #F0FDF4
-  BorderColor #16A34A
-  FontColor #14532D
-}
-
 skinparam rectangle {
   BorderColor #64748B
   FontColor #1E293B
@@ -37,13 +31,21 @@ skinparam component {
   FontColor #78350F
 }
 
+skinparam artifact {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+  FontColor #1E293B
+}
+
 skinparam note {
   BackgroundColor #FFFBEB
   BorderColor #B45309
   FontSize 11
 }
 
-actor "User\n(Browser / PWA)" as user
+node "Thiết bị người dùng\n(Điện thoại / Máy tính)" <<device>> as device {
+  artifact "Trình duyệt Web\n(Browser / PWA)" as browser
+}
 
 rectangle "Local (docker-compose)" as local #F1F5F9 {
   node "brewlite-web\n(Next.js :3000)" as web_local
@@ -56,58 +58,60 @@ rectangle "Local (docker-compose)" as local #F1F5F9 {
 
 rectangle "CI (GitHub Actions)" as ci #FEF9C3 {
   component "Runner\n(ubuntu-latest)" as runner
-  component "Docker Build\n& Test" as build
+  component "Docker Build & Test\n(Build Args: NEXT_PUBLIC_*)" as build
   component "Container Registry\nGitHub Packages (ghcr.io)" as ghcr
 
   runner ..> build : execute
-  build --> ghcr : push image (SHA/tag)
+  build --> ghcr : push Docker image (SHA/tag)
 }
-
-cloud "Render CDN / Edge\n(HTTPS :443, TLS Let's Encrypt)" as cdn
 
 rectangle "Production (Render)" as prod #F0FDF4 {
-  node "Render Web Service\nbrewlite-web\n(Next.js / Node.js 20)" as web_prod
-  node "Render Web Service\nbrewlite-api\n(NestJS / Node.js 20)" as api_prod
-  database "Render Managed PostgreSQL\nbrewlite-db\n(Private, :5432)\n[Persistent Volume]" as db_prod
-  
-  web_prod --> api_prod : HTTP :3001 (internal Render network)
-  api_prod --> db_prod : PostgreSQL :5432 (Render private)
+  node "Render Web Service\nbrewlite-web" as web_prod {
+    artifact "ghcr.io/nhom6cnpm/brewlite-web:<sha>" as img_web
+  }
+
+  node "Render Web Service\nbrewlite-api" as api_prod {
+    artifact "ghcr.io/nhom6cnpm/brewlite-api:<sha>" as img_api
+  }
+
+  database "Render Managed PostgreSQL\nbrewlite-db (:5432)\n[Persistent Storage - 30 days]" as db_prod
 }
 
-user --> cdn : HTTPS :443
-cdn --> web_prod : HTTP :3000 (UI traffic)
-cdn --> api_prod : HTTP :3001 (API traffic & /health)
+browser --> web_prod : HTTPS :443\n(https://brewlite-web.onrender.com)
+browser --> api_prod : HTTPS :443\n(https://brewlite-api.onrender.com - CORS & /health)
 
-runner --> web_prod : Trigger Render Deploy Hook (pull ghcr.io)
-runner --> api_prod : Trigger Render Deploy Hook (pull ghcr.io)
+web_prod --> api_prod : HTTPS :443\n(Public URL - SSR / Proxy)
+api_prod --> db_prod : PostgreSQL :5432\n(Render Internal Private URL)
+
+runner --> web_prod : Trigger Deploy Hook
+runner --> api_prod : Trigger Deploy Hook
+ghcr --> web_prod : pull image
+ghcr --> api_prod : pull image
 
 note right of web_prod
   <b>Health Check:</b> GET /menu
-  <b>Logs:</b> Render Runtime Console & Logs
-  <b>Environment Variables:</b>
+  <b>Build Args (Inlined at CI):</b>
   * NEXT_PUBLIC_API_URL
-  * PORT=3000
   * NEXT_PUBLIC_APP_URL
-  * API_INTERNAL_URL
+  <b>Runtime Env:</b>
+  * PORT=3000
+  * API_INTERNAL_URL=https://brewlite-api.onrender.com
 end note
 
 note bottom of api_prod
-  <b>Health Check:</b> GET /health (Task 5.2)
-  <b>Logs:</b> Render Runtime Console & Logs
-  <b>Environment Variables (Render Secrets):</b>
-  * DATABASE_URL (Render Internal Private URL)
-  * JWT_SECRET
-  * JWT_EXPIRES_IN
-  * FRONTEND_URL
-  * NODE_ENV=production
-  * ADMIN_EMAIL
-  * ADMIN_PASSWORD
+  <b>Health Check:</b> GET /health (HTTP 200)
+  <b>Runtime Env (Render Secrets):</b>
+  * DATABASE_URL (Internal Private URL)
+  * JWT_SECRET, JWT_EXPIRES_IN=1d
+  * FRONTEND_URL=https://brewlite-web.onrender.com
+  * PORT=3001, NODE_ENV=production
+  * ADMIN_EMAIL, ADMIN_PASSWORD
 end note
 
 note right of db_prod
-  <b>Persistent Storage:</b> Persistent Volume
-  <b>Credentials:</b> Render Secret (never committed)
-  <b>Access Control:</b> Private (no direct public internet exposure)
+  <b>Persistent Volume:</b> Render Managed Storage
+  <b>Access Control:</b> Private Network Only
+  <b>Lưu ý miễn phí:</b> Hết hạn sau 30 ngày (+14 ngày gia hạn)
 end note
 
 @enduml

@@ -1,9 +1,9 @@
-# ADR 008 – Nền tảng triển khai: Render
+# ADR-008: Nền tảng triển khai: Render
 
-**Trạng thái:** Accepted  
+**Trạng thái:** Đã chấp nhận  
 **Ngày:** 2026-11-05  
 **Người quyết định:** Lương (DucLuong2201)  
-**Liên quan:** ADR 001 (monorepo), Task 3.2, Task 5.3–5.4
+**Liên quan:** ADR-001 (monorepo), Task 3.2, Task 5.3–5.4
 
 ## Bối cảnh
 
@@ -15,12 +15,14 @@ Chọn **Render** làm nền tảng production kết hợp **GitHub Packages (gh
 - **Frontend (brewlite-web):** Render Web Service chạy Docker image từ `ghcr.io/nhom6cnpm/brewlite-web`, tắt auto-deploy trên Render.
 - **Backend (brewlite-api):** Render Web Service chạy Docker image từ `ghcr.io/nhom6cnpm/brewlite-api`, tắt auto-deploy trên Render.
 - **Cơ chế triển khai:** 
-  1. Tắt tính năng auto-deploy của Render khi push code lên Git để tránh deploy mã nguồn chưa kiểm thử.
-  2. GitHub Actions CI thực thi quality gate (Install $\to$ Lint $\to$ Unit Test $\to$ Build Docker image).
-  3. CI push Docker image được gắn tag (commit SHA hoặc semantic version) lên Container Registry GitHub Packages (`ghcr.io`).
-  4. CI kích hoạt Render Deploy Hook bằng `curl` sử dụng secret URL được cấu hình trong GitHub Actions secrets để Render pull image mới nhất và restart container.
+  1. Tắt tính năng auto-deploy của Render khi push code lên Git để tránh deploy mã nguồn chưa qua kiểm thử.
+  2. GitHub Actions CI thực thi quality gate (Install → Lint → Unit Test → Build Docker image).
+  3. Các biến môi trường `NEXT_PUBLIC_*` của Next.js được inlined vào bundle tĩnh lúc build, do đó CI truyền qua `--build-arg` khi chạy `docker build` (không cấu hình runtime trên Render).
+  4. CI push Docker image được gắn tag (commit SHA hoặc semantic version) lên Container Registry GitHub Packages (`ghcr.io`).
+  5. CI kích hoạt Render Deploy Hook bằng `curl` sử dụng secret URL được cấu hình trong GitHub Actions secrets để Render pull image mới nhất và restart container.
 - **Database (brewlite-db):** Render Managed PostgreSQL, kết nối qua `Internal Database URL` (chỉ accessible từ cùng Render project), không public trực tiếp ra ngoài internet.
-- **HTTPS & Định tuyến:** Render cấp TLS tự động (Let's Encrypt); CDN tiếp nhận HTTPS :443 định tuyến giao diện tới `brewlite-web` (:3000) và REST API / health check tới `brewlite-api` (:3001).
+- **HTTPS & Định tuyến:** Mỗi web service trên Render sở hữu một tên miền độc lập (`https://brewlite-web.onrender.com` và `https://brewlite-api.onrender.com`) với chứng chỉ TLS tự động từ Let's Encrypt.
+- **Giao tiếp Web → API:** Do gói Free Web Service của Render không nhận kết nối mạng nội bộ ("Free web services can't receive private network traffic"), giao tiếp giữa `brewlite-web` và `brewlite-api` (cả từ client trình duyệt lẫn server-side proxy / SSR qua `API_INTERNAL_URL`) đều đi qua URL công khai HTTPS: `https://brewlite-api.onrender.com`. Riêng API gọi Database vẫn dùng Internal URL nội bộ bình thường.
 - **Secret management:** Lưu toàn bộ biến môi trường (`JWT_SECRET`, `DATABASE_URL`, `ADMIN_PASSWORD`...) trong Render Environment Variables / Secret Files, **không commit vào repo**.
 
 ## Hệ quả
@@ -31,10 +33,14 @@ Chọn **Render** làm nền tảng production kết hợp **GitHub Packages (gh
 - PostgreSQL managed: backup tự động, dữ liệu được lưu trên persistent storage và cô lập trong mạng nội bộ.
 - HTTPS miễn phí cho toàn bộ endpoint (cả UI và API), không cần tự cấu hình Nginx/Caddy.
 
-**Tiêu cực / Hạn chế:**
-- Render Free tier: Web Service có thể "ngủ" (spin-down) sau 15 phút không có request → cold start ~30s. Database Free tier hết hạn sau 90 ngày.
-- Cần cấu hình quyền truy cập (read package token) nếu package trên GHCR ở chế độ private.
-- Không hỗ trợ WebSocket lâu dài ở gói miễn phí (không ảnh hưởng vì A1 dùng polling).
+**Tiêu cực / Hạn chế & Biện pháp giảm thiểu:**
+- **Web Service Free tier có thể "ngủ" (spin-down):** Sau 15 phút không có request, container sẽ tạm dừng; request tiếp theo cần thời gian cold start ~30–50s. Giải pháp: Client PWA hiển thị trạng thái loading rõ ràng và thực hiện retry khi gặp timeout khởi động.
+- **Database Free tier hết hạn sau 30 ngày:** Theo tài liệu Render (render.com/docs/free), database miễn phí sẽ hết hạn sau 30 ngày, kèm 14 ngày gia hạn (grace period) trước khi dữ liệu bị xóa vĩnh viễn. Đề bài yêu cầu URL production phải hoạt động tại thời điểm chấm bài (Task 5). **Biện pháp xử lý của nhóm:**
+  1. Chỉ khởi tạo instance database Render sát thời điểm nghiệm thu Task 5 để đảm bảo database luôn còn hạn sử dụng khi chấm.
+  2. Toàn bộ cấu trúc bảng và dữ liệu mẫu được quản lý bằng TypeORM migration & seed script, kết hợp lệnh `pg_dump` sao lưu dữ liệu; nhóm có thể tái lập database đầy đủ trong vòng 2 phút bất kỳ lúc nào.
+  3. Trong trường hợp cần duy trì môi trường nghiệm thu lâu hơn 30 ngày, nhóm sẵn sàng nâng gói Starter ($7/tháng) cho database trong thời gian chấm bài.
+- **Không có mạng nội bộ giữa các Web Service:** Cần cấu hình CORS chính xác trên backend NestJS để tiếp nhận request từ tên miền frontend HTTPS.
+- Không hỗ trợ WebSocket lâu dài ở gói miễn phí (không ảnh hưởng vì BrewLite dùng cơ chế polling).
 
 ## Phương án đã cân nhắc
 
