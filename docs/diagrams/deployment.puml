@@ -1,0 +1,124 @@
+@startuml deployment
+title Deployment-01 · UML Deployment Diagram (BrewLite Production & Environments)
+
+skinparam monochrome false
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundcorner 6
+skinparam dpi 150
+
+skinparam node {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  FontColor #0F172A
+}
+
+skinparam database {
+  BackgroundColor #EFF6FF
+  BorderColor #2563EB
+  FontColor #1E3A8A
+}
+
+skinparam rectangle {
+  BorderColor #64748B
+  FontColor #1E293B
+}
+
+skinparam component {
+  BackgroundColor #FEF3C7
+  BorderColor #D97706
+  FontColor #78350F
+}
+
+skinparam artifact {
+  BackgroundColor #FFFFFF
+  BorderColor #475569
+  FontColor #0F172A
+}
+
+skinparam note {
+  BackgroundColor #FFFBEB
+  BorderColor #B45309
+  FontSize 11
+}
+
+node "Thiết bị người dùng\n(Smartphone / PC)" <<device>> as client_device {
+  node "Trình duyệt Web" <<executionEnvironment>> as browser {
+    artifact "BrewLite PWA\n(Next.js Client Bundle)" as pwa
+  }
+}
+
+rectangle "Local (docker-compose)" as local #F1F5F9 {
+  node "brewlite-web" as web_local {
+    artifact "Next.js (:3000)" as web_local_art
+  }
+  node "brewlite-api" as api_local {
+    artifact "NestJS (:3001)" as api_local_art
+  }
+  database "brewlite-db\n(PostgreSQL :5432)\n[Volume: pgdata]" as db_local
+  
+  web_local_art --> api_local_art : HTTP :3001
+  api_local_art --> db_local : PostgreSQL :5432
+}
+
+rectangle "CI (GitHub Actions)" as ci #FEF9C3 {
+  component "Runner\n(ubuntu-latest)" as runner
+  component "Docker Build\n& Test" as build
+  component "Container Registry\nGitHub Packages (ghcr.io)" as ghcr
+
+  runner ..> build : execute
+  build --> ghcr : push image (SHA/tag)
+}
+
+rectangle "Production (Render Cloud)" as prod #F0FDF4 {
+  node "brewlite-web (Render Web Service)\nhttps://brewlite-web.onrender.com" <<executionEnvironment>> as web_prod {
+    artifact "Docker Image\n(ghcr.io/nhom6cnpm/brewlite-web:<tag>)" as web_art
+  }
+
+  node "brewlite-api (Render Web Service)\nhttps://brewlite-api.onrender.com" <<executionEnvironment>> as api_prod {
+    artifact "Docker Image\n(ghcr.io/nhom6cnpm/brewlite-api:<tag>)" as api_art
+  }
+
+  database "brewlite-db (Managed PostgreSQL)\n[Persistent Storage]" as db_prod
+}
+
+pwa --> web_prod : HTTPS :443\n(Tải PWA bundle)
+pwa --> api_prod : HTTPS :443\n(REST API & CORS)
+
+web_prod --> api_prod : HTTPS :443\n(API_INTERNAL_URL / SSR)
+api_prod --> db_prod : PostgreSQL :5432\n(Render Private Network)
+
+runner ..> prod : Trigger Deploy Hooks\nvia curl (secrets)
+ghcr ..> web_prod : pull image
+ghcr ..> api_prod : pull image
+
+note right of web_prod
+  <b>Health Check:</b> GET /menu
+  <b>Logs:</b> Render Runtime Logs
+  <b>Runtime Env:</b>
+  * PORT=3000
+  * API_INTERNAL_URL=https://brewlite-api.onrender.com
+  * NEXT_PUBLIC_APP_URL
+  <b>Build Args (CI):</b>
+  * NEXT_PUBLIC_API_URL=https://brewlite-api.onrender.com
+end note
+
+note bottom of api_prod
+  <b>Health Check:</b> GET /health (Task 5.2)
+  <b>Logs:</b> Render Runtime Logs
+  <b>Runtime Env (Render Secrets):</b>
+  * DATABASE_URL (Internal Database URL)
+  * JWT_SECRET, JWT_EXPIRES_IN
+  * FRONTEND_URL=https://brewlite-web.onrender.com
+  * NODE_ENV=production, PORT=3001
+  * ADMIN_EMAIL, ADMIN_PASSWORD
+end note
+
+note right of db_prod
+  <b>Free Tier Policy:</b> 30 ngày (14 ngày gia hạn)
+  <b>Storage:</b> Persistent Volume (Free)
+  <b>Network:</b> Private (chỉ nhận traffic từ cùng Render project)
+end note
+
+@enduml
