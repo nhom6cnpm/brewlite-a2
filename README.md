@@ -94,3 +94,48 @@ Báo cáo tổng hợp (trang bìa, mục lục) chỉ làm **một lần vào c
 
 ## Biến môi trường
 Xem `.env.example`. **Không commit file `.env`.**
+
+
+## Chạy Web Sprint 1 (Task 4.3)
+
+Web trong `apps/web` gồm menu và trang chi tiết món (ảnh, tên, giá).
+Giỏ hàng, đăng nhập, size/topping, tồn kho và thanh toán sẽ thêm ở Task 5.
+
+Dùng Node 20 (cùng phiên bản chính với CI). Chạy trong terminal tại repo:
+
+```powershell
+cd apps/web
+npm ci
+Copy-Item .env.example .env.local
+npm run dev
+```
+
+Mở `http://localhost:3000/menu`. Chỉ tạo `.env.local` nếu chưa có;
+đặt `NEXT_PUBLIC_API_URL` tới địa chỉ API mà trình duyệt truy cập được.
+Thay biến này thì khởi động lại Web; bản production cần build lại.
+
+API sản phẩm do Tài thực hiện riêng trong PR #21 (Task 4.3):
+- `GET /products`: mảng sản phẩm.
+- `GET /products/:id`: một sản phẩm, hoặc HTTP 404 nếu không tồn tại.
+- Mỗi sản phẩm có `{ id: string, name: string, price: number, imageUrl: string }`;
+  giá là số tiền VND, ảnh dùng `/images/*.jpg`, chưa có trường `stock`.
+
+Cần chạy API cùng PostgreSQL để xem dữ liệu thật. Nếu API chưa chạy,
+Web hiển thị lỗi và nút **Thử lại**, không thay bằng dữ liệu mẫu.
+Chỉ nghiệm thu toàn luồng sau khi API, Web và CI đã kiểm tra cùng nhau.
+
+### Kiểm tra Web
+
+Trong `apps/web`:
+
+```powershell
+npm run lint
+npm test
+npm run build
+```
+
+Test dùng Vitest 3, Vite 6, jsdom 26 và Testing Library (jest-dom 6)
+để tương thích Node 20. Test component giả lập phản hồi `fetch`,
+kiểm tra menu loading/rỗng/lỗi/thử lại, tên/giá và liên kết chi tiết;
+trang chi tiết kiểm tra loading, dữ liệu không có tồn kho, 404 và lỗi/thử lại.
+Các test này không thay thế kiểm tra tích hợp với API và PostgreSQL.
