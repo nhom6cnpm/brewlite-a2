@@ -1,0 +1,23 @@
+@startuml architecture-c4
+!include <C4/C4_Container>
+
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+skinparam dpi 200
+
+title BrewLite – Sơ đồ kiến trúc (C4 Container)
+
+Person(customer, "Khách hàng", "Đăng nhập, xem menu, đặt đơn, thanh toán bằng QR chuyển tiền, theo dõi và hủy đơn, xem lịch sử")
+Person(staff, "Nhân viên (ADMIN)", "Đối chiếu sao kê, xác nhận hoặc từ chối thanh toán, duyệt yêu cầu hủy, pha chế")
+
+System_Boundary(brewlite, "BrewLite (monorepo: apps/web, apps/api, docs)") {
+  Container(web, "Frontend (apps/web)", "Next.js (mobile-first/PWA), TailwindCSS, React Query, Zustand", "Giao diện khách hàng và trang quản trị; Zustand giữ giỏ hàng; tạo QR ở trang /pay/:paymentId (qrcode.react); trang chuyển tiền giả lập /mock-bank/:paymentId; polling trạng thái")
+  Container(api, "Backend API (apps/api)", "NestJS, REST/JSON", "Module theo domain: auth, products, inventory, orders, payments, vouchers, mock-bank (sổ sao kê ngân hàng giả lập); JWT, phân quyền CUSTOMER/ADMIN")
+  ContainerDb(db, "PostgreSQL", "PostgreSQL + TypeORM", "Người dùng, sản phẩm, nguyên liệu và công thức, đơn, thanh toán, sao kê (bank_transactions), voucher; migration tự chạy khi API khởi động")
+}
+
+Rel(customer, web, "Dùng trình duyệt / PWA; quét QR mở trang /mock-bank/:paymentId để chuyển tiền", "HTTPS")
+Rel(staff, web, "Dùng trang quản trị", "HTTPS")
+Rel(web, api, "Gọi API, kèm JWT và Idempotency-Key", "HTTPS/JSON")
+Rel(api, db, "Đọc / ghi dữ liệu", "SQL (TypeORM)")
+@enduml

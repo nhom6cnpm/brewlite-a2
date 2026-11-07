@@ -19,10 +19,10 @@ Cập nhật dần theo từng task: yêu cầu → use-case / user story → th
 | FR-13 | UC-05, UC-11: Khuyến mãi (Voucher) & Điểm thưởng; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-overview.png, docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01]; [Sequence-01](diagrams/sequence-checkout.svg) | | |
 | FR-14 | UC-16: Quản lý menu, giá & nhập kho nguyên liệu (Won't) | docs/diagrams/usecase-overview.png | | |
 | FR-15 | UC-17: Đổi điểm thưởng lấy voucher / đồ uống (Won't) | docs/diagrams/usecase-overview.png | | |
-| NFR-01 | UC-05, UC-09: Hiệu năng hệ thống & Xử lý đồng thời có kiểm chứng; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg) | | |
-| NFR-02 | UC-04, UC-09, UC-10, UC-11: Bảo mật dữ liệu & Phân quyền (Security, Locking); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg) | | |
-| NFR-03 | UC-01..UC-08: Tính khả dụng & Mobile-first PWA tối thiểu; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg) | | |
-| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | | | |
+| NFR-01 | UC-05, UC-09: Hiệu năng hệ thống & Xử lý đồng thời có kiểm chứng; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg); [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md) | | |
+| NFR-02 | UC-04, UC-09, UC-10, UC-11: Bảo mật dữ liệu & Phân quyền (Security, Locking); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg); [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md); [ADR-006](architecture/adr/006-jwt-va-phan-quyen-customer-admin.md) | | |
+| NFR-03 | UC-01..UC-08: Tính khả dụng & Mobile-first PWA tối thiểu; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Architecture-01](diagrams/architecture-c4.svg) | | |
+| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | [Architecture-01](diagrams/architecture-c4.svg); [ADR-001](architecture/adr/001-monorepo.md); [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md) | | |
 
 ### Activity-01 — Task 2.1
 
@@ -58,5 +58,15 @@ Thiết kế cho Issue #9, review tại PR #12; không thay thế bằng chứng
 - LoyaltyTransaction là lớp suy ra từ Order, chưa có bảng riêng trong A1.
 - Đã đối chiếu Task 1.1 trên main `c78780e` và sequence Task 2.2 tại `4c630e8`; các tên `expiresAt`, `total`, `bank_transactions` và trạng thái lượt mã `USED` đã thống nhất với code A1.
 - Cập nhật theo review PR #12: Payment có `idempotencyKey: String` duy nhất; Promotion có `isPublic: Boolean` để phân biệt mã công khai và mã chỉ nhập trực tiếp.
+
+## Architecture-01 (Task 3.1)
+
+Kiến trúc C4 (mức Container) và các quyết định kiến trúc ADR-001 đến ADR-007; không thay thế bằng chứng code/test A2.
+
+- Nguồn PlantUML: [architecture-c4.puml](diagrams/architecture-c4.puml)
+- Ảnh: [SVG](diagrams/architecture-c4.svg) · [PNG](diagrams/architecture-c4.png)
+- Thuyết minh LaTeX: [architecture.tex](architecture/architecture.tex)
+- ADR: [ADR-001](architecture/adr/001-monorepo.md) · [ADR-002](architecture/adr/002-nestjs-modules-theo-domain.md) · [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md) · [ADR-004](architecture/adr/004-ngan-hang-gia-lap-nhan-vien-xac-nhan.md) · [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md) · [ADR-006](architecture/adr/006-jwt-va-phan-quyen-customer-admin.md) · [ADR-007](architecture/adr/007-polling-thay-websocket.md)
+- ADR-008 (nền tảng triển khai) do Task 3.2 bổ sung.
 
 [Class-01]: diagrams/class-domain.svg
