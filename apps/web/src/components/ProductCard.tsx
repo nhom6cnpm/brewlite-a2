@@ -7,7 +7,6 @@ import { formatPrice } from '@/lib/formatPrice';
 export default function ProductCard({ product }: { product: Product }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImage = product.imageUrl && !imgFailed;
-  const soldOut = product.stock <= 0;
 
   return (
     <Link
@@ -27,14 +26,9 @@ export default function ProductCard({ product }: { product: Product }) {
         ) : (
           <div className="flex h-full w-full items-center justify-center text-4xl">☕</div>
         )}
-        {soldOut && (
-          <span className="absolute left-2 top-2 rounded-full bg-stone-800/80 px-2 py-0.5 text-xs font-medium text-white">
-            Hết hàng
-          </span>
-        )}
       </div>
       <div className="p-3 sm:p-4">
-        <h3 className="line-clamp-1 font-semibold text-stone-900">{product.name}</h3>
+        <h2 className="line-clamp-1 font-semibold text-stone-900">{product.name}</h2>
         <p className="mt-1 font-medium text-amber-800">{formatPrice(product.price)}</p>
       </div>
     </Link>

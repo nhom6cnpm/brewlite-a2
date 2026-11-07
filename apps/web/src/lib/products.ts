@@ -12,15 +12,14 @@ export function getApiBaseUrl(): string {
   return configuredUrl ? configuredUrl.replace(/\/+$/, '') : 'http://localhost:3001';
 }
 
-function isProduct(value: unknown): value is Product {
+export function isProduct(value: unknown): value is Product {
   if (typeof value !== 'object' || value === null) return false;
   const product = value as Record<string, unknown>;
   return (
     typeof product.id === 'string' && product.id.length > 0 &&
     typeof product.name === 'string' && product.name.trim().length > 0 &&
     typeof product.price === 'number' && Number.isFinite(product.price) && product.price >= 0 &&
-    typeof product.imageUrl === 'string' && product.imageUrl.trim().length > 0 &&
-    typeof product.stock === 'number' && Number.isFinite(product.stock) && product.stock >= 0
+    typeof product.imageUrl === 'string' && product.imageUrl.trim().length > 0
   );
 }
 
@@ -41,8 +40,5 @@ export async function getProduct(id: string, signal?: AbortSignal): Promise<Prod
     throw new Error('Invalid product response');
   }
 
-  return {
-    ...product,
-    imageUrl: product.imageUrl.startsWith('/images/') ? product.imageUrl : '/images/product-placeholder.svg',
-  };
+  return product;
 }

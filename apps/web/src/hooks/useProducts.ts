@@ -5,6 +5,6 @@ import { fetchProducts } from '@/lib/api';
 export function useProducts() {
   return useQuery({
     queryKey: ['products'],
-    queryFn: fetchProducts,
+    queryFn: ({ signal }) => fetchProducts(signal),
   });
 }
