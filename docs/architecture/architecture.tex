@@ -2,8 +2,7 @@
 
 \subsubsection{Tổng quan}
 
-Kiến trúc BrewLite được mô tả theo \textbf{C4 ở mức Container} (Hình~
-ef{fig:architecture-c4}); mức Context được mô tả bằng lời. Ở mức Context, hệ thống BrewLite phục vụ hai nhóm người dùng: \textbf{Khách hàng} (đặt đồ uống, thanh toán bằng QR chuyển tiền, theo dõi đơn) và \textbf{Nhân viên} có vai trò \texttt{ADMIN} (đối chiếu sao kê, xác nhận thanh toán, duyệt hủy, pha chế). Không có hệ thống bên ngoài nào được tích hợp: ngân hàng giả lập gồm trang chuyển tiền ở frontend và module \texttt{mock-bank} (sổ sao kê) ở backend. Ở mức Container, hệ thống gồm frontend Next.js, backend NestJS (chia module theo domain) và cơ sở dữ liệu PostgreSQL.
+Kiến trúc BrewLite được mô tả theo \textbf{C4 ở mức Container} (Hình~\ref{fig:architecture-c4}); mức Context được mô tả bằng lời. Ở mức Context, hệ thống BrewLite phục vụ hai nhóm người dùng: \textbf{Khách hàng} (đặt đồ uống, thanh toán bằng QR chuyển tiền, theo dõi đơn) và \textbf{Nhân viên} có vai trò \texttt{ADMIN} (đối chiếu sao kê, xác nhận thanh toán, duyệt hủy, pha chế). Không có hệ thống bên ngoài nào được tích hợp: ngân hàng giả lập gồm trang chuyển tiền ở frontend và module \texttt{mock-bank} (sổ sao kê) ở backend. Ở mức Container, hệ thống gồm frontend Next.js, backend NestJS (chia module theo domain) và cơ sở dữ liệu PostgreSQL.
 
 \begin{figure}[htbp]
 \centering
