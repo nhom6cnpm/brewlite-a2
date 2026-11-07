@@ -1,6 +1,6 @@
 # ADR-001: Dùng một repo (monorepo) cho web, API và tài liệu
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 

@@ -1,6 +1,6 @@
 # ADR-002: Backend NestJS chia module theo domain
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 

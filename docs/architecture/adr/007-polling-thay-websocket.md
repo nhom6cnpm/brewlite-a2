@@ -1,6 +1,6 @@
 # ADR-007: Polling thay cho WebSocket để cập nhật trạng thái
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 

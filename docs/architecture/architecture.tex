@@ -2,12 +2,14 @@
 
 \subsubsection{Tổng quan}
 
-BrewLite được tổ chức theo mô hình \textbf{C4 ở hai mức Context và Container}. Ở mức Context, hệ thống BrewLite phục vụ hai nhóm người dùng: \textbf{Khách hàng} (đặt đồ uống, thanh toán bằng QR chuyển tiền, theo dõi đơn) và \textbf{Nhân viên} có vai trò \texttt{ADMIN} (đối chiếu sao kê, xác nhận thanh toán, duyệt hủy, pha chế). Không có hệ thống bên ngoài nào được tích hợp: việc thanh toán do \textbf{Ngân hàng giả lập} (module \texttt{mock-bank}) mô phỏng bên trong hệ thống. Ở mức Container, hệ thống gồm frontend Next.js, backend NestJS (chia module theo domain) và cơ sở dữ liệu PostgreSQL.
+Kiến trúc BrewLite được mô tả theo \textbf{C4 ở mức Container} (Hình~
+ef{fig:architecture-c4}); mức Context được mô tả bằng lời. Ở mức Context, hệ thống BrewLite phục vụ hai nhóm người dùng: \textbf{Khách hàng} (đặt đồ uống, thanh toán bằng QR chuyển tiền, theo dõi đơn) và \textbf{Nhân viên} có vai trò \texttt{ADMIN} (đối chiếu sao kê, xác nhận thanh toán, duyệt hủy, pha chế). Không có hệ thống bên ngoài nào được tích hợp: ngân hàng giả lập gồm trang chuyển tiền ở frontend và module \texttt{mock-bank} (sổ sao kê) ở backend. Ở mức Container, hệ thống gồm frontend Next.js, backend NestJS (chia module theo domain) và cơ sở dữ liệu PostgreSQL.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{architecture-c4.png}
+\includegraphics[width=\linewidth,height=0.9\textheight,keepaspectratio]{architecture-c4.png}
 \caption{Sơ đồ kiến trúc BrewLite (C4 Container)}
+\label{fig:architecture-c4}
 \end{figure}
 
 \subsubsection{Mô tả thành phần}
@@ -21,14 +23,13 @@ BrewLite được tổ chức theo mô hình \textbf{C4 ở hai mức Context v�
 \midrule
 Frontend (\texttt{apps/web}) & Next.js (mobile-first/PWA), TailwindCSS, React Query, Zustand & Giao diện khách hàng và trang quản trị; giữ giỏ hàng bằng Zustand; gọi API và theo dõi trạng thái đơn bằng React Query \\
 Backend API (\texttt{apps/api}) & NestJS (REST/JSON) & Xử lý nghiệp vụ, xác thực JWT và phân quyền \texttt{CUSTOMER}/\texttt{ADMIN}, truy cập cơ sở dữ liệu \\
-Ngân hàng giả lập (\texttt{mock-bank}) & Module NestJS trong tiến trình của API & Sinh QR theo đơn, nhận khoản chuyển giả lập, ghi sao kê, hoàn tiền \\
 PostgreSQL & PostgreSQL + TypeORM & Lưu trữ toàn bộ dữ liệu; migration tự chạy khi API khởi động \\
 \bottomrule
 \end{tabularx}}
 
 \paragraph{Frontend Next.js.}
 
-Ứng dụng web mobile-first, hướng tới PWA, dùng TailwindCSS cho giao diện. React Query gọi API và polling trạng thái đơn; Zustand giữ giỏ hàng (lưu lại khi tải lại trang). Trang quản trị cho nhân viên nằm trong cùng ứng dụng và chỉ truy cập được với vai trò \texttt{ADMIN}.
+Ứng dụng web mobile-first, hướng tới PWA, dùng TailwindCSS cho giao diện. React Query gọi API và polling trạng thái đơn; Zustand giữ giỏ hàng (lưu lại khi tải lại trang). Trang quản trị cho nhân viên nằm trong cùng ứng dụng và chỉ truy cập được với vai trò \texttt{ADMIN}. Frontend cũng tạo mã QR ở trang \texttt{/pay/:paymentId} (thư viện \texttt{qrcode.react}) và có trang chuyển tiền giả lập \texttt{/mock-bank/:paymentId}.
 
 \paragraph{Backend NestJS chia module theo domain.}
 
@@ -42,10 +43,10 @@ Backend là một ứng dụng NestJS (modular monolith). Mỗi module chứa co
 \texttt{auth} & Đăng ký, đăng nhập (mật khẩu băm bằng \texttt{bcrypt}), cấp JWT, phân quyền \texttt{CUSTOMER}/\texttt{ADMIN}; tài khoản nhân viên khởi tạo sẵn từ biến môi trường \\
 \texttt{products} & Menu, chi tiết sản phẩm, tùy chọn size và topping, giá \\
 \texttt{inventory} & Nguyên liệu và công thức; giữ chỗ khi tạo đơn (optimistic locking), hoàn kho khi hủy hoặc hết hạn thanh toán \\
-\texttt{orders} & Tạo đơn từ giỏ hàng (Idempotency-Key), máy trạng thái đơn (\texttt{assertTransition}), tự hủy đơn quá hạn, hủy đơn, lịch sử đơn \\
+\texttt{orders} & Tạo đơn từ giỏ hàng (Idempotency-Key), máy trạng thái đơn (\texttt{assertTransition}), tự hủy đơn quá hạn, hủy đơn, lịch sử đơn; điểm thưởng (\texttt{order-benefits.service}) \\
 \texttt{payments} & Phiên thanh toán, nhân viên xác nhận hoặc từ chối (khóa dòng), tự hoàn tiền khi từ chối \\
-\texttt{mock-bank} & Ngân hàng giả lập: sinh QR, trang chuyển tiền mở bằng QR (không cần đăng nhập), ghi sao kê, hoàn tiền \\
-\texttt{vouchers} & Khuyến mãi (voucher) và điểm thưởng \\
+\texttt{mock-bank} & Sổ sao kê của ngân hàng giả lập (\texttt{bank\_transactions}, \texttt{BankLedgerService}): ghi tiền vào khi khách chuyển và ghi hoàn tiền \\
+\texttt{vouchers} & Khuyến mãi (voucher): mã công khai và mã ẩn, giới hạn lượt dùng \\
 \bottomrule
 \end{tabularx}}
 
@@ -55,14 +56,14 @@ Dữ liệu lưu trong PostgreSQL, truy cập bằng TypeORM. Mọi thay đổi 
 
 \paragraph{Thanh toán mô phỏng và xác nhận của nhân viên.}
 
-Không có callback từ cổng thanh toán. Khách quét QR do \texttt{mock-bank} sinh, mở trang chuyển tiền (không cần đăng nhập trên điện thoại) và chuyển tiền (số tiền cố định, nội dung = mã đơn); khoản chuyển vào sao kê, phiên thanh toán chuyển \texttt{TRANSFER\_RECEIVED} trong khi đơn vẫn \texttt{PENDING}. Nhân viên xác nhận thì đơn thành \texttt{PAID}; từ chối thì thành \texttt{PAYMENT\_FAILED} và hệ thống tự hoàn tiền (ADR-004). Idempotency-Key chống tạo đơn hoặc phiên thanh toán trùng; optimistic locking chống bán vượt tồn kho; khóa dòng (pessimistic locking) chống hai nhân viên cùng xác nhận hoặc hoàn tiền hai lần (ADR-005).
+Không có callback từ cổng thanh toán. Frontend tạo mã QR ở trang \texttt{/pay/:paymentId}; QR mở trang chuyển tiền giả lập \texttt{/mock-bank/:paymentId} (không cần đăng nhập trên điện thoại), nơi khách chuyển tiền (số tiền cố định, nội dung = mã đơn). Module \texttt{mock-bank} ở backend là sổ sao kê (\texttt{bank\_transactions}, \texttt{BankLedgerService}) ghi tiền vào và hoàn tiền; phiên thanh toán chuyển \texttt{TRANSFER\_RECEIVED} trong khi đơn vẫn \texttt{PENDING}. Nhân viên xác nhận thì đơn thành \texttt{PAID}; từ chối thì thành \texttt{PAYMENT\_FAILED} và hệ thống tự hoàn tiền (ADR-004). Idempotency-Key chống tạo đơn hoặc phiên thanh toán trùng; optimistic locking chống bán vượt tồn kho; khóa dòng (pessimistic locking) chống hai nhân viên cùng xác nhận hoặc hoàn tiền hai lần (ADR-005).
 
 \paragraph{Logging, health check và cấu hình.}
 
 \begin{itemize}
-  \item \textbf{Logging:} backend ghi log các yêu cầu quan trọng và lỗi để truy vết sự cố.
+  \item \textbf{Logging:} A1 chưa ghi log từng yêu cầu; hiện chỉ dùng \texttt{Logger} của NestJS ở hai chỗ (tạo tài khoản admin và tác vụ tự hủy đơn quá hạn). Ở Task 5, log được ghi ra stdout để nền tảng triển khai (Render) thu thập.
   \item \textbf{Health check:} A1 hiện chỉ có healthcheck trong \texttt{docker-compose}; endpoint \texttt{GET /health} của API sẽ được làm ở Task 5.2.
-  \item \textbf{Đóng gói và CI/CD:} đóng gói bằng Docker; \texttt{docker-compose.yml} chạy frontend, backend và PostgreSQL ở local; pipeline CI/CD chạy Lint $\rightarrow$ Test $\rightarrow$ Build trước khi merge; môi trường production dùng HTTPS (NFR-04).
+  \item \textbf{Đóng gói và CI/CD:} đóng gói bằng Docker; \texttt{docker-compose.yml} chạy frontend, backend và PostgreSQL ở local; pipeline CI/CD chạy Lint $\rightarrow$ Test $\rightarrow$ Build trước khi merge; môi trường production dùng HTTPS (NFR-04). Image Docker được build ở CI và lưu trên GitHub Container Registry (\texttt{ghcr.io}), triển khai lên Render (ADR-008).
   \item \textbf{Cấu hình:} toàn bộ qua biến môi trường, có mẫu trong \texttt{.env.example}; bí mật (khóa JWT, mật khẩu cơ sở dữ liệu) không nằm trong repo.
 \end{itemize}
 
@@ -72,8 +73,8 @@ Không có callback từ cổng thanh toán. Khách quét QR do \texttt{mock-ban
   \item Khách đăng nhập; frontend nhận JWT và gửi kèm ở mọi yêu cầu (\texttt{auth}).
   \item Khách xem menu và chọn tùy chọn (\texttt{products}), giỏ hàng nằm ở Zustand.
   \item Frontend gọi \texttt{POST /orders} kèm Idempotency-Key; \texttt{orders} tạo đơn \texttt{PENDING} và \texttt{inventory} giữ chỗ nguyên liệu trong cùng một giao dịch.
-  \item Frontend gọi \texttt{POST /payments} kèm Idempotency-Key; \texttt{payments} làm việc với \texttt{mock-bank} để sinh QR.
-  \item Khách chuyển tiền giả lập; \texttt{mock-bank} ghi sao kê, phiên thanh toán thành \texttt{TRANSFER\_RECEIVED}.
+  \item Frontend gọi \texttt{POST /payments} kèm Idempotency-Key để tạo phiên thanh toán, rồi tạo mã QR ở trang \texttt{/pay/:paymentId} (thư viện \texttt{qrcode.react}).
+  \item Khách quét QR, mở trang \texttt{/mock-bank/:paymentId} và chuyển tiền; \texttt{mock-bank} (\texttt{BankLedgerService}) ghi tiền vào sao kê, phiên thanh toán thành \texttt{TRANSFER\_RECEIVED}.
   \item Nhân viên (\texttt{ADMIN}) xác nhận hoặc từ chối; đơn thành \texttt{PAID} hoặc \texttt{PAYMENT\_FAILED} (kèm hoàn tiền).
   \item Frontend tự làm mới (polling) trạng thái đơn cho khách; nhân viên chuyển đơn \texttt{PAID} $\rightarrow$ \texttt{PREPARING} $\rightarrow$ \texttt{READY} $\rightarrow$ \texttt{COMPLETED}.
 \end{enumerate}

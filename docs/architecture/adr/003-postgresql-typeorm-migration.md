@@ -1,6 +1,6 @@
 # ADR-003: PostgreSQL với TypeORM và migration tự chạy khi khởi động
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 

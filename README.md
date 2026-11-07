@@ -50,7 +50,7 @@ brewlite-a2/
 | 2.1 | Activity diagram (Activity-01) | [activity.tex](docs/diagrams/activity.tex) · [sơ đồ](docs/diagrams/activity-checkout.svg) ([.puml](docs/diagrams/activity-checkout.puml)) |
 | 2.2 | Sequence diagram (Sequence-01) | [sequence.tex](docs/diagrams/sequence.tex) · [sơ đồ](docs/diagrams/sequence-checkout.svg) ([.puml](docs/diagrams/sequence-checkout.puml)) |
 | 2.3 | Class diagram (Class-01) | [class.tex](docs/diagrams/class.tex) · [sơ đồ lớp](docs/diagrams/class-domain.svg) · [enum](docs/diagrams/class-domain-enums.svg) ([.puml](docs/diagrams/class-domain.puml)) |
-| 3.1 | Kiến trúc hệ thống và ADR | Đang làm (#14) — `docs/architecture/`, `docs/architecture/adr/` |
+| 3.1 | Kiến trúc hệ thống và ADR (Architecture-01) | [architecture.tex](docs/architecture/adr/architecture.tex) · [sơ đồ](docs/diagrams/architecture-c4.svg) ([.puml](docs/diagrams/architecture-c4.puml)) · [ADR](docs/architecture/adr/) |
 | 3.2 | Deployment diagram | Đang làm (#15) — `docs/architecture/`, `docs/deployment.md` |
 | — | Ma trận truy vết | [traceability-matrix.md](docs/traceability-matrix.md) |
 

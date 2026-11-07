@@ -1,6 +1,6 @@
 # ADR-004: Ngân hàng giả lập và nhân viên xác nhận thanh toán
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 
@@ -8,15 +8,15 @@
 
 ## Quyết định
 
-Tạo module **`mock-bank`** ("Ngân hàng giả lập") trong backend:
+"Ngân hàng giả lập" gồm hai phần: trang chuyển tiền ở frontend và module **`mock-bank`** ở backend (sổ sao kê).
 
-1. Khách quét QR do `mock-bank` sinh theo đơn; QR mở trang chuyển tiền (không cần đăng nhập trên điện thoại), số tiền cố định, nội dung = mã đơn; bấm "Chuyển tiền" để ghi nhận.
-2. Khoản chuyển được ghi vào **sao kê** của quán; phiên thanh toán chuyển sang `TRANSFER_RECEIVED`, đơn vẫn `PENDING`.
+1. Frontend tạo mã QR ở trang `/pay/:paymentId` (thư viện `qrcode.react`). QR mở trang `/mock-bank/:paymentId` (không cần đăng nhập trên điện thoại), số tiền cố định, nội dung = mã đơn; khách bấm "Chuyển tiền" để ghi nhận.
+2. Module `mock-bank` ở backend là **sổ sao kê** của quán (`bank_transactions`, `BankLedgerService`): ghi tiền vào khi khách chuyển và ghi hoàn tiền khi từ chối hoặc hủy. Phiên thanh toán chuyển sang `TRANSFER_RECEIVED`, đơn vẫn `PENDING`.
 3. **Nhân viên (`ADMIN`)** đối chiếu sao kê và xác nhận (phiên thành `SUCCESS`, đơn thành `PAID`) hoặc từ chối (phiên thành `FAILED`, đơn thành `PAYMENT_FAILED`, hệ thống tự hoàn tiền và ghi vào sao kê).
 4. Thanh toán thẻ là quẹt thẻ tại quầy ngoài hệ thống, không có form nhập thẻ; khi nhân viên xác nhận thì khoản tiền được ghi vào sao kê.
 5. Không có callback; trạng thái chỉ đổi do hành động của nhân viên hoặc do đơn hết hạn (đơn đã có tiền về thì không tự hủy).
 
-`payments` làm việc với `mock-bank` qua một giao diện (interface) rõ ràng để sau này có thể thay bằng ngân hàng hoặc cổng thật.
+Hiện tại `payments` gọi thẳng `BankLedgerService`. Sau này có thể tách thành một interface để thay bằng ngân hàng hoặc cổng thật.
 
 ## Hệ quả
 
@@ -29,7 +29,8 @@ Tạo module **`mock-bank`** ("Ngân hàng giả lập") trong backend:
 **Mất:**
 
 - Nhân viên phải đối chiếu thủ công, thanh toán không tự động hoàn tất.
-- Hành vi khác cổng thật (không có callback, không có chữ ký giao dịch) nên chuyển sang cổng thật sẽ phải làm thêm.
+- Hành vi khác cổng thật (không có callback, không có chữ ký giao dịch).
+- `payments` gắn trực tiếp với `BankLedgerService`; muốn chuyển sang cổng thật phải tách interface trước.
 - Cần xử lý sai lệch: khách chuyển sai số tiền hoặc sai nội dung, chuyển trùng.
 
 ## Phương án đã cân nhắc

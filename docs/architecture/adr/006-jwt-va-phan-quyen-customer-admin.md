@@ -1,6 +1,6 @@
 # ADR-006: JWT và phân quyền CUSTOMER / ADMIN
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 

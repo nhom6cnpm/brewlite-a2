@@ -1,6 +1,6 @@
 # ADR-005: Idempotency-Key và cơ chế khóa (optimistic locking cho tồn kho, pessimistic locking cho xác nhận thanh toán)
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp nhận
 
 ## Bối cảnh
 
