@@ -1,0 +1,70 @@
+@startuml
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam roundcorner 10
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam arrowColor #2C3E50
+skinparam actorBorderColor #2C3E50
+skinparam rectangleBorderColor #BDC3C7
+skinparam usecaseBackgroundColor #ECF0F1
+skinparam usecaseBorderColor #34495E
+
+left to right direction
+
+title Sơ đồ Use-case - Đặt và thanh toán đơn hàng (Task 1.3)
+
+actor "Khách hàng\n(Customer)" as Customer
+
+rectangle "Hệ thống Đặt đồ uống BrewLite" {
+  usecase "UC-CK: Đặt và thanh toán đơn hàng" as UC_CK #FFF3CD
+
+  usecase "Đặt đơn từ giỏ hàng\n(Idempotency-Key, giá tính lại)\n[UC-05]" as UC_Order
+  usecase "Giữ nguyên liệu 15 phút\n[UC-09]" as UC_Hold
+  usecase "Chuyển khoản qua\nNgân hàng giả lập (QR)\n[UC-06]" as UC_Transfer
+  usecase "Ghi nhận sao kê\n& tự hoàn tiền\n[UC-10]" as UC_Ledger
+
+  usecase "Đăng nhập\n[UC-04]" as UC_Login
+  usecase "Áp mã giảm giá" as UC_Voucher
+  usecase "Thanh toán thẻ tại quầy" as UC_Card
+  usecase "Thử lại thanh toán\n(PAYMENT_FAILED -> PENDING)" as UC_Retry
+  usecase "Hủy đơn / gửi yêu cầu hủy\n[UC-08]" as UC_Cancel
+
+  usecase "Đối chiếu sao kê &\nxác nhận / từ chối thanh toán\n[UC-11]" as UC_Confirm
+}
+
+actor "Ngân hàng giả lập\n(Mock Bank)" as MockBank
+actor "Nhân viên / Barista\n(ADMIN)" as Staff
+
+' Khách hàng bên trái
+Customer -- UC_CK
+
+' Use-case chính luôn bao gồm
+UC_CK ..> UC_Order : <<include>>
+UC_CK ..> UC_Transfer : <<include>>
+UC_Order ..> UC_Hold : <<include>>
+UC_Transfer ..> UC_Ledger : <<include>>
+
+' Tình huống chỉ xảy ra trong một số trường hợp
+UC_Login ..> UC_CK : <<extend>>\n(chưa đăng nhập)
+UC_Voucher ..> UC_Order : <<extend>>\n(có nhập mã)
+UC_Card ..> UC_CK : <<extend>>\n(chọn thẻ)
+UC_Retry ..> UC_CK : <<extend>>\n(bị từ chối)
+UC_Cancel ..> UC_CK : <<extend>>\n(khách hủy)
+
+' Nhân viên xác nhận, ghi sao kê
+UC_Confirm ..> UC_Ledger : <<include>>
+
+' Ngân hàng giả lập và Nhân viên bên phải
+UC_Transfer --- MockBank
+UC_Confirm --- Staff
+
+note as N_Rule
+  <b>Quy tắc chính</b>
+  - Chỉ nhân viên chuyển đơn sang PAID (yêu cầu GV).
+  - Từ chối -> PAYMENT_FAILED, tự hoàn tiền, khách thử lại.
+  - Quá 15 phút chưa có tiền về -> CANCELLED, hoàn nguyên liệu.
+  - Đã có tiền về (TRANSFER_RECEIVED) thì không tự hủy.
+end note
+
+@enduml

@@ -1,0 +1,82 @@
+@startuml
+' Activity-01 -- Task 2.1, issue #7. All required branches are in this file.
+!pragma useVerticalIf on
+skinparam defaultFontName Arial
+skinparam defaultFontSize 32
+skinparam titleFontSize 32
+skinparam shadowing false
+skinparam ArrowColor #34495E
+<style>
+activityDiagram {
+  activity {
+    Padding 2
+  }
+}
+</style>
+skinparam activity {
+  BackgroundColor #F7F9FA
+  BorderColor #34495E
+  DiamondBackgroundColor #FFF3CD
+  DiamondBorderColor #9A6B16
+}
+skinparam swimlane {
+  BorderColor #BDC3C7
+  TitleBackgroundColor #EAF0F4
+  TitleFontStyle bold
+}
+title Activity-01 · Đặt và thanh toán đơn
+|kh| Khách hàng
+|ht| Hệ thống\n(frontend/backend)
+|nv| Nhân viên\n(ADMIN)
+|kh|
+start
+:Xem menu; chọn size/topping;\nthêm giỏ, đặt hàng [UC-05]\n[FR-01, FR-02, FR-03];
+|ht|
+if (Đã đăng nhập?) then (Có)
+else (Chưa)
+  :Chuyển sang đăng nhập [FR-04];
+  |kh|
+  :Đăng nhập; về giỏ còn nguyên;\nbấm Đặt hàng [UC-04, UC-05];
+  |ht|
+endif
+if (Đủ nguyên liệu?\n[FR-05, FR-06 / UC-09]) then (Có)
+else (Không)
+  :Báo thiếu nguyên liệu;\nrollback; giữ giỏ;
+  stop
+endif
+:Tính giá; tạo đơn PENDING;\ngiữ nguyên liệu/voucher 15 phút\n[FR-05, FR-06, FR-13];
+|kh|
+repeat
+  |ht|
+  if (Còn hạn?) then (Có)
+  else (Không)
+    :CANCELLED; hoàn nguyên liệu,\nvoucher; giữ giỏ [FR-06, FR-10];
+    stop
+  endif
+  :Tạo phiên PENDING [FR-07];\nthử lại: PAYMENT_FAILED → PENDING;\nkey mới, cùng đơn/hạn cũ [FR-10];
+  |kh|
+  :Quét QR; mở mock-bank;\nbấm Chuyển tiền [FR-07 / UC-06];
+  |ht|
+  if (Khách chuyển tiền\ntrước hạn?) then (Có)
+  else (Hết 15 phút)
+    :CANCELLED; hoàn nguyên liệu,\nvoucher; giữ giỏ [FR-06, FR-10];
+    stop
+  endif
+  :Ghi tiền vào sao kê;\nphiên TRANSFER_RECEIVED;\nđơn vẫn PENDING [FR-07 / UC-10];
+  |nv|
+  if (Đối chiếu: xác nhận?\n[FR-08 / UC-11]) then (Có)
+    |ht|
+    :SUCCESS; PAID; xóa giỏ;\nchốt voucher, điểm [FR-03, FR-13];
+    |kh|
+    :Xem xác nhận đơn;
+    stop
+  else (Từ chối)
+  endif
+  |ht|
+  :FAILED; PAYMENT_FAILED;\ntự REFUND tiền đã nhận;\ngiữ nguyên liệu và giỏ [FR-08];
+  |kh|
+repeat while (Khách thử lại cùng đơn?) is (Có) not (Không)
+|ht|
+:Đến hạn: CANCELLED;\nhoàn nguyên liệu, voucher;\ngiữ giỏ [FR-06, FR-10];
+stop
+@enduml

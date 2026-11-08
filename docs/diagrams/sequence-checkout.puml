@@ -1,0 +1,245 @@
+@startuml
+' Sequence-01 -- Task 2.2, Issue #8: Sequence diagram "Đặt và thanh toán đơn hàng"
+!pragma teoz true
+skinparam defaultFontName Arial
+skinparam defaultFontSize 14
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam ArrowColor #2C3E50
+skinparam LifeLineBorderColor #2C3E50
+skinparam LifeLineBackgroundColor #EAF2F8
+skinparam BoxPadding 10
+' plantuml.com cuts PNG output above 4096 px; scale keeps the whole diagram
+scale 0.9
+
+skinparam sequence {
+  GroupBorderColor #7F8C8D
+  GroupBackgroundColor #F8F9FA
+  GroupHeaderFontStyle bold
+  GroupFontSize 13
+  ReferenceBackgroundColor #E8F8F5
+  ReferenceBorderColor #16A085
+}
+
+skinparam actor {
+  BackgroundColor #D4E6F1
+  BorderColor #2980B9
+}
+skinparam participant {
+  BackgroundColor #E8F8F5
+  BorderColor #16A085
+}
+skinparam database {
+  BackgroundColor #FCF3CF
+  BorderColor #B7950B
+}
+
+title Sequence-01 · Luồng Đặt và thanh toán đơn hàng (BrewLite)
+
+actor "Khách hàng\n(CUSTOMER)" as c #D4E6F1
+participant "Next.js UI\n(Giao diện)" as ui #E8F8F5
+participant "NestJS API\n(Backend)" as api #E8F8F5
+database "PostgreSQL\n(Cơ sở dữ liệu)" as db #FCF3CF
+participant "Ngân hàng giả lập\n(Mock Bank)" as mb #FDEDEC
+actor "Nhân viên\n(ADMIN)" as staff #D5F5E3
+
+== GIAI ĐOẠN 1: Đặt đơn hàng (POST /orders) ==
+
+c -> ui : Bấm "Đặt hàng" tại /cart\n(chọn size, topping, voucher)
+activate ui
+
+ui -> ui : Kiểm tra JWT lưu trong localStorage
+alt Chưa đăng nhập
+  ui --> c : Chuyển hướng sang /login?redirect=/cart\n(đăng nhập xong quay lại giỏ giữ nguyên)
+end
+
+ui -> api : POST /orders { items, voucherCode }\nHeader: Idempotency-Key, Authorization: Bearer <jwt>
+activate api
+
+api -> api : Xác thực JWT & Validate DTO
+alt Thiếu JWT hoặc token hết hạn
+  api --> ui : 401 Unauthorized
+  ui --> c : Thông báo yêu cầu đăng nhập
+else DTO không hợp lệ / Thiếu Idempotency-Key
+  api --> ui : 400 Bad Request (Validation failed)
+end
+
+api -> db : BEGIN TRANSACTION
+activate db
+
+api -> db : Kiểm tra Idempotency-Key trong bảng order_request_keys
+alt Gửi lặp cùng Idempotency-Key
+  alt Cùng payload / items
+    db --> api : Bản ghi đơn hàng cũ
+    api -> db : ROLLBACK
+    api --> ui : 201 (Trả lại đơn hàng cũ, không tạo mới)
+  else Khác payload / items
+    api -> db : ROLLBACK
+    api --> ui : 409 Conflict ("Idempotency key mismatch")
+  end
+end
+
+api -> db : Truy vấn giá gốc bảng products (Tính lại giá từ products + phụ phí size/topping, không tin client)
+api -> db : SELECT stock FROM ingredients (Kiểm tra tồn kho theo công thức)
+alt Không đủ nguyên liệu tồn kho [E1]
+  api -> db : ROLLBACK
+  api --> ui : 400 Bad Request ("<nguyên liệu> không đủ tồn kho")
+  ui --> c : Báo thiếu nguyên liệu; giữ nguyên giỏ hàng
+end
+
+api -> db : Trừ kho giữ nguyên liệu tạm thời (Optimistic locking)\n[Size M: x1.25, L: x1.5, Topping: định lượng riêng]
+api -> db : Kiểm tra & giữ 1 lượt dùng voucher hợp lệ (nếu có)
+api -> db : INSERT INTO orders (status='PENDING', expiresAt=NOW()+15m)\nINSERT INTO order_items, INSERT INTO order_request_keys
+api -> db : COMMIT TRANSACTION
+deactivate db
+
+api --> ui : 201 Created { id: orderId, status: "PENDING", total, expiresAt }
+deactivate api
+ui --> c : Chuyển sang /checkout/:orderId (Hiển thị đồng hồ đếm ngược 15 phút)
+deactivate ui
+
+== GIAI ĐOẠN 2: Khởi tạo thanh toán & Quét QR (POST /payments) ==
+
+c -> ui : Chọn "Chuyển khoản / Ví" -> Bấm "Thanh toán"
+activate ui
+ui -> api : POST /payments { orderId, method: "WALLET" }\nHeader: Idempotency-Key, Authorization: Bearer <jwt>
+activate api
+
+api -> db : BEGIN TRANSACTION (khóa dòng đơn hàng)
+activate db
+api -> db : Tìm Idempotency-Key trong bảng payment_request_keys
+alt Gửi lặp cùng Idempotency-Key
+  alt Cùng đơn hàng & cùng phương thức
+    db --> api : Phiên thanh toán cũ
+    api -> db : COMMIT (không ghi thêm gì)
+    api --> ui : 201 { paymentId cũ, status } (Trả lại phiên cũ, không tạo phiên mới)
+  else Khác đơn hàng / khác phương thức
+    api -> db : ROLLBACK
+    api --> ui : 400 Bad Request ("Idempotency-Key đã được dùng cho yêu cầu thanh toán khác")
+  end
+else Idempotency-Key mới
+  api -> db : Kiểm tra đơn PENDING / PAYMENT_FAILED & còn hạn 15m
+  api -> db : INSERT INTO payment_request_keys\nINSERT INTO payments (orderId, amount, status='PENDING', method='WALLET')
+  api -> db : COMMIT TRANSACTION
+  api --> ui : 201 Created { paymentId, amount, status: "PENDING", qrUrl }
+end
+deactivate db
+deactivate api
+ui --> c : Chuyển sang /pay/:paymentId (Hiển thị mã QR ngân hàng kèm số tiền & mã đơn)
+deactivate ui
+
+== GIAI ĐOẠN 3: Chuyển tiền qua Ngân hàng giả lập & Kiểm tra thời hạn 15 phút ==
+
+c -> mb : Quét QR mở /mock-bank/:paymentId (không cần đăng nhập)
+activate mb
+c -> mb : Bấm nút "Chuyển tiền"
+
+mb -> api : POST /mock-bank/payments/:id/transfer { paymentId, amount }
+activate api
+
+alt Khách chuyển tiền trước hạn (expiresAt > NOW())
+  api -> db : BEGIN TRANSACTION
+  activate db
+  api -> db : INSERT INTO bank_transactions (type='IN', amount, description=orderId)
+  api -> db : UPDATE payments SET status = 'TRANSFER_RECEIVED' WHERE id = paymentId
+  note over api, db #FEF9E7
+    <b>Lưu ý quan trọng:</b> Đơn hàng <b>VẪN Ở TRẠNG THÁI PENDING</b>.
+    Không tự chuyển sang PAID. Khóa đơn chống tự hủy quá hạn vì tiền đã về.
+  end note
+  api -> db : COMMIT TRANSACTION
+  deactivate db
+
+  api --> mb : 200 OK { success: true, message: "Ghi nhận giao dịch ngân hàng thành công" }
+  deactivate api
+  mb --> c : Hiển thị màn hình "Chuyển tiền thành công"
+  deactivate mb
+
+else Hết 15 phút chưa chuyển / Quá hạn (expiresAt < NOW() và chưa nhận tiền) [E4]
+  note over api, db #FADBD8
+    API kiểm tra hạn ngay khi nhận chuyển khoản; tác vụ nền cũng tự hủy đơn quá hạn mỗi 5 giây.
+    Điều kiện: đơn PENDING / PAYMENT_FAILED, quá 15 phút và KHÔNG có phiên TRANSFER_RECEIVED
+  end note
+  api -> db : BEGIN TRANSACTION
+  activate db
+  api -> db : UPDATE orders SET status = 'CANCELLED' WHERE expiresAt < NOW()
+  api -> db : Hoàn trả nguyên liệu về kho (Cộng lại tồn kho đúng 1 lần)
+  api -> db : Trả lại lượt dùng voucher (nếu có)
+  api -> db : COMMIT TRANSACTION
+  deactivate db
+
+  api --> mb : 400 Bad Request / Đã hết hạn thanh toán
+  deactivate api
+  mb --> c : Thông báo đơn đã hết hạn và tự hủy;\nGiữ nguyên giỏ hàng để khách đặt lại món
+  deactivate mb
+end
+
+== GIAI ĐOẠN 4: Đối chiếu sao kê, Polling & Xử lý kết quả ==
+
+staff -> ui : Mở tab "Thanh toán" (/admin/payments)
+activate ui
+ui -> api : Polling mỗi 4s: GET /admin/payments?status=TRANSFER_RECEIVED\nAuthorization: Bearer <admin_jwt>
+api --> ui : Danh sách giao dịch đã nhận tiền (TRANSFER_RECEIVED)
+ui --> staff : Hiển thị danh sách, phát chuông/thông báo giao dịch mới
+
+c -> ui : Khách ở trang /pay/:paymentId
+ui -> api : Polling mỗi 3s: GET /payments/:id
+api --> ui : { paymentStatus: "TRANSFER_RECEIVED", orderStatus: "PENDING" }
+ui --> c : Hiển thị "Đã nhận tiền - Chờ nhân viên xác nhận"
+
+staff -> staff : Đối chiếu sao kê (Kiểm tra đúng số tiền và nội dung mã đơn)
+
+alt TRƯỜNG HỢP 1: Nhân viên bấm "Xác nhận" (Thành công)
+  staff -> ui : Bấm "Xác nhận" trên giao diện Admin
+  ui -> api : POST /admin/payments/:id/confirm\nAuthorization: Bearer <admin_jwt>
+  activate api
+  api -> db : BEGIN TRANSACTION (Pessimistic locking / SELECT FOR UPDATE)
+  activate db
+  api -> db : UPDATE payments SET status = 'SUCCESS'
+  api -> db : UPDATE orders SET status = 'PAID' (kiểm tra assertTransition)
+  api -> db : UPDATE VoucherUsage.status = 'USED' (chốt lượt sử dụng voucher chính thức)
+  api -> db : Cộng điểm thưởng tích lũy (+1 điểm / 10.000 VNĐ thực trả)
+  api -> db : COMMIT TRANSACTION
+  deactivate db
+  api --> ui : 200 OK { paymentStatus: "SUCCESS", orderStatus: "PAID" }
+  deactivate api
+
+  ui -> api : Khách polling: GET /payments/:id
+  api --> ui : { paymentStatus: "SUCCESS", orderStatus: "PAID" }
+  ui -> ui : Xóa giỏ hàng khỏi localStorage (Chỉ xóa khi đơn đã PAID)
+  ui --> c : Chuyển hướng sang /orders/:id/confirmation\n(Xem xác nhận đơn & điểm tích lũy)
+
+else TRƯỜNG HỢP 2: Nhân viên bấm "Từ chối" (Sai số tiền / Sai nội dung) [A3]
+  staff -> ui : Bấm "Từ chối" trên giao diện Admin
+  ui -> api : POST /admin/payments/:id/reject { reason }\nAuthorization: Bearer <admin_jwt>
+  activate api
+  api -> db : BEGIN TRANSACTION (Pessimistic locking)
+  activate db
+  api -> db : UPDATE payments SET status = 'FAILED'
+  api -> db : UPDATE orders SET status = 'PAYMENT_FAILED' (qua assertTransition)
+  api -> db : INSERT INTO bank_transactions (type='REFUND', amount, description="Hoàn tiền: "+orderId)\n(Tự động ghi nhận hoàn tiền đúng số tiền đã nhận)
+  note over api, db #FEF9E7
+    Nguyên liệu <b>VẪN ĐƯỢC GIỮ</b>, giỏ hàng giữ nguyên.
+    Hạn thanh toán vẫn tính theo mốc ban đầu (không gia hạn).
+  end note
+  api -> db : COMMIT TRANSACTION
+  deactivate db
+  api --> ui : 200 OK { paymentStatus: "FAILED", orderStatus: "PAYMENT_FAILED" }
+  deactivate api
+
+  ui -> api : Khách polling: GET /payments/:id
+  api --> ui : { paymentStatus: "FAILED", orderStatus: "PAYMENT_FAILED" }
+  ui --> c : Báo thanh toán thất bại, tiền đã được hoàn;\nHiển thị nút "Thử lại thanh toán"
+
+  opt Khách chọn "Thử lại thanh toán" trên cùng đơn hàng [A4]
+    c -> ui : Bấm "Thử lại thanh toán"
+    ui -> api : POST /payments { orderId, method: "WALLET" }\nHeader: Idempotency-Key: <key_mới>
+    activate api
+    api -> db : Kiểm tra đơn: PAYMENT_FAILED -> chuyển về PENDING; kiểm tra còn hạn 15m
+    api -> db : INSERT INTO payments (orderId, status='PENDING', key_mới)
+    api --> ui : 201 Created (Tạo phiên thanh toán mới) -> Khách quét QR thanh toán lại
+    deactivate api
+  end
+end
+deactivate ui
+
+@enduml
