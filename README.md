@@ -103,10 +103,21 @@ Giỏ hàng, đăng nhập, size/topping, tồn kho và thanh toán sẽ thêm �
 
 Dùng Node 20 (cùng phiên bản chính với CI). Chạy trong terminal tại repo:
 
+**PowerShell (Windows):**
+
 ```powershell
 cd apps/web
 npm ci
 Copy-Item .env.example .env.local
+npm run dev
+```
+
+**macOS/Linux:**
+
+```bash
+cd apps/web
+npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
