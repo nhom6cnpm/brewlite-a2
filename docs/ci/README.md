@@ -1,21 +1,39 @@
 # Minh chứng Continuous Integration (CI) — Task 4.4
 
-Thư mục này lưu trữ các minh chứng thực hiện theo yêu cầu của Assignment 2 (Task 4.4):
+Tài liệu lưu trữ minh chứng thực hiện theo yêu cầu Assignment 2 (Task 4.4):
 1. **Link 1 Pull Request có CI chạy thành công**.
-2. **Ảnh và log 1 lần pipeline phát hiện lỗi** (thực hiện qua PR thử nghiệm cố ý làm hỏng test/lint, ghi nhận phát hiện lỗi và đóng PR).
+2. **Ảnh và log 1 lần pipeline phát hiện lỗi** (thực hiện qua PR thử nghiệm cố ý làm hỏng test, ghi nhận phát hiện lỗi và đóng PR).
 
 ---
 
 ## 1. Minh chứng CI chạy thành công
-- **Pull Request**: Sẽ được cập nhật sau khi tạo PR cho Task 4.4.
-- **Trạng thái**: Tất cả các bước trong job `web` (`Install` → `Lint` → `Unit Test` → `Build`) đều đạt trạng thái thành công (green checkmark).
+- **Pull Request**: [#24 — ci(web): thiết lập pipeline CI cho web và cấu hình quality gate (Task 4.4)](https://github.com/nhom6cnpm/brewlite-a2/pull/24)
+- **Workflow Run**: [GitHub Actions Run #42592007019](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592007019)
+- **Nhánh thực hiện**: `ci/task-4-4-pipeline` nhắm vào `main`
+- **Kết quả quality gate**:
+  - `Checkout repository`: [Success]
+  - `Setup Node.js 20` (cache npm): [Success]
+  - `Install dependencies` (`npm ci`): [Success]
+  - `Run lint` (`npm run lint` — ESLint): [Success — 0 errors]
+  - `Run unit tests` (`npm test` — Vitest): [Success — 2 test files, 11 tests passed]
+  - `Build web application` (`npm run build` — Next.js): [Success — production build compiled]
+  - **Trạng thái Check `web`**: **Pass (Green checkmark)**
 
 ---
 
 ## 2. Minh chứng CI phát hiện lỗi (Quality Gate chặn lỗi)
-- **Mục đích**: Kiểm chứng cơ chế bảo vệ của pipeline CI: khi có lỗi trong mã nguồn (lint lỗi, test hỏng hoặc build thất bại), CI phải lập tức báo đỏ (failed) và chặn việc merge mã lỗi vào nhánh `main`.
-- **Thực hiện**: Mở PR thử nghiệm cố ý làm hỏng test trong `apps/web`.
-- **Kết quả**: Pipeline phát hiện lỗi ở bước `Run unit tests` và dừng lại ngay lập tức.
-- **Chi tiết ảnh chụp và log**:
-  - Log lỗi: [ci-failure-log.txt](./ci-failure-log.txt)
-  - Ảnh minh chứng: [ci-failure.png](./ci-failure.png)
+- **Mục đích**: Kiểm chứng cơ chế bảo vệ của pipeline CI: khi phát hiện vi phạm lint, test hỏng hoặc build lỗi, CI phải dừng ngay lập tức (fail), không cho phép mã nguồn lỗi được merge vào nhánh `main`.
+- **Thử nghiệm**: Mở PR [#25 — [DEMO-FAIL] test: cố ý làm hỏng test để kiểm tra CI quality gate phát hiện lỗi](https://github.com/nhom6cnpm/brewlite-a2/pull/25) trên nhánh `test/ci-failure-demo`. Cố ý thêm assertion sai `expect(true).toBe(false)` trong `apps/web/src/app/menu/page.test.tsx`.
+- **Workflow Run phát hiện lỗi**: [GitHub Actions Run #42592401582](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592401582)
+- **Diễn biến lỗi**:
+  - `Run lint`: Pass
+  - `Run unit tests`: **Fail** (AssertionError: expected true to be false tại `apps/web/src/app/menu/page.test.tsx:14:18`)
+  - `Build web application`: **Skipped** (pipeline tự động dừng, không build tiếp khi test hỏng)
+  - **Trạng thái Job `web`**: **Failed (Red X)**
+- **Xử lý sau thử nghiệm**: Đã đóng PR #25 theo đúng quy trình và bảo toàn chất lượng nhánh `main`.
+
+### Ảnh chụp màn hình CI phát hiện lỗi:
+![CI Pipeline Failure](ci-failure.png)
+
+### Tệp log chi tiết:
+- Toàn bộ log console tải từ GitHub Actions: [ci-failure-log.txt](./ci-failure-log.txt)

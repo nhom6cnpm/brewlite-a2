@@ -1,0 +1,255 @@
+﻿ï»¿2026-11-09T09:18:36.3197296Z Current runner version: '2.338.2'
+2026-11-09T09:18:36.3217121Z ##[group]Runner Image Provisioner
+2026-11-09T09:18:36.3217816Z Hosted Compute Agent
+2026-11-09T09:18:36.3218182Z Version: 20261028.624
+2026-11-09T09:18:36.3218602Z Commit: 54898b74c23fde5556c9b3c3a2290865feef0dfe
+2026-11-09T09:18:36.3219063Z Build Date: 2026-10-28T21:51:42Z
+2026-11-09T09:18:36.3219489Z Worker ID: {5543ab0b-a911-4ab6-a0cc-9fce6d05787b}
+2026-11-09T09:18:36.3219996Z Region: southcentralus
+2026-11-09T09:18:36.3220361Z Cloud: Azure
+2026-11-09T09:18:36.3220693Z ##[endgroup]
+2026-11-09T09:18:36.3221837Z ##[group]Operating System
+2026-11-09T09:18:36.3222218Z Ubuntu
+2026-11-09T09:18:36.3222659Z 24.04.5
+2026-11-09T09:18:36.3222989Z LTS
+2026-11-09T09:18:36.3223364Z ##[endgroup]
+2026-11-09T09:18:36.3223755Z ##[group]Runner Image
+2026-11-09T09:18:36.3224140Z Image: ubuntu-24.04
+2026-11-09T09:18:36.3224548Z Version: 20261101.360.1
+2026-11-09T09:18:36.3225363Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-09T09:18:36.3226301Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261101.360
+2026-11-09T09:18:36.3226874Z ##[endgroup]
+2026-11-09T09:18:36.3227680Z ##[group]GITHUB_TOKEN Permissions
+2026-11-09T09:18:36.3229558Z Contents: read
+2026-11-09T09:18:36.3229970Z Metadata: read
+2026-11-09T09:18:36.3230343Z Packages: read
+2026-11-09T09:18:36.3230692Z ##[endgroup]
+2026-11-09T09:18:36.3232414Z Secret source: Actions
+2026-11-09T09:18:36.3232959Z Cache mode: write
+2026-11-09T09:18:36.3233594Z Prepare workflow directory
+2026-11-09T09:18:36.3506509Z Prepare all required actions
+2026-11-09T09:18:36.3551835Z Getting action download info
+2026-11-09T09:18:36.5911268Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-11-09T09:18:36.6714616Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-11-09T09:18:36.8602776Z Complete job name: web
+2026-11-09T09:18:36.9188038Z ##[group]Run actions/checkout@v4
+2026-11-09T09:18:36.9188496Z with:
+2026-11-09T09:18:36.9188764Z   repository: nhom6cnpm/brewlite-a2
+2026-11-09T09:18:36.9190906Z   token: ***
+2026-11-09T09:18:36.9191299Z   ssh-strict: true
+2026-11-09T09:18:36.9191553Z   ssh-user: git
+2026-11-09T09:18:36.9191812Z   persist-credentials: true
+2026-11-09T09:18:36.9192093Z   clean: true
+2026-11-09T09:18:36.9192355Z   sparse-checkout-cone-mode: true
+2026-11-09T09:18:36.9192663Z   fetch-depth: 1
+2026-11-09T09:18:36.9192915Z   fetch-tags: false
+2026-11-09T09:18:36.9193171Z   show-progress: true
+2026-11-09T09:18:36.9193430Z   lfs: false
+2026-11-09T09:18:36.9193672Z   submodules: false
+2026-11-09T09:18:36.9193932Z   set-safe-directory: true
+2026-11-09T09:18:36.9194225Z   allow-unsafe-pr-checkout: false
+2026-11-09T09:18:36.9194603Z ##[endgroup]
+2026-11-09T09:18:37.1139147Z Syncing repository: nhom6cnpm/brewlite-a2
+2026-11-09T09:18:37.1141312Z ##[group]Getting Git version info
+2026-11-09T09:18:37.1142114Z Working directory is '/home/runner/work/brewlite-a2/brewlite-a2'
+2026-11-09T09:18:37.1143116Z [command]/usr/bin/git version
+2026-11-09T09:18:37.1203679Z git version 2.56.0
+2026-11-09T09:18:37.1225185Z ##[endgroup]
+2026-11-09T09:18:37.1238885Z Temporarily overriding HOME='/home/runner/work/_temp/fb050bfc-c7d9-41c5-a505-64ace3581070' before making global git config changes
+2026-11-09T09:18:37.1240313Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-09T09:18:37.1244109Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/brewlite-a2/brewlite-a2
+2026-11-09T09:18:37.1296241Z Deleting the contents of '/home/runner/work/brewlite-a2/brewlite-a2'
+2026-11-09T09:18:37.1300442Z ##[group]Initializing the repository
+2026-11-09T09:18:37.1304628Z [command]/usr/bin/git init /home/runner/work/brewlite-a2/brewlite-a2
+2026-11-09T09:18:37.1389634Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-09T09:18:37.1390664Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-09T09:18:37.1391786Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-09T09:18:37.1392694Z hint: call:
+2026-11-09T09:18:37.1393102Z hint:
+2026-11-09T09:18:37.1393597Z hint: 	git config --global init.defaultBranch <name>
+2026-11-09T09:18:37.1394154Z hint:
+2026-11-09T09:18:37.1394671Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-09T09:18:37.1395545Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-09T09:18:37.1396258Z hint:
+2026-11-09T09:18:37.1396639Z hint: 	git branch -m <name>
+2026-11-09T09:18:37.1397086Z hint:
+2026-11-09T09:18:37.1397700Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-09T09:18:37.1398690Z Initialized empty Git repository in /home/runner/work/brewlite-a2/brewlite-a2/.git/
+2026-11-09T09:18:37.1407685Z [command]/usr/bin/git remote add origin https://github.com/nhom6cnpm/brewlite-a2
+2026-11-09T09:18:37.1452709Z ##[endgroup]
+2026-11-09T09:18:37.1453451Z ##[group]Disabling automatic garbage collection
+2026-11-09T09:18:37.1456604Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-09T09:18:37.1491738Z ##[endgroup]
+2026-11-09T09:18:37.1492377Z ##[group]Setting up auth
+2026-11-09T09:18:37.1498555Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-09T09:18:37.1541332Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-09T09:18:37.1850354Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-09T09:18:37.1888840Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-09T09:18:37.2089571Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-09T09:18:37.2128112Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-09T09:18:37.2329730Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-09T09:18:37.2376209Z ##[endgroup]
+2026-11-09T09:18:37.2376781Z ##[group]Fetching the repository
+2026-11-09T09:18:37.2385138Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +86eed1de9edd26e36d3a04989a84d13bc240301e:refs/remotes/pull/25/merge
+2026-11-09T09:18:37.8418312Z From https://github.com/nhom6cnpm/brewlite-a2
+2026-11-09T09:18:37.8419534Z  * [new ref]         86eed1de9edd26e36d3a04989a84d13bc240301e -> pull/25/merge
+2026-11-09T09:18:37.8421763Z ##[endgroup]
+2026-11-09T09:18:37.8422507Z ##[group]Determining the checkout info
+2026-11-09T09:18:37.8452535Z ##[endgroup]
+2026-11-09T09:18:37.8453135Z [command]/usr/bin/git sparse-checkout disable
+2026-11-09T09:18:37.8490753Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-09T09:18:37.8533439Z ##[group]Checking out the ref
+2026-11-09T09:18:37.8537486Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/25/merge
+2026-11-09T09:18:37.8765765Z Note: switching to 'refs/remotes/pull/25/merge'.
+2026-11-09T09:18:37.8766833Z 
+2026-11-09T09:18:37.8767501Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-09T09:18:37.8769069Z changes and commit them, and you can discard any commits you make in this
+2026-11-09T09:18:37.8770686Z state without impacting any branches by switching back to a branch.
+2026-11-09T09:18:37.8771763Z 
+2026-11-09T09:18:37.8772437Z If you want to create a new branch to retain commits you create, you may
+2026-11-09T09:18:37.8773906Z do so (now or later) by using -c with the switch command. Example:
+2026-11-09T09:18:37.8774766Z 
+2026-11-09T09:18:37.8775552Z   git switch -c <new-branch-name>
+2026-11-09T09:18:37.8776165Z 
+2026-11-09T09:18:37.8776541Z Or undo this operation with:
+2026-11-09T09:18:37.8777094Z 
+2026-11-09T09:18:37.8777425Z   git switch -
+2026-11-09T09:18:37.8777857Z 
+2026-11-09T09:18:37.8778579Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-09T09:18:37.8779553Z 
+2026-11-09T09:18:37.8780547Z HEAD is now at 86eed1d Merge d1868877ae3197c16b4b730f20e06dbb732641fb into 366c0243aa5e9d717dc3840ad708e9de450f6af9
+2026-11-09T09:18:37.8783548Z ##[endgroup]
+2026-11-09T09:18:37.8822580Z [command]/usr/bin/git log -1 --format=%H
+2026-11-09T09:18:37.8854023Z 86eed1de9edd26e36d3a04989a84d13bc240301e
+2026-11-09T09:18:37.9193056Z ##[group]Run actions/setup-node@v4
+2026-11-09T09:18:37.9193863Z with:
+2026-11-09T09:18:37.9194462Z   node-version: 20
+2026-11-09T09:18:37.9195039Z   cache: npm
+2026-11-09T09:18:37.9195761Z   cache-dependency-path: apps/web/package-lock.json
+2026-11-09T09:18:37.9196643Z   always-auth: false
+2026-11-09T09:18:37.9197283Z   check-latest: false
+2026-11-09T09:18:37.9202643Z   token: ***
+2026-11-09T09:18:37.9203187Z ##[endgroup]
+2026-11-09T09:18:38.0187388Z Attempting to download 20...
+2026-11-09T09:18:38.0293261Z (node:2129) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-09T09:18:38.0295059Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-09T09:18:38.6699962Z Acquiring 20.20.2 - x64 from https://github.com/actions/node-versions/releases/download/20.20.2-23521894959/node-20.20.2-linux-x64.tar.gz
+2026-11-09T09:18:39.1004634Z Extracting ...
+2026-11-09T09:18:39.1193666Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/1d1367a4-e5f6-4a1b-8950-18680a480d8b -f /home/runner/work/_temp/77b7579e-340b-4300-a083-a4cc670c5cea
+2026-11-09T09:18:39.8816207Z Adding to the cache ...
+2026-11-09T09:18:41.4355574Z ##[group]Environment details
+2026-11-09T09:18:41.6014190Z node: v20.20.2
+2026-11-09T09:18:41.6014562Z npm: 10.8.2
+2026-11-09T09:18:41.6014741Z yarn: 1.22.22
+2026-11-09T09:18:41.6015085Z ##[endgroup]
+2026-11-09T09:18:41.6029927Z [command]/opt/hostedtoolcache/node/20.20.2/x64/bin/npm config get cache
+2026-11-09T09:18:41.6771284Z /home/runner/.npm
+2026-11-09T09:18:41.8352590Z npm cache is not found
+2026-11-09T09:18:41.8546093Z ##[group]Run npm ci
+2026-11-09T09:18:41.8546296Z [36;1mnpm ci[0m
+2026-11-09T09:18:41.8567085Z shell: /usr/bin/bash -e {0}
+2026-11-09T09:18:41.8567267Z ##[endgroup]
+2026-11-09T09:18:43.1680739Z npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+2026-11-09T09:18:45.9896404Z npm warn deprecated eslint@9.39.5: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+2026-11-09T09:19:15.1840505Z 
+2026-11-09T09:19:15.1843548Z added 460 packages, and audited 461 packages in 33s
+2026-11-09T09:19:15.1843930Z 
+2026-11-09T09:19:15.1844159Z 168 packages are looking for funding
+2026-11-09T09:19:15.1844449Z   run `npm fund` for details
+2026-11-09T09:19:15.3735071Z 
+2026-11-09T09:19:15.3736146Z 14 vulnerabilities (9 moderate, 2 high, 3 critical)
+2026-11-09T09:19:15.3736469Z 
+2026-11-09T09:19:15.3736696Z To address issues that do not require attention, run:
+2026-11-09T09:19:15.3737105Z   npm audit fix
+2026-11-09T09:19:15.3737223Z 
+2026-11-09T09:19:15.3737453Z To address all issues (including breaking changes), run:
+2026-11-09T09:19:15.3737769Z   npm audit fix --force
+2026-11-09T09:19:15.3737906Z 
+2026-11-09T09:19:15.3738027Z Run `npm audit` for details.
+2026-11-09T09:19:15.4283567Z ##[group]Run npm run lint
+2026-11-09T09:19:15.4283751Z [36;1mnpm run lint[0m
+2026-11-09T09:19:15.4300616Z shell: /usr/bin/bash -e {0}
+2026-11-09T09:19:15.4300772Z ##[endgroup]
+2026-11-09T09:19:15.5056888Z 
+2026-11-09T09:19:15.5057551Z > brewlite-web@0.1.0 lint
+2026-11-09T09:19:15.5057929Z > eslint
+2026-11-09T09:19:15.5058043Z 
+2026-11-09T09:19:17.0395324Z ##[group]Run npm test
+2026-11-09T09:19:17.0395664Z [36;1mnpm test[0m
+2026-11-09T09:19:17.0412301Z shell: /usr/bin/bash -e {0}
+2026-11-09T09:19:17.0412444Z ##[endgroup]
+2026-11-09T09:19:17.1173030Z 
+2026-11-09T09:19:17.1173680Z > brewlite-web@0.1.0 test
+2026-11-09T09:19:17.1173907Z > vitest run
+2026-11-09T09:19:17.1173982Z 
+2026-11-09T09:19:17.3473311Z 
+2026-11-09T09:19:17.3475196Z [1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m/home/runner/work/brewlite-a2/brewlite-a2/apps/web[39m
+2026-11-09T09:19:17.3475566Z 
+2026-11-09T09:19:18.2305463Z  [32mâ[39m src/app/products/[id]/page.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+2026-11-09T09:19:18.2696605Z  [31mâ¯[39m src/app/menu/page.test.tsx [2m([22m[2m7 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 170[2mms[22m[39m
+2026-11-09T09:19:18.2702833Z [31m   [31mÃ[31m Menu[2m > [22mminh chá»©ng CI phÃ¡t hiá»n lá»i (cá» Ã½ lÃ m há»ng test)[39m[32m 6[2mms[22m[39m
+2026-11-09T09:19:18.2704041Z [31m     â expected true to be false // Object.is equality[39m
+2026-11-09T09:19:18.2722654Z    [32mâ[39m Menu[2m > [22mhiá»n thá» skeleton khi Äang chá» API[32m 25[2mms[22m[39m
+2026-11-09T09:19:18.2724113Z    [32mâ[39m Menu[2m > [22mhiá»n thá» tráº¡ng thÃ¡i rá»ng khi API khÃ´ng cÃ³ mÃ³n[32m 15[2mms[22m[39m
+2026-11-09T09:19:18.2724864Z    [32mâ[39m Menu[2m > [22mhiá»n thá» lá»i API vÃ  táº£i láº¡i danh sÃ¡ch khi báº¥m Thá»­ láº¡i[32m 74[2mms[22m[39m
+2026-11-09T09:19:18.2736326Z    [32mâ[39m Menu[2m > [22mbÃ¡o lá»i khi máº¥t káº¿t ná»i[32m 11[2mms[22m[39m
+2026-11-09T09:19:18.2737221Z    [32mâ[39m Menu[2m > [22mgá»i API ÄÆ°á»£c cáº¥u hÃ¬nh, hiá»n thá» tÃªn/giÃ¡ vÃ  liÃªn káº¿t tá»i chi tiáº¿t[32m 28[2mms[22m[39m
+2026-11-09T09:19:18.2738134Z    [32mâ[39m Menu[2m > [22mkhÃ´ng hiá»n thá» dá»¯ liá»u sai tá»« API nhÆ° má»t thá»±c ÄÆ¡n rá»ng[32m 10[2mms[22m[39m
+2026-11-09T09:19:18.2898003Z 
+2026-11-09T09:19:18.2912688Z [31mâ¯â¯â¯â¯â¯â¯â¯[39m[1m[41m Failed Tests 1 [49m[22m[31mâ¯â¯â¯â¯â¯â¯â¯[39m
+2026-11-09T09:19:18.2914759Z 
+2026-11-09T09:19:18.2915818Z [41m[1m FAIL [22m[49m src/app/menu/page.test.tsx[2m > [22mMenu[2m > [22mminh chá»©ng CI phÃ¡t hiá»n lá»i (cá» Ã½ lÃ m há»ng test)
+2026-11-09T09:19:18.2916889Z [31m[1mAssertionError[22m: expected true to be false // Object.is equality[39m
+2026-11-09T09:19:18.2917325Z 
+2026-11-09T09:19:18.2938888Z [32m- Expected[39m
+2026-11-09T09:19:18.2943108Z [31m+ Received[39m
+2026-11-09T09:19:18.2943257Z 
+2026-11-09T09:19:18.2943375Z [32m- false[39m
+2026-11-09T09:19:18.2943587Z [31m+ true[39m
+2026-11-09T09:19:18.2943702Z 
+2026-11-09T09:19:18.2944057Z [36m [2mâ¯[22m src/app/menu/page.test.tsx:[2m14:18[22m[39m
+2026-11-09T09:19:18.2972269Z     [90m 12| [39m  [34mit[39m([32m"minh chá»©ng CI phÃ¡t hiá»n lá»i (cá» Ã½ lÃ m há»ng test)"[39m[33m,[39m () [33m=>[39m {
+2026-11-09T09:19:18.2972695Z 
+2026-11-09T09:19:18.2973160Z [2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+2026-11-09T09:19:18.2984019Z [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m11 passed[39m[22m[90m (12)[39m
+2026-11-09T09:19:18.2984993Z [2m   Start at [22m 09:19:17
+2026-11-09T09:19:18.2985858Z [2m   Duration [22m 942ms[2m (transform 124ms, setup 302ms, collect 236ms, tests 319ms, environment 550ms, prepare 124ms)[22m
+2026-11-09T09:19:18.2986426Z 
+2026-11-09T09:19:18.2986565Z 
+2026-11-09T09:19:18.3005953Z ##[error]AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ â¯ src/app/menu/page.test.tsx:14:18
+
+
+2026-11-09T09:19:18.3027568Z     [90m 13| [39m    [90m// Cá» Ã½ tháº¥t báº¡i Äá» kiá»m chá»©ng quality gate cá»§a CI workflow[39m
+2026-11-09T09:19:18.3028096Z     [90m 14| [39m    [34mexpect[39m([35mtrue[39m)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+2026-11-09T09:19:18.3028440Z     [90m   | [39m                 [31m^[39m
+2026-11-09T09:19:18.3028672Z     [90m 15| [39m  })[33m;[39m
+2026-11-09T09:19:18.3028856Z     [90m 16| [39m
+2026-11-09T09:19:18.3028937Z 
+2026-11-09T09:19:18.3029552Z [31m[2mâ¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯â¯[1/1]â¯[22m[39m
+2026-11-09T09:19:18.3029942Z 
+2026-11-09T09:19:18.3783080Z ##[error]Process completed with exit code 1.
+2026-11-09T09:19:18.3885863Z Post job cleanup.
+2026-11-09T09:19:18.4468086Z [command]/usr/bin/git version
+2026-11-09T09:19:18.4503315Z git version 2.56.0
+2026-11-09T09:19:18.4542248Z Temporarily overriding HOME='/home/runner/work/_temp/507fc317-ee2d-49db-94a7-c5496cd8aeea' before making global git config changes
+2026-11-09T09:19:18.4543244Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-09T09:19:18.4544055Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/brewlite-a2/brewlite-a2
+2026-11-09T09:19:18.4570641Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-09T09:19:18.4614093Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-09T09:19:18.4833581Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-09T09:19:18.4859119Z http.https://github.com/.extraheader
+2026-11-09T09:19:18.4869802Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-11-09T09:19:18.4910977Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-09T09:19:18.5128947Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-09T09:19:18.5170683Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-09T09:19:18.5515407Z Cleaning up orphan processes
+2026-11-09T09:19:18.5772953Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

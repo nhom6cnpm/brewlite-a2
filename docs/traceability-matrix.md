@@ -89,5 +89,7 @@ Bắt buộc vượt qua toàn bộ quality gate (lint, test, build) trước kh
 - File cấu hình: [ci.yml](../.github/workflows/ci.yml)
 - Job `web`: Node 20, thư mục `apps/web`, chạy `npm ci` → `npm run lint` (ESLint) → `npm test` (Vitest) → `npm run build` (Next.js).
 - Bắt buộc branch protection: check `web` (và `api`) phải xanh mới được merge.
+- Minh chứng CI: [docs/ci/README.md](ci/README.md) (PR thành công [#24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), minh chứng phát hiện lỗi trên PR [#25](https://github.com/nhom6cnpm/brewlite-a2/pull/25)).
+
 
 

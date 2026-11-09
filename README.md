@@ -185,6 +185,11 @@ Nhánh `main` được áp dụng branch protection với các chính sách bắ
 - Bắt buộc các status check CI (`web`, `api`) phải vượt qua (pass) thành công mới được phép merge.
 
 ### Minh chứng CI (Task 4.4)
-- **Link PR chạy CI thành công**: [Pull Request #...](https://github.com/nhom6cnpm/brewlite-a2/pull/...)
-- **Minh chứng pipeline phát hiện lỗi**: Xem chi tiết ảnh chụp và log lỗi tại thư mục [docs/ci/](docs/ci/).
+- **Link PR chạy CI thành công**: [Pull Request #24](https://github.com/nhom6cnpm/brewlite-a2/pull/24) (Job `web` vượt qua toàn bộ 4 bước: Install, Lint, Test, Build).
+- **Minh chứng pipeline phát hiện lỗi**:
+  - Thử nghiệm trên [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test để kiểm tra CI).
+  - Ảnh chụp màn hình CI phát hiện lỗi: ![CI phát hiện lỗi](docs/ci/ci-failure.png)
+  - Log chi tiết quá trình phát hiện lỗi: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt)
+  - Xem chi tiết tại tài liệu [docs/ci/README.md](docs/ci/README.md).
+
 
