@@ -1,5 +1,7 @@
 # ☕ BrewLite – Assignment 2
 
+[![CI](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml/badge.svg)](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml)
+
 Ứng dụng đặt cà phê không dùng tiền mặt — Bài tập lớn môn Công nghệ Phần mềm, Trường Đại học Sài Gòn (HK I, 2026–2027).
 Assignment 2: **Requirements to Deployment** — từ khai thác yêu cầu, mô hình hóa, thiết kế kiến trúc đến hai Sprint, CI/CD và triển khai production.
 
@@ -35,8 +37,8 @@ brewlite-a2/
 |---|---|---|
 | 1 | Khai thác và đặc tả yêu cầu | ✅ Xong |
 | 2 | Mô hình hóa hệ thống | ✅ Xong |
-| 3 | Thiết kế kiến trúc | ⏳ Đang làm (#14, #15) |
-| 4 | Triển khai Sprint 1 | ⏳ Đang làm ([milestone Sprint 1](https://github.com/nhom6cnpm/brewlite-a2/milestone/1)) |
+| 3 | Thiết kế kiến trúc | ✅ Xong (#14, #15) |
+| 4 | Triển khai Sprint 1 | ⏳ Đang làm (MVP #16 xong, CI #17 đang hoàn thiện) |
 | 5 | Triển khai Sprint 2, CI/CD và Delivery | ⬜ |
 
 > Các task phải hoàn thành **theo đúng thứ tự**; task sau chỉ được nghiệm thu khi tạo phẩm của task trước đã có trên repository.
@@ -150,3 +152,39 @@ Test dùng Vitest 3, Vite 6, jsdom 26 và Testing Library (jest-dom 6)
 kiểm tra menu loading/rỗng/lỗi/thử lại, tên/giá và liên kết chi tiết;
 trang chi tiết kiểm tra loading, dữ liệu không có tồn kho, 404 và lỗi/thử lại.
 Các test này không thay thế kiểm tra tích hợp với API và PostgreSQL.
+
+## Continuous Integration (CI)
+
+Dự án áp dụng quy trình kiểm thử và tích hợp liên tục (CI) tự động bằng GitHub Actions thông qua workflow [ci.yml](.github/workflows/ci.yml).
+
+### Pipeline gồm những gì?
+Mỗi Pull Request và commit đẩy lên nhánh `main` đều phải vượt qua 4 chặng quality gate tự động:
+1. **Install (`npm ci`)**: Cài đặt phụ thuộc dựa trên `package-lock.json`, bật cache npm để tăng tốc độ thực thi.
+2. **Lint (`npm run lint`)**:
+   - `apps/web`: Kiểm tra lỗi cú pháp và phong cách mã nguồn bằng **ESLint** (Next.js config).
+   - `apps/api`: Kiểm tra mã nguồn với **Oxlint** (`--type-aware`, do Phúc cấu hình).
+3. **Unit Test (`npm test`)**:
+   - `apps/web`: Chạy toàn bộ unit/component test với **Vitest** (không cần database).
+   - `apps/api`: Chạy toàn bộ unit test với **Jest** (không cần database; kiểm thử integration với PostgreSQL dành cho Task 5.2).
+4. **Build (`npm run build`)**:
+   - `apps/web`: Đóng gói ứng dụng Next.js (`next build`) với biến môi trường mẫu `NEXT_PUBLIC_API_URL: http://localhost:3001` (không đưa secret vào workflow).
+   - `apps/api`: Biên dịch NestJS (`nest build`).
+
+### Chạy khi nào?
+- Khi mở hoặc cập nhật một **Pull Request** vào nhánh `main`.
+- Khi có commit được **push** trực tiếp vào nhánh `main` (sau khi merge PR).
+
+### Xem kết quả ở đâu?
+- Xem danh sách và lịch sử thực thi tại tab **Actions**: [GitHub Actions Workflows](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml).
+- Xem trạng thái trực tiếp của từng bước kiểm tra (status checks) ngay tại giao diện Pull Request trên GitHub.
+
+### Quy tắc bảo vệ nhánh (Branch Protection)
+Nhánh `main` được áp dụng branch protection với các chính sách bắt buộc:
+- Bắt buộc merge thông qua **Pull Request** (chặn push trực tiếp vào `main`).
+- Bắt buộc có ít nhất **1 người review và approve**.
+- Bắt buộc các status check CI (`web`, `api`) phải vượt qua (pass) thành công mới được phép merge.
+
+### Minh chứng CI (Task 4.4)
+- **Link PR chạy CI thành công**: [Pull Request #...](https://github.com/nhom6cnpm/brewlite-a2/pull/...)
+- **Minh chứng pipeline phát hiện lỗi**: Xem chi tiết ảnh chụp và log lỗi tại thư mục [docs/ci/](docs/ci/).
+
