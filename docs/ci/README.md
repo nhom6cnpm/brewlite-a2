@@ -13,7 +13,7 @@ Tài liệu lưu trữ minh chứng thực hiện theo yêu cầu Assignment 2 (
 - **Kết quả quality gate**:
   - **Job `api` (Phúc phụ trách)**:
     - `Checkout repository`: [Success]
-    - `Setup Node.js 20` (cache npm): [Success]
+    - `Setup Node.js 24` (cache npm): [Success]
     - `Install dependencies` (`npm ci`): [Success]
     - `Run lint` (`npm run lint` — Oxlint `--type-aware`): [Success — 0 errors]
     - `Run unit tests` (`npm test` — Jest): [Success — 2 suites, 8 tests passed]
