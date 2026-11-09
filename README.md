@@ -38,7 +38,7 @@ brewlite-a2/
 | 1 | Khai thác và đặc tả yêu cầu | ✅ Xong |
 | 2 | Mô hình hóa hệ thống | ✅ Xong |
 | 3 | Thiết kế kiến trúc | ✅ Xong (#14, #15) |
-| 4 | Triển khai Sprint 1 | ⏳ Đang làm (MVP #16 xong, CI #17 đang hoàn thiện) |
+| 4 | Triển khai Sprint 1 | ✅ Xong ([milestone Sprint 1](https://github.com/nhom6cnpm/brewlite-a2/milestone/1)) |
 | 5 | Triển khai Sprint 2, CI/CD và Delivery | ⬜ |
 
 > Các task phải hoàn thành **theo đúng thứ tự**; task sau chỉ được nghiệm thu khi tạo phẩm của task trước đã có trên repository.
@@ -103,7 +103,7 @@ Xem `.env.example`. **Không commit file `.env`.**
 Web trong `apps/web` gồm menu và trang chi tiết món (ảnh, tên, giá).
 Giỏ hàng, đăng nhập, size/topping, tồn kho và thanh toán sẽ thêm ở Task 5.
 
-Dùng Node 20 (cùng phiên bản chính với CI). Chạy trong terminal tại repo:
+Dùng Node 24 (cùng phiên bản chính với CI). Chạy trong terminal tại repo:
 
 **PowerShell (Windows):**
 
@@ -148,7 +148,7 @@ npm run build
 ```
 
 Test dùng Vitest 3, Vite 6, jsdom 26 và Testing Library (jest-dom 6)
-để tương thích Node 20. Test component giả lập phản hồi `fetch`,
+để tương thích Node 24. Test component giả lập phản hồi `fetch`,
 kiểm tra menu loading/rỗng/lỗi/thử lại, tên/giá và liên kết chi tiết;
 trang chi tiết kiểm tra loading, dữ liệu không có tồn kho, 404 và lỗi/thử lại.
 Các test này không thay thế kiểm tra tích hợp với API và PostgreSQL.
@@ -185,11 +185,9 @@ Nhánh `main` được áp dụng branch protection với các chính sách bắ
 - Bắt buộc các status check CI (`web`, `api`) phải vượt qua (pass) thành công mới được phép merge.
 
 ### Minh chứng CI (Task 4.4)
-- **Link PR chạy CI thành công**: [Pull Request #24](https://github.com/nhom6cnpm/brewlite-a2/pull/24) (Job `web` vượt qua toàn bộ 4 bước: Install, Lint, Test, Build).
-- **Minh chứng pipeline phát hiện lỗi**:
-  - Thử nghiệm trên [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test để kiểm tra CI).
-  - Ảnh chụp màn hình CI phát hiện lỗi: ![CI phát hiện lỗi](docs/ci/ci-failure.png)
-  - Log chi tiết quá trình phát hiện lỗi: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt)
-  - Xem chi tiết tại tài liệu [docs/ci/README.md](docs/ci/README.md).
+- **CI chạy thành công**: [Pull Request #24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), [Workflow Run #42592007019](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592007019) — job `api` và `web` qua đủ 4 bước. Log: [docs/ci/ci-success-log.txt](docs/ci/ci-success-log.txt)
+- **CI phát hiện lỗi**: [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test), [Workflow Run #42592401582](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592401582) — job `web` dừng ở bước test. Log: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt), ảnh: [docs/ci/ci-failure.png](docs/ci/ci-failure.png)
+- **Branch protection khóa merge**: [Pull Request #26](https://github.com/nhom6cnpm/brewlite-a2/pull/26) — ảnh [docs/ci/ci-blocked-merge.png](docs/ci/ci-blocked-merge.png) chứng minh nút merge bị khóa khi check CI lỗi.
+- Chi tiết: [docs/ci/README.md](docs/ci/README.md)
 
 
