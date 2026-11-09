@@ -9,6 +9,11 @@ const products = [
 ];
 
 describe("Menu", () => {
+  it("minh chứng CI phát hiện lỗi (cố ý làm hỏng test)", () => {
+    // Cố ý thất bại để kiểm chứng quality gate của CI workflow
+    expect(true).toBe(false);
+  });
+
   it("hiển thị skeleton khi đang chờ API", () => {
     vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => {})));
     renderWithQuery(<MenuPage />);
