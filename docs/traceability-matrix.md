@@ -4,8 +4,8 @@ Cập nhật dần theo từng task: yêu cầu → use-case / user story → th
 
 | Mã yêu cầu | Use-case / User Story | Thiết kế / Sơ đồ | Code / API | Test |
 |---|---|---|---|---|
-| FR-01 | UC-01: Xem danh mục đồ uống (Menu) | docs/diagrams/usecase-overview.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01] | | |
-| FR-02 | UC-02: Xem chi tiết & tùy chọn (Size/Topping) | docs/diagrams/usecase-overview.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01] | | |
+| FR-01 | UC-01: Xem danh mục đồ uống (Menu) | docs/diagrams/usecase-overview.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01] | `src/products/products.controller.ts`, `src/products/products.service.ts`, `GET /products` | `src/products/products.controller.spec.ts`, `src/products/products.service.spec.ts` |
+| FR-02 | UC-02: Xem chi tiết & tùy chọn (Size/Topping) | docs/diagrams/usecase-overview.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01] | `src/products/products.controller.ts`, `src/products/products.service.ts`, `GET /products/:id` | `src/products/products.controller.spec.ts`, `src/products/products.service.spec.ts` |
 | FR-03 | UC-03: Quản lý giỏ hàng (Cart); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-overview.png, docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg) | | |
 | FR-04 | UC-04: Đăng ký & Đăng nhập (JWT); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-overview.png, docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01]; [Sequence-01](diagrams/sequence-checkout.svg) | | |
 | FR-05 | UC-05: Đặt đơn hàng (Giữ nguyên liệu 15p); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-overview.png, docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Class-01]; [Sequence-01](diagrams/sequence-checkout.svg) | | |
