@@ -1,0 +1,68 @@
+\subsection{Task 3.2 -- Deployment diagram}
+
+\subsubsection{Nền tảng triển khai}
+
+Nhóm chọn \textbf{Render} làm nền tảng production vì cung cấp Web Service và Managed PostgreSQL được bảo vệ trong mạng nội bộ, cấp chứng chỉ HTTPS tự động, hỗ trợ Container Registry GitHub Packages (\texttt{ghcr.io}) và tích hợp triển khai tự động qua Render Deploy Hook.
+Chi tiết quyết định xem tại \texttt{docs/architecture/adr/008-nen-tang-trien-khai.md}.
+
+\subsubsection{Deployment diagram}
+
+\begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=\linewidth]{docs/diagrams/deployment.png}
+  \caption{UML Deployment diagram -- BrewLite trên Render (Production)}
+  \label{fig:deployment}
+\end{figure}
+
+\subsubsection{Mô tả các node và ranh giới}
+
+\paragraph{Local (docker-compose)}
+Ba service chạy trên môi trường phát triển cục bộ:
+\begin{itemize}
+  \item \texttt{brewlite-web} -- Next.js :3000, kết nối API cục bộ qua \texttt{NEXT\_PUBLIC\_API\_URL=http://localhost:3001}.
+  \item \texttt{brewlite-api} -- NestJS :3001, kết nối database cục bộ qua \texttt{DATABASE\_URL}.
+  \item \texttt{brewlite-db} -- PostgreSQL 16 :5432, lưu trữ trên volume \texttt{pgdata}, health check qua \texttt{pg\_isready}.
+\end{itemize}
+
+\paragraph{CI (GitHub Actions)}
+Runner \texttt{ubuntu-latest} thực thi pipeline kiểm tra chất lượng: install $\to$ lint $\to$ test $\to$ build Docker image.
+Các biến môi trường \texttt{NEXT\_PUBLIC\_*} được truyền trực tiếp làm \texttt{--build-arg} cho Docker build để Next.js nhúng vào bundle tĩnh lúc đóng gói.
+Image sau khi build thành công được gắn tag (commit SHA/semver) và push lên Container Registry GitHub Packages (\texttt{ghcr.io}).
+Kế tiếp, CI kích hoạt Render Deploy Hook qua \texttt{curl} để Render tự động pull image mới nhất từ \texttt{ghcr.io} và triển khai lên Production.
+
+\paragraph{Production (Render)}
+\begin{itemize}
+  \item \textbf{Thiết bị người dùng} (\texttt{<<device>>}): Điện thoại hoặc máy tính chạy Trình duyệt Web / PWA, kết nối trực tiếp tới Render qua hai đường HTTPS :443 độc lập:
+    \begin{itemize}
+      \item \texttt{https://brewlite-web.onrender.com} phục vụ giao diện người dùng Next.js.
+      \item \texttt{https://brewlite-api.onrender.com} phục vụ các lời gọi REST API (hỗ trợ CORS) và kiểm tra sức khỏe (\texttt{GET /health}).
+    \end{itemize}
+  \item \textbf{brewlite-web} (Render Web Service): chạy Docker image từ \texttt{ghcr.io}, cổng nội bộ 3000.
+    Do Web Service miễn phí trên Render không thể nhận lưu lượng mạng nội bộ, các lời gọi server-side (SSR / Server proxy) từ web sang API được định tuyến qua URL công khai HTTPS: \texttt{API\_INTERNAL\_URL=https://brewlite-api.onrender.com}.
+    Health check: \texttt{GET /menu}.
+  \item \textbf{brewlite-api} (Render Web Service): chạy Docker image từ \texttt{ghcr.io}, cổng nội bộ 3001.
+    Health check: \texttt{GET /health} (HTTP 200, hoàn thiện ở Task 5.2).
+    Biến môi trường bí mật: \texttt{DATABASE\_URL} (Render Internal URL), \texttt{JWT\_SECRET}, \texttt{JWT\_EXPIRES\_IN}, \texttt{FRONTEND\_URL=https://brewlite-web.onrender.com}, \texttt{NODE\_ENV=production}, \texttt{ADMIN\_EMAIL}, \texttt{ADMIN\_PASSWORD}.
+  \item \textbf{brewlite-db} (Render Managed PostgreSQL): lưu trữ trên persistent volume, lắng nghe cổng 5432 và chỉ cho phép kết nối nội bộ từ \texttt{brewlite-api} qua Render Internal Database URL. Instance miễn phí có thời hạn 30 ngày (+14 ngày gia hạn trước khi xóa); nhóm chủ động chuẩn bị kịch bản seed và backup/restore để sẵn sàng tái tạo môi trường phục vụ nghiệm thu.
+\end{itemize}
+
+Mọi secret lưu trong Render Environment Variables, \textbf{không} xuất hiện trong repository hoặc log CI.
+
+\subsubsection{Truy vết}
+
+Mỗi node trong deployment diagram truy vết được tới thành phần trong kiến trúc (Task 3.1) và thư mục mã nguồn:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Node (Deployment)} & \textbf{Kiến trúc (Task 3.1)} & \textbf{Mã nguồn} \\
+\midrule
+Thiết bị người dùng & Actor Client (PWA / Browser) & Giao diện người dùng \\
+brewlite-web & Frontend Next.js (C4 Container) & \texttt{apps/web/} \\
+brewlite-api & Backend NestJS (C4 Container) & \texttt{apps/api/} \\
+brewlite-db  & PostgreSQL + TypeORM (C4 Container) & Migration trong \texttt{apps/api/src/migrations/} \\
+ghcr.io      & Container Registry & GitHub Packages (\texttt{ghcr.io}) \\
+GitHub Actions Runner & CI Pipeline & \texttt{.github/workflows/} \\
+\bottomrule
+\end{tabular}
+\end{center}
