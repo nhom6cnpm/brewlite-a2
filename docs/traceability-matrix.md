@@ -22,7 +22,7 @@ Cập nhật dần theo từng task: yêu cầu → use-case / user story → th
 | NFR-01 | UC-05, UC-09: Hiệu năng hệ thống & Xử lý đồng thời có kiểm chứng; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg); [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md) | | |
 | NFR-02 | UC-04, UC-09, UC-10, UC-11: Bảo mật dữ liệu & Phân quyền (Security, Locking); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg); [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md); [ADR-006](architecture/adr/006-jwt-va-phan-quyen-customer-admin.md) | | |
 | NFR-03 | UC-01..UC-08: Tính khả dụng & Mobile-first PWA tối thiểu; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Architecture-01](diagrams/architecture-c4.svg) | | |
-| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | [Architecture-01](diagrams/architecture-c4.svg); [ADR-001](architecture/adr/001-monorepo.md); [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md); [Deployment-01](diagrams/deployment.svg); [ADR-008](architecture/adr/008-nen-tang-trien-khai.md) | CI: [ci.yml](../.github/workflows/ci.yml) (pipeline CI: lint, test, build cho apps/web) | CI-T01 — GitHub Actions: check web tự động chạy khi PR/push (npm ci → eslint → vitest → next build), chặn merge khi lỗi |
+| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | [Architecture-01](diagrams/architecture-c4.svg); [ADR-001](architecture/adr/001-monorepo.md); [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md); [Deployment-01](diagrams/deployment.svg); [ADR-008](architecture/adr/008-nen-tang-trien-khai.md) | CI: [ci.yml](../.github/workflows/ci.yml) (pipeline CI: lint, test, build cho cả apps/api và apps/web) | CI-T01 — GitHub Actions: 2 check api và web tự động chạy khi PR/push (npm ci → lint → test → build), chặn merge khi có lỗi |
 
 ### Activity-01 — Task 2.1
 
@@ -87,8 +87,9 @@ Pipeline Continuous Integration (CI) tự động kích hoạt trên GitHub Acti
 Bắt buộc vượt qua toàn bộ quality gate (lint, test, build) trước khi merge.
 
 - File cấu hình: [ci.yml](../.github/workflows/ci.yml)
-- Job `web`: Node 20, thư mục `apps/web`, chạy `npm ci` → `npm run lint` (ESLint) → `npm test` (Vitest) → `npm run build` (Next.js).
-- Bắt buộc branch protection: check `web` (và `api`) phải xanh mới được merge.
+- Job `api` (Phúc phụ trách): Node 20, thư mục `apps/api`, chạy `npm ci` → `npm run lint` (Oxlint) → `npm test` (Jest) → `npm run build` (NestJS).
+- Job `web` (Lương phụ trách): Node 20, thư mục `apps/web`, chạy `npm ci` → `npm run lint` (ESLint) → `npm test` (Vitest) → `npm run build` (Next.js).
+- Bắt buộc branch protection: cả 2 check `api` và `web` phải xanh mới được merge.
 - Minh chứng CI: [docs/ci/README.md](ci/README.md) (PR thành công [#24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), minh chứng phát hiện lỗi trên PR [#25](https://github.com/nhom6cnpm/brewlite-a2/pull/25)).
 
 

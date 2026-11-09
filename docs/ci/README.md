@@ -11,13 +11,22 @@ Tài liệu lưu trữ minh chứng thực hiện theo yêu cầu Assignment 2 (
 - **Workflow Run**: [GitHub Actions Run #42592007019](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592007019)
 - **Nhánh thực hiện**: `ci/task-4-4-pipeline` nhắm vào `main`
 - **Kết quả quality gate**:
-  - `Checkout repository`: [Success]
-  - `Setup Node.js 20` (cache npm): [Success]
-  - `Install dependencies` (`npm ci`): [Success]
-  - `Run lint` (`npm run lint` — ESLint): [Success — 0 errors]
-  - `Run unit tests` (`npm test` — Vitest): [Success — 2 test files, 11 tests passed]
-  - `Build web application` (`npm run build` — Next.js): [Success — production build compiled]
-  - **Trạng thái Check `web`**: **Pass (Green checkmark)**
+  - **Job `api` (Phúc phụ trách)**:
+    - `Checkout repository`: [Success]
+    - `Setup Node.js 20` (cache npm): [Success]
+    - `Install dependencies` (`npm ci`): [Success]
+    - `Run lint` (`npm run lint` — Oxlint `--type-aware`): [Success — 0 errors]
+    - `Run unit tests` (`npm test` — Jest): [Success — 2 suites, 8 tests passed]
+    - `Build API application` (`npm run build` — NestJS): [Success — production build compiled]
+    - **Trạng thái Check `api`**: **Pass (Green checkmark)**
+  - **Job `web` (Lương phụ trách)**:
+    - `Checkout repository`: [Success]
+    - `Setup Node.js 20` (cache npm): [Success]
+    - `Install dependencies` (`npm ci`): [Success]
+    - `Run lint` (`npm run lint` — ESLint): [Success — 0 errors]
+    - `Run unit tests` (`npm test` — Vitest): [Success — 2 test files, 11 tests passed]
+    - `Build web application` (`npm run build` — Next.js): [Success — production build compiled]
+    - **Trạng thái Check `web`**: **Pass (Green checkmark)**
 
 ---
 
