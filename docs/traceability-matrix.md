@@ -22,7 +22,7 @@ Cập nhật dần theo từng task: yêu cầu → use-case / user story → th
 | NFR-01 | UC-05, UC-09: Hiệu năng hệ thống & Xử lý đồng thời có kiểm chứng; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg); [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md) | | |
 | NFR-02 | UC-04, UC-09, UC-10, UC-11: Bảo mật dữ liệu & Phân quyền (Security, Locking); UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Sequence-01](diagrams/sequence-checkout.svg); [ADR-005](architecture/adr/005-idempotency-key-va-optimistic-locking.md); [ADR-006](architecture/adr/006-jwt-va-phan-quyen-customer-admin.md) | | |
 | NFR-03 | UC-01..UC-08: Tính khả dụng & Mobile-first PWA tối thiểu; UC-CK: Đặt và thanh toán đơn hàng (Task 1.3) | docs/diagrams/usecase-checkout.png; [Activity-01](diagrams/activity-checkout.svg); [Architecture-01](diagrams/architecture-c4.svg) | | |
-| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | [Architecture-01](diagrams/architecture-c4.svg); [ADR-001](architecture/adr/001-monorepo.md); [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md); [Deployment-01](diagrams/deployment.svg); [ADR-008](architecture/adr/008-nen-tang-trien-khai.md) | CI: [ci.yml](../.github/workflows/ci.yml) (pipeline CI: lint, test, build cho cả apps/api và apps/web) | CI-T01 — GitHub Actions: 2 check api và web tự động chạy khi PR/push (npm ci → lint → test → build), chặn merge khi có lỗi |
+| NFR-04 | Toàn hệ thống: Khả năng triển khai Docker & CI/CD | [Architecture-01](diagrams/architecture-c4.svg); [ADR-001](architecture/adr/001-monorepo.md); [ADR-003](architecture/adr/003-postgresql-typeorm-migration.md); [Deployment-01](diagrams/deployment.svg); [ADR-008](architecture/adr/008-nen-tang-trien-khai.md) | CI: [ci.yml](../.github/workflows/ci.yml); Docker: [docker-compose.yml](../docker-compose.yml), [api/Dockerfile](../apps/api/Dockerfile), [web/Dockerfile](../apps/web/Dockerfile); API: [GET /health](../apps/api/src/health/health.controller.ts) ([service](../apps/api/src/health/health.service.ts)) | CI-T01 — GitHub Actions (check `api`, `web`); API-T03 — [health controller](../apps/api/src/health/health.controller.spec.ts), [health service](../apps/api/src/health/health.service.spec.ts): trả 200 `{ status: "ok" }` khi DB sẵn sàng, 503 khi mất kết nối DB |
 
 ### Activity-01 — Task 2.1
 
@@ -92,3 +92,10 @@ Bắt buộc vượt qua toàn bộ quality gate (lint, test, build) trước kh
 - Bắt buộc branch protection: cả 2 check `api` và `web` phải xanh mới được merge.
 - Minh chứng CI: [docs/ci/README.md](ci/README.md) (PR thành công [#24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), minh chứng phát hiện lỗi trên PR [#25](https://github.com/nhom6cnpm/brewlite-a2/pull/25)).
 
+### Docker & Healthcheck — Task 5.2
+
+Cấu hình đóng gói container dùng **Node 24** (`node:24-alpine`) và điều phối chạy local bằng một lệnh `docker compose up` cho đủ 3 dịch vụ (`postgres`, `api`, `web`), tự động chạy migration/seed khi khởi động API.
+
+- Compose & Dockerfiles: [docker-compose.yml](../docker-compose.yml), [apps/api/Dockerfile](../apps/api/Dockerfile), [apps/web/Dockerfile](../apps/web/Dockerfile)
+- Healthcheck endpoint: [GET /health](../apps/api/src/health/health.controller.ts), [HealthService](../apps/api/src/health/health.service.ts) (trả `200 { "status": "ok" }` khi kết nối DB thành công, `503` khi DB lỗi)
+- Unit test (`API-T03`): [health.controller.spec.ts](../apps/api/src/health/health.controller.spec.ts), [health.service.spec.ts](../apps/api/src/health/health.service.spec.ts)

@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: brewlite-a2-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-brewlite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brewlite}
+      POSTGRES_DB: ${POSTGRES_DB:-brewlite}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-brewlite} -d ${POSTGRES_DB:-brewlite}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: brewlite-a2-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-brewlite}:${POSTGRES_PASSWORD:-brewlite}@postgres:5432/${POSTGRES_DB:-brewlite}
+      JWT_SECRET: ${JWT_SECRET:-brewlite_jwt_secret_dev}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@brewlite.vn}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      ORDER_PAYMENT_TIMEOUT_MINUTES: ${ORDER_PAYMENT_TIMEOUT_MINUTES:-15}
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES: ${ORDER_PAYMENT_TIMEOUT_MINUTES:-15}
+    container_name: brewlite-a2-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES: ${ORDER_PAYMENT_TIMEOUT_MINUTES:-15}
+      API_INTERNAL_URL: http://api:3001
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/menu').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  pgdata:
+
