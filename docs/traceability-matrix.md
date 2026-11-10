@@ -90,5 +90,5 @@ Bắt buộc vượt qua toàn bộ quality gate (lint, test, build) trước kh
 - Job `api` (Phúc phụ trách): Node 24, thư mục `apps/api`, chạy `npm ci` → `npm run lint` (Oxlint) → `npm test` (Jest) → `npm run build` (NestJS).
 - Job `web` (Lương phụ trách): Node 24, thư mục `apps/web`, chạy `npm ci` → `npm run lint` (ESLint) → `npm test` (Vitest) → `npm run build` (Next.js).
 - Bắt buộc branch protection: cả 2 check `api` và `web` phải xanh mới được merge.
-- Minh chứng CI: [docs/ci/README.md](ci/README.md) (PR thành công [#24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), minh chứng phát hiện lỗi trên PR [#25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) và khóa merge trên PR [#26](https://github.com/nhom6cnpm/brewlite-a2/pull/26)).
+- Minh chứng CI: [docs/ci/README.md](ci/README.md) (PR thành công [#24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), minh chứng phát hiện lỗi trên PR [#25](https://github.com/nhom6cnpm/brewlite-a2/pull/25)).
 

@@ -45,11 +45,4 @@ Tài liệu lưu trữ minh chứng thực hiện theo yêu cầu Assignment 2 (
 - **Ảnh chụp màn hình thực tế từ giao diện GitHub Actions**:
   ![CI Pipeline Failure](ci-failure.png)
 
----
-
-## 3. Minh chứng Branch Protection khóa merge khi test thất bại
-- **Thử nghiệm khóa merge**: Mở PR [#26 — [DEMO-FAIL] test: cố ý làm hỏng test để minh chứng nút merge bị khóa bởi branch protection](https://github.com/nhom6cnpm/brewlite-a2/pull/26) trên nhánh `test/ci-blocked-demo`.
-- **Kết quả bảo vệ nhánh**: Quy tắc branch protection trên nhánh `main` nhận diện check `web` thất bại và lập tức chuyển trạng thái sang **Merging is blocked**, vô hiệu hóa nút merge để bảo vệ nhánh `main`.
-- **Ảnh chụp màn hình thực tế giao diện Pull Request bị khóa merge**:
-  ![Merging is blocked](ci-blocked-merge.png)
-- **Xử lý sau thử nghiệm**: Cả hai PR thử nghiệm #25 và #26 đều đã được đóng lại theo đúng quy trình.
+- **Xử lý sau thử nghiệm**: PR thử nghiệm #25 đã được đóng sau khi lấy minh chứng.

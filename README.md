@@ -187,7 +187,6 @@ Nhánh `main` được áp dụng branch protection với các chính sách bắ
 ### Minh chứng CI (Task 4.4)
 - **CI chạy thành công**: [Pull Request #24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), [Workflow Run #42592007019](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592007019) — job `api` và `web` qua đủ 4 bước. Log: [docs/ci/ci-success-log.txt](docs/ci/ci-success-log.txt)
 - **CI phát hiện lỗi**: [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test), [Workflow Run #42592401582](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592401582) — job `web` dừng ở bước test. Log: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt), ảnh: [docs/ci/ci-failure.png](docs/ci/ci-failure.png)
-- **Branch protection khóa merge**: [Pull Request #26](https://github.com/nhom6cnpm/brewlite-a2/pull/26) — ảnh [docs/ci/ci-blocked-merge.png](docs/ci/ci-blocked-merge.png) chứng minh nút merge bị khóa khi check CI lỗi.
 - Chi tiết: [docs/ci/README.md](docs/ci/README.md)
 
 
