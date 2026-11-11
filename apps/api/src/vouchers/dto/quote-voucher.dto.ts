@@ -16,6 +16,12 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  SIZE_IDS,
+  TOPPING_IDS,
+  type ProductSize,
+  type ToppingId,
+} from '../../pricing/product-options';
 
 /** Same item fields as Mai's CartItem, deliberately excludes client prices. */
 export class VoucherCartItemDto {
@@ -25,18 +31,24 @@ export class VoucherCartItemDto {
   @MaxLength(64)
   productId!: string;
 
-  @ApiProperty({ enum: ['S', 'M', 'L'] })
-  @IsIn(['S', 'M', 'L'], { message: 'Size phải thuộc S, M hoặc L.' })
-  size!: 'S' | 'M' | 'L';
+  @ApiProperty({ enum: SIZE_IDS })
+  @IsIn(SIZE_IDS, { message: 'Size phải thuộc S, M hoặc L.' })
+  size!: ProductSize;
 
-  @ApiProperty({ type: [String], example: ['cream'] })
+  @ApiProperty({
+    type: String,
+    enum: TOPPING_IDS,
+    isArray: true,
+    example: ['cream'],
+  })
   @IsArray()
-  @ArrayMaxSize(20)
+  @ArrayMaxSize(TOPPING_IDS.length)
   @ArrayUnique()
   @IsString({ each: true })
   @MinLength(1, { each: true })
   @MaxLength(64, { each: true })
-  toppingIds!: string[];
+  @IsIn(TOPPING_IDS, { each: true, message: 'Topping không hợp lệ.' })
+  toppingIds!: ToppingId[];
 
   @ApiProperty({ minimum: 1, maximum: 99, example: 1 })
   @IsInt()

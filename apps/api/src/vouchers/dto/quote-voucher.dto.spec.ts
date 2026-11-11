@@ -34,6 +34,7 @@ describe('API-T51 — voucher input validation', () => {
   it('rejects duplicate toppings, invalid sizes and malformed codes', async () => {
     for (const payload of [
       { items: [{ ...item, toppingIds: ['cream', 'cream'] }] },
+      { items: [{ ...item, toppingIds: ['not-a-topping'] }] },
       { items: [{ ...item, size: 'XL' }] },
       { items: [item], voucherCode: 'BAD CODE' },
       { items: [item], voucherCode: 'X'.repeat(33) },

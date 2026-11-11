@@ -2,13 +2,20 @@ import { Test } from '@nestjs/testing';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { VouchersController } from './vouchers.controller';
 import { VoucherCatalogService } from './voucher-catalog.service';
+import { VoucherCartQuoteService } from './voucher-cart-quote.service';
 
 describe('API-T54 — public catalogue HTTP/Swagger', () => {
   it('publishes GET /vouchers and the catalogue response schema', async () => {
     const catalog = { list: jest.fn(async () => []) };
     const module = await Test.createTestingModule({
       controllers: [VouchersController],
-      providers: [{ provide: VoucherCatalogService, useValue: catalog }],
+      providers: [
+        { provide: VoucherCatalogService, useValue: catalog },
+        {
+          provide: VoucherCartQuoteService,
+          useValue: { quoteGuest: jest.fn() },
+        },
+      ],
     }).compile();
     const app = module.createNestApplication();
     try {
@@ -19,8 +26,14 @@ describe('API-T54 — public catalogue HTTP/Swagger', () => {
       );
       expect(document.paths['/vouchers'].get?.tags).toContain('vouchers');
       expect(document.components?.schemas?.PublicVoucherDto).toBeDefined();
-      // An unfinished authenticated quote route must not be exposed as a working API.
-      expect(document.paths['/vouchers/quote']).toBeUndefined();
+      expect(
+        document.paths['/vouchers/quote'].post?.responses['200'],
+      ).toBeDefined();
+      expect(
+        document.paths['/vouchers/quote'].post?.responses['503'],
+      ).toBeDefined();
+      expect(document.components?.schemas?.VoucherQuoteDto).toBeDefined();
+      expect(document.components?.schemas?.QuoteVoucherDto).toBeDefined();
       expect(await module.get(VouchersController).list()).toEqual([]);
       expect(catalog.list).toHaveBeenCalledTimes(1);
     } finally {

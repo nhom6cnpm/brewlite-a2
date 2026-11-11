@@ -99,10 +99,12 @@ Xem `.env.example`. **Không commit file `.env`.**
 
 ## Voucher Sprint 2 — Issue #31 (đang triển khai)
 
-Phần độc lập gồm danh sách mã công khai `GET /vouchers` (Swagger tại `/api/docs`),
-migration/4 mã mẫu, logic giảm giá và lượt dùng, component chọn/nhập mã cùng unit test.
-Chưa ghép JWT, bảng lượt dùng/User/Order, `POST /vouchers/quote` và trang giỏ;
-chưa nghiệm thu toàn luồng. Xem [phạm vi, mã mẫu và các bước phối hợp](docs/task-5-1-vouchers.md).
+Phần độc lập gồm `GET /vouchers`, `POST /vouchers/quote` cho khách chưa đăng nhập
+(Swagger tại `/api/docs`), migration/4 mã mẫu, giá server theo size/topping A1,
+logic lượt dùng, component chọn/nhập mã và test. Báo giá không giữ lượt/nguyên liệu;
+chưa ghép JWT, bảng lượt dùng/User/Order và trang giỏ. Request báo giá có Authorization
+hiện trả 503 rõ lý do cho đến khi tích hợp tài khoản. Chưa nghiệm thu toàn luồng.
+Xem [phạm vi, mã mẫu và kiểm tra PostgreSQL](docs/task-5-1-vouchers.md).
 
 ## Chạy bằng Docker
 
