@@ -1,63 +1,79 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ProductsService } from './products.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
 import { Product } from './product.entity';
+import { InventoryService } from '../inventory/inventory.service';
+import type { OrderLine } from '../inventory/recipe-calculator';
+import type { SelectionAvailabilityQuery } from './dto/availability.dto';
+import type {
+  CartAvailabilityResponseDto,
+  SelectionAvailabilityResponseDto,
+} from './availability-response.dto';
 
-describe('ProductsService', () => {
-  let service: ProductsService;
-  let repo: Repository<Product>;
+// `stock` = cups still sellable (size S, no topping), computed from ingredients
+export interface ProductWithStock {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  stock: number;
+}
 
-  const mockProducts: Product[] = [
-    { id: 'p1', name: 'Americano', price: 30000, imageUrl: '/images/americano.jpg' },
-    { id: 'p2', name: 'Bạc xỉu', price: 32000, imageUrl: '/images/bac-xiu.jpg' },
-  ];
-
-  const mockRepository = {
-    find: jest.fn().mockResolvedValue(mockProducts),
-    findOneBy: jest.fn().mockImplementation((query) => {
-      const found = mockProducts.find((p) => p.id === query.id);
-      return Promise.resolve(found || null);
-    }),
-  };
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ProductsService,
-        {
-          provide: getRepositoryToken(Product),
-          useValue: mockRepository,
-        },
-      ],
-    }).compile();
-
-    service = module.get<ProductsService>(ProductsService);
-    repo = module.get<Repository<Product>>(getRepositoryToken(Product));
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  describe('findAll', () => {
-    it('should return an array of products', async () => {
-      const result = await service.findAll();
-      expect(result).toEqual(mockProducts);
-      expect(repo.find).toHaveBeenCalled();
-    });
-  });
-
-  describe('findById', () => {
-    it('should return a product if found', async () => {
-      const result = await service.findById('p1');
-      expect(result).toEqual(mockProducts[0]);
-      expect(repo.findOneBy).toHaveBeenCalledWith({ id: 'p1' });
-    });
-
-    it('should return null if product not found', async () => {
-      const result = await service.findById('invalid');
-      expect(result).toBeNull();
-    });
-  });
+const withStock = (product: Product, stock: number): ProductWithStock => ({
+  id: product.id,
+  name: product.name,
+  price: product.price,
+  imageUrl: product.imageUrl,
+  stock,
 });
+
+// Products, ingredients and recipes are seeded by migration 1761650000000-AddInventory
+@Injectable()
+export class ProductsService {
+  constructor(
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    private readonly inventoryService: InventoryService,
+  ) {}
+
+  async findAll(): Promise<ProductWithStock[]> {
+    const products = await this.productRepository.find({
+      order: { id: 'ASC' },
+    });
+    const cups = await this.inventoryService.getSellableCups(
+      products.map((p) => p.id),
+    );
+    return products.map((p) => withStock(p, cups.get(p.id) ?? 0));
+  }
+
+  async findById(id: string): Promise<ProductWithStock | null> {
+    const product = await this.productRepository.findOneBy({ id });
+    if (!product) {
+      return null;
+    }
+    const cups = await this.inventoryService.getSellableCups([id]);
+    return withStock(product, cups.get(id) ?? 0);
+  }
+
+  async getCartAvailability(
+    lines: readonly OrderLine[],
+  ): Promise<CartAvailabilityResponseDto> {
+    const ids = [...new Set(lines.map((line) => line.productId))];
+    const products = await this.productRepository.findBy({ id: In(ids) });
+    if (products.length !== ids.length) {
+      throw new NotFoundException('Sản phẩm không tồn tại');
+    }
+    return this.inventoryService.getAvailability(lines);
+  }
+
+  async getSelectionAvailability(
+    id: string,
+    query: SelectionAvailabilityQuery,
+  ): Promise<SelectionAvailabilityResponseDto> {
+    const result = await this.getCartAvailability([
+      { productId: id, size: query.size, toppingIds: query.toppingIds, qty: 1 },
+    ]);
+    const { productId, size, toppingIds, stock } = result.items[0];
+    return { productId, size, toppingIds, stock };
+  }
+}
