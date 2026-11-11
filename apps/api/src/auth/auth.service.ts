@@ -110,5 +110,20 @@ export class AuthService {
       role: user.role ?? 'CUSTOMER',
     };
   }
+
+  async findAllUsers(): Promise<
+    Array<UserProfileResponse & { createdAt: Date }>
+  > {
+    const users = await this.userRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      loyaltyPoints: user.loyaltyPoints ?? 0,
+      role: user.role ?? 'CUSTOMER',
+      createdAt: user.createdAt,
+    }));
+  }
 }
 

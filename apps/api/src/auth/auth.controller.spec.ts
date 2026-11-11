@@ -27,6 +27,15 @@ describe('AuthController', () => {
       loyaltyPoints: 0,
       role: 'CUSTOMER',
     }),
+    findAllUsers: jest.fn().mockResolvedValue([
+      {
+        id: 'uuid-1',
+        email: 'test@brewlite.com',
+        loyaltyPoints: 0,
+        role: 'CUSTOMER',
+        createdAt: new Date(),
+      },
+    ]),
   };
 
   beforeEach(async () => {
@@ -68,6 +77,12 @@ describe('AuthController', () => {
     const res = await controller.getProfile(req);
     expect(res.id).toBe('uuid-1');
     expect(mockAuthService.getProfile).toHaveBeenCalledWith('uuid-1');
+  });
+
+  it('getAllUsers calls authService.findAllUsers', async () => {
+    const res = await controller.getAllUsers();
+    expect(res).toHaveLength(1);
+    expect(mockAuthService.findAllUsers).toHaveBeenCalled();
   });
 });
 

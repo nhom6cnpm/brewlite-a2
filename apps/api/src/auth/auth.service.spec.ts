@@ -37,6 +37,7 @@ describe('AuthService', () => {
           return null;
         },
       ),
+    find: jest.fn().mockImplementation(async () => [...mockUsers]),
   };
 
   beforeEach(async () => {
@@ -164,6 +165,20 @@ describe('AuthService', () => {
       await expect(service.getProfile('invalid-id')).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe('findAllUsers', () => {
+    it('returns all registered users without passwordHash', async () => {
+      await service.register({
+        email: 'user1@brewlite.com',
+        password: 'password123',
+      });
+
+      const list = await service.findAllUsers();
+      expect(list.length).toBe(1);
+      expect(list[0].email).toBe('user1@brewlite.com');
+      expect((list[0] as Record<string, unknown>).passwordHash).toBeUndefined();
     });
   });
 });

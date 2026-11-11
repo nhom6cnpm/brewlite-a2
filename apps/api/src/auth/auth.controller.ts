@@ -18,6 +18,8 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { RolesGuard } from './roles.guard';
+import { Roles } from './roles';
 import type { AuthenticatedUser } from './jwt.strategy';
 
 @ApiTags('Auth')
@@ -61,5 +63,24 @@ export class AuthController {
   async getProfile(@Req() req: { user: AuthenticatedUser }) {
     return this.authService.getProfile(req.user.userId);
   }
-}
 
+  @Get('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Xem danh sách toàn bộ tài khoản trong hệ thống (Chỉ ADMIN)',
+  })
+  @ApiResponse({ status: 200, description: 'Danh sách tài khoản hệ thống' })
+  @ApiResponse({
+    status: 401,
+    description: 'Chưa đăng nhập hoặc token không hợp lệ',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Không đủ quyền truy cập (Yêu cầu tài khoản ADMIN)',
+  })
+  async getAllUsers() {
+    return this.authService.findAllUsers();
+  }
+}
