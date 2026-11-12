@@ -9,7 +9,7 @@ export interface CartItem {
   size: ProductSize;
   toppingIds: string[];
   qty: number;
-  unitPrice: number;
+  unitPrice: number; 
 }
 
 // Khóa nhận diện "cùng món + cùng size + cùng topping" (không phụ thuộc thứ tự topping)
