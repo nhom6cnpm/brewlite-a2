@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import CartBadge from "./CartBadge";
 
 export default function Header() {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export default function Header() {
             )}
           >
             Menu
+            <CartBadge />
           </Link>
         </nav>
       </div>
