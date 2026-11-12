@@ -181,6 +181,40 @@ kiểm tra menu loading/rỗng/lỗi/thử lại, tên/giá và liên kết chi 
 trang chi tiết kiểm tra loading, dữ liệu không có tồn kho, 404 và lỗi/thử lại.
 Các test này không thay thế kiểm tra tích hợp với API và PostgreSQL.
 
+## Chi tiết món — Sprint 2, đợt 1 (Issue #29)
+
+Trang `/products/[id]` bổ sung size S/M/L, topping Kem béo/Trân châu,
+số lượng và giá theo lựa chọn. Phụ phí dùng chung với store giỏ hàng:
+M +5.000đ, L +10.000đ, mỗi topping +5.000đ. Backend vẫn phải tính lại giá
+chính thức khi tạo đơn ở đợt 2.
+
+- `POST /products/availability` nhận `{ items: [{ productId, size, toppingIds, qty }] }`;
+  phản hồi `{ available, items: [{ productId, size, toppingIds, qty, stock }] }`.
+  `stock` là số ly tối đa của dòng sau khi dành nguyên liệu cho các dòng còn lại.
+- Trang gửi cả các dòng đang có trong giỏ và lựa chọn mới, cập nhật khi đổi tùy chọn,
+  tự kiểm tra lại mỗi 15 giây/khi quay lại tab. Trước khi thêm, kiểm tra lại với
+  đúng số lượng khách chọn. Hết/vượt nguyên liệu hoặc tổng cùng lựa chọn quá 99 ly
+  thì khóa thêm; lỗi API hiện thông báo và cho thử lại.
+- Dữ liệu availability được kiểm tra cấu trúc, đúng lựa chọn và tính nhất quán.
+  Giao diện không thay dữ liệu thật bằng mẫu khi API lỗi hoặc chưa có endpoint.
+- Thêm món dùng `store/useCart.ts` (Zustand persist); chỉ lưu giỏ ở trình duyệt,
+  chưa tạo đơn hay giữ nguyên liệu trong database. Trang giỏ và badge do Issue #30
+  phụ trách, thanh toán thuộc đợt 2 (#36).
+
+**Nguồn và phụ thuộc:** chuyển cách chọn món/hook/API từ A1
+`Bai_Tap_Lon_CNPM` commit `92a43f4`, sửa theo giao diện A2. Trang chi tiết dùng
+`store/useCart.ts`, `lib/productOptions.ts` và `hooks/useHydrated.ts` dùng chung
+đã có trên `main`; dependency giỏ hàng là `zustand ^5.1.0`.
+API kho Issue #28 của Tài vẫn đang được triển khai; chỉ nghiệm thu toàn luồng
+sau khi API availability vào `main` và được kiểm tra cùng Web/PostgreSQL thật.
+
+**Kiểm tra:** `npm run lint`, `npm test`, `npm run build` trong `apps/web`, Node 24.
+Component test dùng phản hồi fetch giả lập để kiểm tra đúng giá, số ly, lỗi/thử lại,
+gửi đúng toàn giỏ, thay đổi kho/giỏ khi đang kiểm tra, bấm lặp và giới hạn 99 ly.
+Test API client kiểm tra payload, AbortSignal, lỗi backend và dữ liệu trả về sai.
+Các mã `WEB-T20..T31`, `WEB-T40..T45` được ghi trong ma trận truy vết.
+Các test này chưa chứng minh API/PostgreSQL thật chạy cùng giao diện.
+
 ## Continuous Integration (CI)
 
 Dự án áp dụng quy trình kiểm thử và tích hợp liên tục (CI) tự động bằng GitHub Actions thông qua workflow [ci.yml](.github/workflows/ci.yml).
