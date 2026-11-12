@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
-import { useCart, getLineKey, selectTotalPrice } from "@/store/useCart";
+import { useCart, getLineKey } from "@/store/useCart";
 import { useHydrated } from "@/hooks/useHydrated";
 import { useAvailability } from "@/hooks/useAvailability";
 import { formatPrice } from "@/lib/formatPrice";
 import { toppingOptions } from "@/lib/productOptions";
-import PriceSummary from "@/components/PriceSummary";
+import CartVoucherSummary from "@/components/CartVoucherSummary";
 
 const toppingLabel = (ids: string[]) =>
   ids.length
@@ -17,7 +17,6 @@ const toppingLabel = (ids: string[]) =>
 export default function CartPage() {
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);
-  const total = useCart(selectTotalPrice);
   const setQty = useCart((s) => s.setQty);
   const removeItem = useCart((s) => s.removeItem);
   const availability = useAvailability(items, hydrated);
@@ -152,9 +151,7 @@ export default function CartPage() {
               )}
             </div>
 
-            <PriceSummary
-              totals={{ subtotal: total, discount: 0, total }}
-            />
+            <CartVoucherSummary />
 
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
