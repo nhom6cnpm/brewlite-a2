@@ -7,6 +7,7 @@ import { useState } from "react";
 import { formatPrice } from "@/lib/formatPrice";
 import { getProduct, ProductNotFoundError } from "@/lib/products";
 import type { Product } from "@/types/product";
+import ProductOptions from "@/components/ProductOptions";
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -100,12 +101,12 @@ function ProductDetails({ id }: { id: string }) {
           </button>
         </div>
       )}
-      <ProductInfo key={product.id} product={product} />
+      <ProductInfo key={product.id} product={product} disabled={isFetching || Boolean(error)} />
     </>
   );
 }
 
-function ProductInfo({ product }: { product: Product }) {
+function ProductInfo({ product, disabled }: { product: Product; disabled: boolean }) {
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
@@ -139,6 +140,7 @@ function ProductInfo({ product }: { product: Product }) {
         <p className="mt-4 text-2xl font-semibold text-amber-800">
           {formatPrice(product.price)}
         </p>
+        <ProductOptions product={product} disabled={disabled} />
       </div>
     </section>
   );
