@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -36,15 +35,11 @@ async function bootstrap() {
     jsonDocumentUrl: 'api/docs-json',
   });
 
-  // Đảm bảo endpoint /api/docs-json luôn phục vụ JSON spec
-  const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/api/docs-json', (_req: Request, res: Response) => {
-    res.json(document);
-  });
-
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`BrewLite API running on port ${port}`);
-  console.log(`Swagger documentation available at http://localhost:${port}/api/docs`);
+  console.log(
+    `Swagger documentation available at http://localhost:${port}/api/docs`,
+  );
 }
 void bootstrap();
