@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './health/health.module';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/product.entity';
+import { AuthModule } from './auth/auth.module';
+import { User } from './auth/user.entity';
 
 @Module({
   imports: [
@@ -16,7 +18,7 @@ import { Product } from './products/product.entity';
         url:
           configService.get<string>('DATABASE_URL') ??
           'postgresql://brewlite:brewlite@localhost:5432/brewlite',
-        entities: [Product],
+        entities: [Product, User],
         // Migrations run automatically on app startup (also handles seed order)
         migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
         migrationsRun: true,
@@ -26,6 +28,7 @@ import { Product } from './products/product.entity';
     }),
     HealthModule,
     ProductsModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
