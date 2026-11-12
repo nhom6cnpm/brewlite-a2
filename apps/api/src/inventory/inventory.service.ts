@@ -14,7 +14,7 @@ import {
   type InventoryOverview,
   type IngredientRow,
   type ProductRow,
-} from './ingredient-overview.';
+}  from './ingredient-overview';
 import {
   type IngredientAmounts,
   type OrderLine,

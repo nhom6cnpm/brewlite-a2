@@ -49,12 +49,12 @@ export class AddInventory1761650000000 implements MigrationInterface {
     // Products (moved from ProductsService startup seed; keeps existing rows)
     await queryRunner.query(`
       INSERT INTO "products" ("id", "name", "price", "imageUrl", "stock") VALUES
-        ('1', 'Cà phê sữa', 35000, '/images/coffee.jpg', 0),
-        ('2', 'Americano', 40000, '/images/americano.jpg', 0),
-        ('3', 'Cappuccino', 45000, '/images/cappuccino.jpg', 0),
-        ('4', 'Trà đào', 39000, '/images/peach-tea.jpg', 0),
-        ('5', 'Trà vải', 39000, '/images/lychee-tea.jpg', 0),
-        ('6', 'Bạc xỉu', 35000, '/images/bac-xiu.jpg', 0)
+        ('p1', 'Cà phê sữa', 35000, '/images/coffee.jpg', 0),
+        ('p2', 'Americano', 40000, '/images/americano.jpg', 0),
+        ('p3', 'Cappuccino', 45000, '/images/cappuccino.jpg', 0),
+        ('p4', 'Trà đào', 39000, '/images/peach-tea.jpg', 0),
+        ('p5', 'Trà vải', 39000, '/images/lychee-tea.jpg', 0),
+        ('p6', 'Bạc xỉu', 35000, '/images/bac-xiu.jpg', 0)
       ON CONFLICT ("id") DO NOTHING
     `);
 
@@ -75,12 +75,12 @@ export class AddInventory1761650000000 implements MigrationInterface {
     // Recipes for one cup at size S (M ×1.25, L ×1.5 — see recipe-calculator.ts)
     await queryRunner.query(`
       INSERT INTO "recipe_items" ("productId", "ingredientId", "amount") VALUES
-        ('1', 'coffee', 20), ('1', 'condensed-milk', 30),
-        ('2', 'coffee', 18),
-        ('3', 'coffee', 18), ('3', 'fresh-milk', 120),
-        ('4', 'tea', 5), ('4', 'peach', 60), ('4', 'sugar-syrup', 20),
-        ('5', 'tea', 5), ('5', 'lychee', 60), ('5', 'sugar-syrup', 20),
-        ('6', 'coffee', 10), ('6', 'condensed-milk', 40), ('6', 'fresh-milk', 60)
+        ('p1', 'coffee', 20), ('p1', 'condensed-milk', 30),
+        ('p2', 'coffee', 18),
+        ('p3', 'coffee', 18), ('p3', 'fresh-milk', 120),
+        ('p4', 'tea', 5), ('p4', 'peach', 60), ('p4', 'sugar-syrup', 20),
+        ('p5', 'tea', 5), ('p5', 'lychee', 60), ('p5', 'sugar-syrup', 20),
+        ('p6', 'coffee', 10), ('p6', 'condensed-milk', 40), ('p6', 'fresh-milk', 60)
     `);
 
     // Topping ids match frontend/src/lib/productOptions.ts and orders/pricing.ts
