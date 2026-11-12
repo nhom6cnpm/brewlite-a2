@@ -1,9 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-// Task 10b: recipe-based inventory.
-// - ingredients / recipe_items / topping_recipes tables + sample data
-// - products are seeded here (recipes reference them), so the app no longer seeds on startup
-// - products.stock is removed: stock is now computed from ingredients
+// Tồn kho theo nguyên liệu (chuyển từ A1, sửa theo A2):
+// - tạo bảng ingredients / recipe_items / topping_recipes + dữ liệu mẫu
+// - món đã được seed ở InitialProducts (p1..p6); bảng products không có cột stock,
+//   số ly còn bán được tính từ nguyên liệu
 export class AddInventory1761650000000 implements MigrationInterface {
   name = 'AddInventory1761650000000';
 
@@ -46,18 +46,6 @@ export class AddInventory1761650000000 implements MigrationInterface {
       )
     `);
 
-    // Products (moved from ProductsService startup seed; keeps existing rows)
-    await queryRunner.query(`
-      INSERT INTO "products" ("id", "name", "price", "imageUrl", "stock") VALUES
-        ('p1', 'Cà phê sữa', 35000, '/images/coffee.jpg', 0),
-        ('p2', 'Americano', 40000, '/images/americano.jpg', 0),
-        ('p3', 'Cappuccino', 45000, '/images/cappuccino.jpg', 0),
-        ('p4', 'Trà đào', 39000, '/images/peach-tea.jpg', 0),
-        ('p5', 'Trà vải', 39000, '/images/lychee-tea.jpg', 0),
-        ('p6', 'Bạc xỉu', 35000, '/images/bac-xiu.jpg', 0)
-      ON CONFLICT ("id") DO NOTHING
-    `);
-
     // Sample stock (edit by hand for demos, e.g. UPDATE ingredients SET quantity = ...)
     await queryRunner.query(`
       INSERT INTO "ingredients" ("id", "name", "unit", "quantity") VALUES
@@ -72,15 +60,17 @@ export class AddInventory1761650000000 implements MigrationInterface {
         ('pearls', 'Trân châu', 'g', 2000)
     `);
 
+    // Công thức 1 ly size S theo món A2: p1 Americano, p2 Bạc xỉu, p3 Cappuccino,
+    // p4 Cà phê sữa, p5 Trà vải, p6 Trà đào
     // Recipes for one cup at size S (M ×1.25, L ×1.5 — see recipe-calculator.ts)
     await queryRunner.query(`
       INSERT INTO "recipe_items" ("productId", "ingredientId", "amount") VALUES
-        ('p1', 'coffee', 20), ('p1', 'condensed-milk', 30),
-        ('p2', 'coffee', 18),
+        ('p1', 'coffee', 18),
+        ('p2', 'coffee', 10), ('p2', 'condensed-milk', 40), ('p2', 'fresh-milk', 60),
         ('p3', 'coffee', 18), ('p3', 'fresh-milk', 120),
-        ('p4', 'tea', 5), ('p4', 'peach', 60), ('p4', 'sugar-syrup', 20),
+        ('p4', 'coffee', 20), ('p4', 'condensed-milk', 30),
         ('p5', 'tea', 5), ('p5', 'lychee', 60), ('p5', 'sugar-syrup', 20),
-        ('p6', 'coffee', 10), ('p6', 'condensed-milk', 40), ('p6', 'fresh-milk', 60)
+        ('p6', 'tea', 5), ('p6', 'peach', 60), ('p6', 'sugar-syrup', 20)
     `);
 
     // Topping ids match frontend/src/lib/productOptions.ts and orders/pricing.ts
@@ -89,14 +79,9 @@ export class AddInventory1761650000000 implements MigrationInterface {
         ('cream', 'cream', 20),
         ('pearls', 'pearls', 40)
     `);
-
-    await queryRunner.query(`ALTER TABLE "products" DROP COLUMN "stock"`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "products" ADD "stock" integer NOT NULL DEFAULT 100`,
-    );
     await queryRunner.query(`DROP TABLE "topping_recipes"`);
     await queryRunner.query(`DROP TABLE "recipe_items"`);
     await queryRunner.query(`DROP TABLE "ingredients"`);

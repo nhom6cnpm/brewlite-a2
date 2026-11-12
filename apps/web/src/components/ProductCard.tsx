@@ -35,7 +35,7 @@ export default function ProductCard({ product }: { product: Product }) {
           <div className="flex h-full w-full items-center justify-center text-4xl">☕</div>
         )}
       </div>
-      
+
       <div className="p-3 sm:p-4">
         <h2 className="line-clamp-1 font-semibold text-stone-900">{product.name}</h2>
         <p className="mt-1 font-medium text-amber-800">{formatPrice(product.price)}</p>
