@@ -115,6 +115,7 @@ Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng t
 
 3. Kiểm tra hoạt động:
    - API healthcheck: mở `http://localhost:3001/health` → trả về HTTP `200` với `{"status":"ok"}`.
+   - Tài liệu API (Swagger UI): xem và test API tại `http://localhost:3001/api/docs` (JSON schema tại `http://localhost:3001/api/docs-json`).
    - API danh sách món: mở `http://localhost:3001/products` → trả về 6 sản phẩm mẫu.
    - Giao diện Web Menu: mở `http://localhost:3000/menu` → hiển thị thực đơn đầy đủ hình ảnh và giá.
 
