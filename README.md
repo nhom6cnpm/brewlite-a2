@@ -39,7 +39,7 @@ brewlite-a2/
 | 2 | Mô hình hóa hệ thống | ✅ Xong |
 | 3 | Thiết kế kiến trúc | ✅ Xong (#14, #15) |
 | 4 | Triển khai Sprint 1 | ✅ Xong ([milestone Sprint 1](https://github.com/nhom6cnpm/brewlite-a2/milestone/1)) |
-| 5 | Triển khai Sprint 2, CI/CD và Delivery | ⬜ |
+| 5 | Triển khai Sprint 2, CI/CD và Delivery | ⏳ Đang làm |
 
 > Các task phải hoàn thành **theo đúng thứ tự**; task sau chỉ được nghiệm thu khi tạo phẩm của task trước đã có trên repository.
 
@@ -97,6 +97,33 @@ Báo cáo tổng hợp (trang bìa, mục lục) chỉ làm **một lần vào c
 ## Biến môi trường
 Xem `.env.example`. **Không commit file `.env`.**
 
+## Chạy bằng Docker
+
+Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng thời cả 3 dịch vụ (**PostgreSQL**, **NestJS API**, **Next.js Web**):
+
+1. (Tuỳ chọn) Tạo file `.env` từ mẫu nếu muốn tuỳ chỉnh biến môi trường:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+2. Build và khởi chạy toàn bộ hệ thống:
+   ```bash
+   docker compose up --build
+   ```
+   - `postgres`: chạy PostgreSQL 16 (port `5432`), lưu dữ liệu vào volume `pgdata`.
+   - `api`: chờ `postgres` healthy rồi khởi động ở port `3001`, tự động chạy TypeORM migration để tạo bảng và seed dữ liệu mẫu khi khởi động.
+   - `web`: chờ `api` healthy (qua `GET /health`) rồi khởi động Next.js ở port `3000`. Các biến `NEXT_PUBLIC_*` được truyền qua `build-arg` lúc đóng gói image.
+
+3. Kiểm tra hoạt động:
+   - API healthcheck: mở `http://localhost:3001/health` → trả về HTTP `200` với `{"status":"ok"}`.
+   - API danh sách món: mở `http://localhost:3001/products` → trả về 6 sản phẩm mẫu.
+   - Giao diện Web Menu: mở `http://localhost:3000/menu` → hiển thị thực đơn đầy đủ hình ảnh và giá.
+
+4. Dừng và tái tạo lại database từ đầu (xóa volume):
+   ```bash
+   docker compose down -v
+   docker compose up --build
+   ```
+   Khi khởi động lại, toàn bộ bảng và dữ liệu mẫu sẽ được tạo lại tự động từ migration.
 
 ## Chạy Web Sprint 1 (Task 4.3)
 
