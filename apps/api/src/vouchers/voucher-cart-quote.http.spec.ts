@@ -8,6 +8,12 @@ import { VouchersService } from './vouchers.service';
 import { VoucherUsagesService } from './voucher-usages.service';
 import { Product } from '../products/product.entity';
 import type { Voucher } from './voucher.entity';
+import { User } from '../auth/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from '../auth/jwt.strategy';
+import type { VoucherUsageAvailability } from './voucher-usage';
 
 const now = new Date('2026-11-11T10:00:00Z');
 const publicVoucher: Voucher = {
@@ -33,11 +39,14 @@ const hiddenVoucher: Voucher = Object.assign({}, publicVoucher, {
   isPublic: false,
 });
 const item = { productId: 'p1', size: 'M', toppingIds: ['cream'], qty: 2 };
+const userId = '12345678-1234-4234-9234-123456789012';
+const jwtSecret = 'voucher-http-unit-secret';
 
 /** HTTP + real validation/service composition; repository/transaction are mocked, not PostgreSQL integration. */
-describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
+describe('API-T56 — POST /vouchers/quote HTTP with main JWT strategy', () => {
   let app: INestApplication;
   let url: string;
+  let jwt: JwtService;
   const writes = {
     save: jest.fn(),
     insert: jest.fn(),
@@ -46,6 +55,9 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
   };
   const accountUsage = {
     availability: jest.fn(),
+    unavailableReason: jest.fn((usage: VoucherUsageAvailability) =>
+      new VoucherUsagesService().unavailableReason(usage),
+    ),
     reserve: jest.fn(),
     markUsed: jest.fn(),
     release: jest.fn(),
@@ -56,6 +68,9 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
       async ({ where }: { where: { code: string } }) =>
         [publicVoucher, hiddenVoucher].find((v) => v.code === where.code) ??
         null,
+    ),
+    findOneByOrFail: jest.fn(async ({ code }: { code: string }) =>
+      [publicVoucher, hiddenVoucher].find((v) => v.code === code)!,
     ),
     createQueryBuilder: () => ({
       where() {
@@ -79,11 +94,16 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
     },
   ]);
   const clock = jest.fn(async () => [{ now }]);
+  const existsBy = jest.fn(async () => true);
   const manager = {
     ...writes,
     query: clock,
     getRepository: (entity: unknown) =>
-      entity === Product ? { ...writes, findBy } : voucherRepository,
+      entity === Product
+        ? { ...writes, findBy }
+        : entity === User
+          ? { existsBy }
+          : voucherRepository,
   } as unknown as EntityManager;
   const transaction = jest.fn(
     async (work: (m: EntityManager) => Promise<unknown>) => work(manager),
@@ -91,10 +111,16 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
+      imports: [PassportModule, JwtModule.register({ secret: jwtSecret })],
       controllers: [VouchersController],
       providers: [
         VoucherCartQuoteService,
         VouchersService,
+        JwtStrategy,
+        {
+          provide: ConfigService,
+          useValue: new ConfigService({ JWT_SECRET: jwtSecret }),
+        },
         { provide: DataSource, useValue: { transaction } },
         {
           provide: VoucherCatalogService,
@@ -104,8 +130,11 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
       ],
     }).compile();
     app = module.createNestApplication();
-    // Match the application's default pipe: route-local strict transformation must still work.
-    app.useGlobalPipes(new ValidationPipe());
+    jwt = module.get(JwtService);
+    // Use the exact global validation settings merged from PR #48.
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.listen(0, '127.0.0.1');
     url = `${await app.getUrl()}/vouchers/quote`;
   });
@@ -114,6 +143,13 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
   });
   beforeEach(() => {
     jest.clearAllMocks();
+    existsBy.mockResolvedValue(true);
+    accountUsage.availability.mockResolvedValue({
+      maxUsesPerUser: 3,
+      reservedUses: 0,
+      usedUses: 0,
+      availableUses: 3,
+    });
   });
   const post = (payload: unknown, authorization?: string) =>
     fetch(url, {
@@ -235,11 +271,79 @@ describe('API-T56 — POST /vouchers/quote guest HTTP contract', () => {
     'never treats a supplied Authorization header as guest: %p',
     async (authorization) => {
       const response = await post({ items: [item] }, authorization);
-      expect(response.status).toBe(503);
-      expect(await response.json()).toMatchObject({
-        code: 'VOUCHER_ACCOUNT_QUOTE_NOT_READY',
-      });
+      expect(response.status).toBe(401);
       expect(transaction).not.toHaveBeenCalled();
     },
   );
+  it('valid JWT returns account-specific counts without reserving anything', async () => {
+    const usage = {
+      maxUsesPerUser: 3,
+      reservedUses: 1,
+      usedUses: 1,
+      availableUses: 1,
+    };
+    accountUsage.availability.mockResolvedValue(usage);
+    const token = jwt.sign({
+      sub: userId,
+      email: 'unit@example.test',
+      role: 'CUSTOMER',
+    });
+    const response = await post(
+      { items: [item], voucherCode: 'BREW10' },
+      `Bearer ${token}`,
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      voucherUsage: usage,
+      vouchers: [{ usage }],
+    });
+    expect(existsBy).toHaveBeenCalledWith({ id: userId });
+    expect(accountUsage.availability).toHaveBeenCalledWith(
+      manager,
+      userId,
+      'BREW10',
+      3,
+    );
+    expect(accountUsage.reserve).not.toHaveBeenCalled();
+  });
+  it('expired JWT returns 401 and never falls back to guest pricing', async () => {
+    const token = jwt.sign(
+      { sub: userId, email: 'unit@example.test' },
+      { expiresIn: -1 },
+    );
+    expect((await post({ items: [item] }, `Bearer ${token}`)).status).toBe(401);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+  it('a signed token without an account ID never becomes a guest quote', async () => {
+    const token = jwt.sign({ email: 'unit@example.test' });
+    expect((await post({ items: [item] }, `Bearer ${token}`)).status).toBe(401);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+  it('a valid signature for a deleted or malformed account returns 401', async () => {
+    existsBy.mockResolvedValue(false);
+    const token = jwt.sign({ sub: userId, email: 'unit@example.test' });
+    expect((await post({ items: [item] }, `Bearer ${token}`)).status).toBe(401);
+    const malformed = jwt.sign({
+      sub: 'not-a-uuid',
+      email: 'unit@example.test',
+    });
+    expect((await post({ items: [item] }, `Bearer ${malformed}`)).status).toBe(
+      401,
+    );
+  });
+  it.each([
+    { reservedUses: 0, usedUses: 3 },
+    { reservedUses: 3, usedUses: 0 },
+  ])('valid JWT rejects exhausted or fully held slots %p', async (counts) => {
+    accountUsage.availability.mockResolvedValue({
+      maxUsesPerUser: 3,
+      ...counts,
+      availableUses: 0,
+    });
+    const token = jwt.sign({ sub: userId, email: 'unit@example.test' });
+    expect(
+      (await post({ items: [item], voucherCode: 'BREW10' }, `Bearer ${token}`))
+        .status,
+    ).toBe(409);
+  });
 });

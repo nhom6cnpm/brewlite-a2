@@ -37,7 +37,7 @@ export class VoucherQuoteDto {
     type: VoucherUsageDto,
     nullable: true,
     description:
-      'null trong báo giá khách chưa đăng nhập; chưa kiểm tra quota cá nhân.',
+      'null khi chưa chọn mã hoặc chưa đăng nhập; có JWT hợp lệ thì trả lượt riêng của tài khoản.',
   })
   voucherUsage!: VoucherUsageDto | null;
 }

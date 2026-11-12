@@ -3,19 +3,31 @@ import {
   Controller,
   Get,
   Header,
-  Headers,
   HttpCode,
   Post,
-  ServiceUnavailableException,
+  Req,
+  UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { VoucherCatalogService } from './voucher-catalog.service';
 import { PublicVoucherDto } from './dto/public-voucher.dto';
 import { QuoteVoucherDto } from './dto/quote-voucher.dto';
 import { VoucherQuoteDto } from './dto/voucher-quote.dto';
 import { VoucherCartQuoteService } from './voucher-cart-quote.service';
+import { OptionalVoucherAuthGuard } from './optional-voucher-auth.guard';
+import type { AuthenticatedUser } from '../auth/jwt.strategy';
+
+// Keep the original body intact until this route's explicit DTO pipe runs;
+// main's global whitelist would otherwise strip unknown keys before rejection.
+type VoucherQuoteBody = Pick<QuoteVoucherDto, keyof QuoteVoucherDto>;
 
 @ApiTags('vouchers')
 @Controller('vouchers')
@@ -41,24 +53,22 @@ export class VouchersController {
   @HttpCode(200)
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Authorization')
+  @UseGuards(OptionalVoucherAuthGuard)
   @UsePipes(
     new ValidationPipe({
+      expectedType: QuoteVoucherDto,
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
     }),
   )
   @ApiOperation({
-    summary: 'Báo giá voucher theo giỏ (khách chưa đăng nhập)',
+    summary: 'Báo giá voucher theo giỏ và lượt dùng của tài khoản',
     description:
-      'Đọc giá sản phẩm từ DB và phụ phí A1. Không giữ nguyên liệu/lượt dùng; quota trả null. Request có Authorization hiện trả 503 cho đến khi ghép JWT/quota, không bị coi là khách chưa đăng nhập.',
+      'Không có token: báo giá khách, usage null. Có JWT hợp lệ: kiểm tra tối đa 3 lượt/mã theo tài khoản. Token sai/hết hạn: 401. Chỉ báo giá, không giữ nguyên liệu hoặc lượt voucher.',
   })
-  @ApiHeader({
-    name: 'Authorization',
-    required: false,
-    description:
-      'Chưa hỗ trợ đến khi tích hợp JWT/quota; gửi header này sẽ nhận 503.',
-  })
+  @ApiBearerAuth('JWT-auth')
+  @ApiBody({ type: QuoteVoucherDto })
   @ApiResponse({ status: 200, type: VoucherQuoteDto })
   @ApiResponse({
     status: 400,
@@ -66,21 +76,18 @@ export class VouchersController {
       'Giỏ/mã không hợp lệ, món không tồn tại hoặc voucher không đủ điều kiện.',
   })
   @ApiResponse({
-    status: 503,
+    status: 401,
+    description: 'Token sai/hết hạn hoặc tài khoản không còn hợp lệ.',
+  })
+  @ApiResponse({
+    status: 409,
     description:
-      'Chức năng báo giá theo tài khoản đang chờ tích hợp JWT/quota.',
+      'Đã hết lượt mã hoặc các lượt còn lại đang giữ cho đơn chờ thanh toán.',
   })
   quote(
-    @Body() dto: QuoteVoucherDto,
-    @Headers('authorization') authorization?: string,
+    @Body() dto: VoucherQuoteBody,
+    @Req() request: { user?: AuthenticatedUser },
   ) {
-    // Replace with Phuc's optional JWT guard + account quote after the contracts/migrations land.
-    if (authorization !== undefined)
-      throw new ServiceUnavailableException({
-        code: 'VOUCHER_ACCOUNT_QUOTE_NOT_READY',
-        message:
-          'Báo giá voucher theo tài khoản chưa sẵn sàng. Vui lòng thử lại sau.',
-      });
-    return this.cartQuote.quoteGuest(dto);
+    return this.cartQuote.quote(dto, request.user?.userId);
   }
 }

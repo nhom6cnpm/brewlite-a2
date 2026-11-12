@@ -99,11 +99,17 @@ Xem `.env.example`. **Không commit file `.env`.**
 
 ## Voucher Sprint 2 — Issue #31 (đang triển khai)
 
-`GET /vouchers` và `POST /vouchers/quote` hiện hỗ trợ báo giá cho khách chưa đăng nhập;
-chưa ghép JWT, quota và trang giỏ, request có Authorization đang trả 503.
+`GET /vouchers` trả mã công khai; `POST /vouchers/quote` báo giá theo giỏ và hỗ trợ
+JWT tùy chọn. Khách chưa đăng nhập không có số lượt cá nhân; JWT hợp lệ kiểm tra
+tối đa 3 lượt/mã/tài khoản, token sai/hết hạn trả 401, mã hết/đang giữ lượt trả 409.
+Báo giá không giữ nguyên liệu hoặc lượt dùng. Hai bảng quota/usage có khóa ngoại
+tới users; khóa ngoại orderId tới orders chờ bổ sung ở #33. Component
+`CartVoucherSummary` đã đóng gói chọn mã và tổng tiền server, dùng lại store/Auth/PriceSummary
+trên main; việc thay khối tổng tiền ở trang giỏ là phần phối hợp với Mai, chưa tự ghép.
 Mã mẫu: `THU5K`, `BREW10`, `NHOM15K`; mã nhập tay: `NHAP7K`.
 Kiểm tra PostgreSQL riêng: trong `apps/api`, chạy `npm run vouchers:smoke`
-(cần Docker Engine và image `postgres:16-alpine`; tự dọn container test, không dùng DB đồ án).
+(cần Docker Engine và image `postgres:16-alpine`; kiểm tra JWT/quota đồng thời/rollback,
+tự dọn container test và không dùng DB đồ án).
 Phạm vi, kết quả và phần chờ tích hợp nằm ở [Draft PR #47](https://github.com/nhom6cnpm/brewlite-a2/pull/47)
 và [ma trận truy vết](docs/traceability-matrix.md).
 

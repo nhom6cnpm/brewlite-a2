@@ -13,7 +13,7 @@ describe('API-T54 — public catalogue HTTP/Swagger', () => {
         { provide: VoucherCatalogService, useValue: catalog },
         {
           provide: VoucherCartQuoteService,
-          useValue: { quoteGuest: jest.fn() },
+          useValue: { quote: jest.fn() },
         },
       ],
     }).compile();
@@ -22,7 +22,11 @@ describe('API-T54 — public catalogue HTTP/Swagger', () => {
       await app.init();
       const document = SwaggerModule.createDocument(
         app,
-        new DocumentBuilder().setTitle('Test').setVersion('1').build(),
+        new DocumentBuilder()
+          .setTitle('Test')
+          .setVersion('1')
+          .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'JWT-auth')
+          .build(),
       );
       expect(document.paths['/vouchers'].get?.tags).toContain('vouchers');
       expect(document.components?.schemas?.PublicVoucherDto).toBeDefined();
@@ -30,10 +34,13 @@ describe('API-T54 — public catalogue HTTP/Swagger', () => {
         document.paths['/vouchers/quote'].post?.responses['200'],
       ).toBeDefined();
       expect(
-        document.paths['/vouchers/quote'].post?.responses['503'],
+        document.paths['/vouchers/quote'].post?.responses['401'],
       ).toBeDefined();
       expect(document.components?.schemas?.VoucherQuoteDto).toBeDefined();
       expect(document.components?.schemas?.QuoteVoucherDto).toBeDefined();
+      expect(document.paths['/vouchers/quote'].post?.security).toContainEqual({
+        'JWT-auth': [],
+      });
       expect(await module.get(VouchersController).list()).toEqual([]);
       expect(catalog.list).toHaveBeenCalledTimes(1);
     } finally {
