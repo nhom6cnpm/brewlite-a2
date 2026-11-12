@@ -201,11 +201,11 @@ chính thức khi tạo đơn ở đợt 2.
   phụ trách, thanh toán thuộc đợt 2 (#36).
 
 **Nguồn và phụ thuộc:** chuyển cách chọn món/hook/API từ A1
-`Bai_Tap_Lon_CNPM` commit `92a43f4`, sửa theo giao diện A2. Hai file dùng chung
-`store/useCart.ts`, `lib/productOptions.ts` được dùng lại từ PR #45 của Mai
-(commit `78953e4`), cùng dependency `zustand ^5.1.0`; không triển khai store khác.
-Nhánh Issue #29 phải được đối chiếu lại sau khi PR #45 và API kho Issue #28 vào main,
-đúng thứ tự merge của nhóm. Hiện endpoint availability chưa có trong main.
+`Bai_Tap_Lon_CNPM` commit `92a43f4`, sửa theo giao diện A2. Trang chi tiết dùng
+`store/useCart.ts`, `lib/productOptions.ts` và `hooks/useHydrated.ts` dùng chung
+đã có trên `main`; dependency giỏ hàng là `zustand ^5.1.0`.
+API kho Issue #28 của Tài vẫn đang được triển khai; chỉ nghiệm thu toàn luồng
+sau khi API availability vào `main` và được kiểm tra cùng Web/PostgreSQL thật.
 
 **Kiểm tra:** `npm run lint`, `npm test`, `npm run build` trong `apps/web`, Node 24.
 Component test dùng phản hồi fetch giả lập để kiểm tra đúng giá, số ly, lỗi/thử lại,
