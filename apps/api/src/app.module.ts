@@ -3,9 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './health/health.module';
 import { ProductsModule } from './products/products.module';
-import { Product } from './products/product.entity';
+import { InventoryModule } from './inventory/inventory.module';
 import { AuthModule } from './auth/auth.module';
-import { User } from './auth/user.entity';
 
 @Module({
   imports: [
@@ -18,7 +17,8 @@ import { User } from './auth/user.entity';
         url:
           configService.get<string>('DATABASE_URL') ??
           'postgresql://brewlite:brewlite@localhost:5432/brewlite',
-        entities: [Product, User],
+        // Tự động quét tất cả các file entity trong src/
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         // Migrations run automatically on app startup (also handles seed order)
         migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
         migrationsRun: true,
@@ -28,6 +28,7 @@ import { User } from './auth/user.entity';
     }),
     HealthModule,
     ProductsModule,
+    InventoryModule,
     AuthModule,
   ],
 })
