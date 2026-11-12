@@ -4,10 +4,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthModule } from './health/health.module';
 import { ProductsModule } from './products/products.module';
 import { Product } from './products/product.entity';
+import { AuthModule } from './auth/auth.module';
+import { User } from './auth/user.entity';
 import { Voucher } from './vouchers/voucher.entity';
-import { VouchersModule } from './vouchers/vouchers.module';
 import { VoucherUsage } from './vouchers/voucher-usage.entity';
 import { VoucherUserQuota } from './vouchers/voucher-user-quota.entity';
+import { VouchersModule } from './vouchers/vouchers.module';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { VoucherUserQuota } from './vouchers/voucher-user-quota.entity';
         url:
           configService.get<string>('DATABASE_URL') ??
           'postgresql://brewlite:brewlite@localhost:5432/brewlite',
-        entities: [Product, Voucher, VoucherUsage, VoucherUserQuota],
+        entities: [Product, User, Voucher, VoucherUsage, VoucherUserQuota],
         // Migrations run automatically on app startup (also handles seed order)
         migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
         migrationsRun: true,
@@ -30,6 +32,7 @@ import { VoucherUserQuota } from './vouchers/voucher-user-quota.entity';
     }),
     HealthModule,
     ProductsModule,
+    AuthModule,
     VouchersModule,
   ],
 })
