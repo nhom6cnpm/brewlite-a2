@@ -289,12 +289,12 @@ Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery
 7. **Dừng pipeline và Rollback:** Nếu smoke test không đạt sau các lần thử, pipeline lập tức dừng lại (đánh dấu thất bại đỏ) và in hướng dẫn rollback chi tiết.
 
 ### 2. Đường dẫn Production
-| Dịch vụ | Nền tảng | URL Production |
+| Dịch vụ | Nền tảng | URL Production (A2) |
 |---|---|---|
-| **Web Frontend** | Render Web Service | [https://brewlite-web.onrender.com](https://brewlite-web.onrender.com) |
-| **API Backend** | Render Web Service | [https://brewlite-api.onrender.com](https://brewlite-api.onrender.com) |
-| **Health Check** | API Endpoint | [https://brewlite-api.onrender.com/health](https://brewlite-api.onrender.com/health) |
-| **Swagger Docs** | API Endpoint | [https://brewlite-api.onrender.com/api/docs](https://brewlite-api.onrender.com/api/docs) |
+| **Web Frontend** | Render Web Service | [https://brewlite-a2-web.onrender.com](https://brewlite-a2-web.onrender.com) |
+| **API Backend** | Render Web Service | [https://brewlite-a2-api.onrender.com](https://brewlite-a2-api.onrender.com) |
+| **Health Check** | API Endpoint | [https://brewlite-a2-api.onrender.com/health](https://brewlite-a2-api.onrender.com/health) |
+| **Swagger Docs** | API Endpoint | [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs) |
 | **Database** | Render Managed PostgreSQL | Cổng nội bộ `:5432` (cô lập trong private network) |
 
 ### 3. Quy trình Rollback
