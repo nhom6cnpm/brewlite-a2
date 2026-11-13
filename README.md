@@ -233,6 +233,38 @@ Test API client kiểm tra payload, AbortSignal, lỗi backend và dữ liệu t
 Các mã `WEB-T20..T31`, `WEB-T40..T45` được ghi trong ma trận truy vết.
 Các test này chưa chứng minh API/PostgreSQL thật chạy cùng giao diện.
 
+## Integration test API tạo đơn và thanh toán — Task 5.2 Đợt 2 (Issue #38)
+
+Bộ kiểm thử tích hợp (Integration Test) kiểm thử trực tiếp các API thật với cơ sở dữ liệu **PostgreSQL thật** thông qua TypeORM và Supertest, đặt tại thư mục `apps/api/test/order-payment.integration-spec.ts`.
+
+### Cách chạy kiểm thử cục bộ:
+1. Đảm bảo PostgreSQL đang chạy (ví dụ database `brewlite_test`):
+   ```powershell
+   # Tạo database test nếu chưa có
+   & "psql" -U brewlite -d postgres -c "CREATE DATABASE brewlite_test;"
+   ```
+2. Chạy lệnh integration test trong thư mục `apps/api`:
+   ```bash
+   cd apps/api
+   export TEST_DATABASE_URL="postgresql://brewlite:brewlite@localhost:5432/brewlite_test"
+   npm run test:integration
+   ```
+   *(Tên database trong `TEST_DATABASE_URL` bắt buộc phải có hậu tố `_test` để bảo vệ dữ liệu dev/production).*
+
+### Các kịch bản kiểm thử trọng tâm (10 test cases):
+1. **Tạo đơn thành công (`INT-T01`, FR-05)**: Gọi `POST /orders` tạo đơn `PENDING`, lưu snapshot món, tính giá và hạn thanh toán 15 phút (`expiresAt`), trừ kho nguyên liệu theo đúng định lượng (`recipe_items`) và ghi nhận `order_request_keys`.
+2. **Idempotency-Key đồng thời (`INT-T01`, FR-05)**: Gửi 10 request `POST /orders` cùng `Idempotency-Key` đồng thời → hệ thống trả về cùng một mã đơn hàng duy nhất, trừ kho nguyên liệu đúng 1 lần. Gửi lại cùng key nhưng đổi giỏ hàng bị từ chối với `409 Conflict`.
+3. **Tranh chấp nguyên liệu — Không bán vượt (`INT-T04`, FR-07, NFR-01)**: Đặt kho cà phê chỉ đủ làm đúng 1 ly cuối (`quantity = 18`). 20 khách hàng gửi request đặt đơn đồng thời → cơ chế **Optimistic Locking** (cột `version`) đảm bảo **chính xác 1 khách đặt thành công**, 19 khách còn lại bị từ chối/hết hàng. Tồn kho về đúng 0g, tuyệt đối không bị bán vượt âm kho.
+4. **Máy trạng thái đơn hàng (`INT-T04`, FR-10)**: Kiểm soát nghiêm ngặt sơ đồ chuyển trạng thái `ORDER_TRANSITIONS`, chặn mọi hành vi chuyển trạng thái bất hợp lệ (ví dụ `PENDING` → `READY`, `COMPLETED` → `PENDING`).
+5. **Tự hủy và hoàn kho khi quá hạn (`INT-T04`, FR-10)**: Quét đơn hàng `PENDING` quá hạn 15 phút → tự động hủy đơn (`CANCELLED`) và hoàn trả toàn bộ nguyên liệu đã giữ về kho.
+6. **Thanh toán Ví qua ngân hàng giả lập (`INT-T02`, `INT-T03`, FR-07, FR-08)**: Khách tạo phiên thanh toán Ví `PENDING` → tra cứu thông tin chuyển khoản → bấm chuyển tiền trên ngân hàng giả lập `POST /mock-bank/payments/:id/transfer` ghi nhận dòng `IN` vào sổ sao kê `bank_transactions` (phiên thành `TRANSFER_RECEIVED`, đơn vẫn `PENDING`). Chuyển tiền lặp lại không ghi tiền lần 2. Khách thường gọi xác nhận bị chặn `403 Forbidden`. Nhân viên đối soát và xác nhận `POST /admin/payments/:id/confirm` → đơn chuyển `PAID` và phiên thành `SUCCESS`.
+7. **Từ chối thanh toán & Hoàn tiền đúng 1 lần (`INT-T02`, FR-07)**: Khi đơn có tiền trong sao kê nhưng nhân viên từ chối `POST /admin/payments/:id/reject` → sổ sao kê ghi nhận giao dịch `REFUND` hoàn tiền đúng 1 lần, đơn chuyển sang `PAYMENT_FAILED`. Khách có thể tạo phiên thanh toán mới để thử lại.
+8. **Thanh toán Thẻ tại quầy (`INT-T03`, FR-08)**: Khách chọn `CARD` → nhân viên xác nhận tại quầy tự động ghi nhận giao dịch `IN` vào sao kê và chuyển đơn sang `PAID`.
+9. **Chặn xác nhận đơn quá hạn (`INT-T03`, FR-08)**: Nhân viên xác nhận đơn đã quá hạn 15 phút sẽ bị từ chối (`400 Bad Request`), đơn tự động bị hủy và hoàn trả nguyên liệu.
+
+### Continuous Integration (CI)
+Pipeline CI GitHub Actions trong `.github/workflows/ci.yml` bổ sung job `integration` chạy song song với service container `postgres:16-alpine`, đảm bảo toàn bộ bộ test integration được tự động kiểm chứng và xanh 100% trên mỗi Pull Request.
+
 ## Continuous Integration (CI)
 
 Dự án áp dụng quy trình kiểm thử và tích hợp liên tục (CI) tự động bằng GitHub Actions thông qua workflow [ci.yml](.github/workflows/ci.yml).
