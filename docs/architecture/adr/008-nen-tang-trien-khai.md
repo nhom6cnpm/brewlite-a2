@@ -1,6 +1,6 @@
 # ADR-008: Nền tảng triển khai: Render và Container Registry
 
-- **Trạng thái:** Đề xuất (chờ review)
+- **Trạng thái:** Đã chấp thuận (Accepted)
 - **Ngày:** 2026-11-05
 - **Người quyết định:** Lương (DucLuong2201)
 - **Liên quan:** ADR-001 (monorepo), Task 3.2, Task 5.3–5.4
@@ -37,7 +37,7 @@ Chọn **Render** làm nền tảng production kết hợp **GitHub Packages (gh
 **Mất:**
 
 - **Render Free Tier Database hết hạn sau 30 ngày** (sau đó có 14 ngày gia hạn trước khi bị xóa vĩnh viễn). Đây là rủi ro lớn nhất cho Task 5 (mất điểm nếu URL production không chạy tại thời điểm chấm).
-  - *Cách xử lý:* Chỉ khởi tạo database Render khi bước vào Sprint 2 / Task 5; đồng thời chuẩn bị sẵn migration và seed script tự động (`npm run migration:run && npm run seed`) để có thể tái lập dữ liệu mẫu trong vòng 1 phút bất cứ lúc nào.
+  - *Cách xử lý:* Chỉ khởi tạo database Render khi bước vào Sprint 2 / Task 5; đồng thời chuẩn bị sẵn cơ chế migration tự động khi API khởi động (chứa sẵn seed dữ liệu mẫu trong migration) để có thể tái lập dữ liệu mẫu trong vòng 1 phút bất cứ lúc nào mà không cần chạy lệnh riêng.
 - Render Free Web Service có thể "ngủ" (spin-down) sau 15 phút không có request → cold start ~30s.
 - Gói Free Web Service không nhận được traffic nội bộ, buộc Next.js server-side phải gọi API qua HTTPS công khai (độ trễ nhỉnh hơn mạng nội bộ một chút nhưng hoàn toàn chấp nhận được).
 - Không hỗ trợ WebSocket lâu dài ở gói miễn phí (không ảnh hưởng vì BrewLite dùng polling theo ADR-007).

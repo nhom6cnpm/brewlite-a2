@@ -300,4 +300,36 @@ Nhánh `main` được áp dụng branch protection với các chính sách bắ
 - **CI phát hiện lỗi**: [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test), [Workflow Run #42592401582](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592401582) — job `web` dừng ở bước test. Log: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt), ảnh: [docs/ci/ci-failure.png](docs/ci/ci-failure.png)
 - Chi tiết: [docs/ci/README.md](docs/ci/README.md)
 
+## Triển khai Production & Rollback (Task 5.4 — Lương)
+
+Hệ thống được triển khai trên nền tảng đám mây **Render** kết hợp **GitHub Container Registry (`ghcr.io`)** với bảo vệ HTTPS tự động.
+
+### 1. Địa chỉ dịch vụ Production (Cụm A2)
+
+| Dịch vụ | URL Production | Mô tả |
+|---|---|---|
+| **Frontend Web** | [https://brewlite-a2-web.onrender.com](https://brewlite-a2-web.onrender.com) | Next.js 15 PWA giao diện đặt hàng |
+| **Backend API** | [https://brewlite-a2-api.onrender.com](https://brewlite-a2-api.onrender.com) | NestJS 11 REST API |
+| **API Healthcheck** | [https://brewlite-a2-api.onrender.com/health](https://brewlite-a2-api.onrender.com/health) | Trả về `{"status":"ok","database":"up"}` |
+| **Tài liệu Swagger UI** | [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs) | Tra cứu và thử nghiệm API với Bearer JWT |
+| **Cơ sở dữ liệu** | Render PostgreSQL 16 (Private Network) | Kết nối nội bộ qua `:5432`, **tắt Public Network** |
+
+### 2. Quy trình Triển khai (Deploy)
+1. **Tự động qua CD Pipeline**: Khi mã nguồn được merge vào `main` hoặc tạo tag `v*`, workflow `.github/workflows/cd.yml` tự động:
+   - Chạy Quality Gate (Lint, Test, Build).
+   - Đóng gói Docker image Node 24 Alpine, gắn tag commit SHA và push lên `ghcr.io`.
+   - Kích hoạt Render Deploy Hook kèm URL image tương ứng để cập nhật dịch vụ.
+   - Khi khởi động, API (1 replica) tự động chạy TypeORM migration trong transaction để tạo bảng và nạp dữ liệu mẫu mà không cần lệnh riêng.
+   - Thực thi Smoke Test tự động gọi `/health` và `/products` để nghiệm thu.
+2. **Kích hoạt thủ công**: Chạy workflow Continuous Delivery tại tab GitHub Actions hoặc bấm *Manual Deploy* trên Render Dashboard.
+
+### 3. Quy trình Phục hồi / Quay lui (Rollback)
+- **Cách 1 (Nhanh nhất)**: Truy cập Render Dashboard $\rightarrow$ Web Service $\rightarrow$ tab **Events** $\rightarrow$ chọn bản deploy ổn định trước đó $\rightarrow$ bấm **Rollback to this deploy** (thực hiện trong $\le$ 30 giây).
+- **Cách 2**: Kích hoạt Render Deploy Hook trỏ về image commit SHA trước đó:
+  ```bash
+  curl -fsS -X POST "${RENDER_API_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-api:sha-<commit_cu>"
+  ```
+
+> Chi tiết toàn bộ cấu hình biến môi trường, bảo mật secrets và hướng dẫn chi tiết xem tại [docs/deployment.md](docs/deployment.md).
+
 
