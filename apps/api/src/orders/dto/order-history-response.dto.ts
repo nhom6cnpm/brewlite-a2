@@ -1,7 +1,6 @@
 import type { CancellationReason } from '../order-expiry';
 import type { OrderStatus } from '../order-status';
-import type { ProductSize, ToppingId } from '../pricing';
-import type { PaymentMethod } from '../payment.entity';
+import type { ProductSize, ToppingId } from '../../pricing/product-options';
 import type {
   CancellationCapabilitiesDto,
   OrderBenefitsResponseDto,
@@ -32,8 +31,6 @@ export interface OrderHistoryResponseDto
   expiresAt: Date;
   cancelledAt: Date | null;
   cancelReason: CancellationReason | null;
-  paymentMethod: PaymentMethod | null;
-  refundedAmount: number;
   transferReceived: boolean;
   serverTime: Date;
   canPay: boolean;

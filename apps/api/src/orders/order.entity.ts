@@ -12,7 +12,6 @@ import {
   BENEFITS_POLICY_VERSIONS,
   type BenefitsPolicyVersion,
 } from './benefits-policy';
-// Nếu không dùng chức năng hoàn tiền ngân hàng thì có thể xóa dòng import CancelRequestStatus dưới đây, hoặc copy file order-cancellation.ts từ A1 sang:
 import type { CancelRequestStatus } from './order-cancellation';
 
 export type { OrderStatus } from './order-status';
@@ -46,7 +45,7 @@ export class Order {
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items!: OrderItem[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 
   @Column({
@@ -67,7 +66,7 @@ export class Order {
   @Column({ type: 'varchar', length: 32, nullable: true })
   cancelReason!: CancellationReason | null;
 
-  // Remains legacy until reservation and settlement are enabled together.
+  // New orders are created with VOUCHER_QUOTAS_AND_POINTS (voucher quota + points).
   @Column({ type: 'int', default: BENEFITS_POLICY_VERSIONS.LEGACY })
   benefitsPolicyVersion!: BenefitsPolicyVersion;
 
