@@ -1,6 +1,7 @@
 # ☕ BrewLite – Assignment 2
 
 [![CI](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml/badge.svg)](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml)
+[![CD](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/cd.yml/badge.svg)](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/cd.yml)
 
 Ứng dụng đặt cà phê không dùng tiền mặt — Bài tập lớn môn Công nghệ Phần mềm, Trường Đại học Sài Gòn (HK I, 2026–2027).
 Assignment 2: **Requirements to Deployment** — từ khai thác yêu cầu, mô hình hóa, thiết kế kiến trúc đến hai Sprint, CI/CD và triển khai production.
@@ -267,5 +268,40 @@ Nhánh `main` được áp dụng branch protection với các chính sách bắ
 - **CI chạy thành công**: [Pull Request #24](https://github.com/nhom6cnpm/brewlite-a2/pull/24), [Workflow Run #42592007019](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592007019) — job `api` và `web` qua đủ 4 bước. Log: [docs/ci/ci-success-log.txt](docs/ci/ci-success-log.txt)
 - **CI phát hiện lỗi**: [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test), [Workflow Run #42592401582](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592401582) — job `web` dừng ở bước test. Log: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt), ảnh: [docs/ci/ci-failure.png](docs/ci/ci-failure.png)
 - Chi tiết: [docs/ci/README.md](docs/ci/README.md)
+
+## Continuous Delivery (CD)
+
+Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery) tự động hóa thông qua GitHub Actions tại workflow [cd.yml](.github/workflows/cd.yml), đáp ứng đầy đủ 7 tiêu chuẩn của đề tài (Task 5.3):
+
+### 1. Quy trình 7 bước (The 7-Step Pipeline)
+1. **Quality Gate:** Tự động chạy lại toàn bộ quy trình kiểm thử chất lượng (`npm ci` → `npm run lint` → `npm test` → `npm run build`) song song cho cả `apps/api` và `apps/web`.
+2. **Gắn thẻ Container Image:** Đóng gói Docker image đa tầng dựa trên **Node 24 Alpine** (`node:24-alpine`). Gắn thẻ theo commit SHA (`sha-<short_sha>`, `sha-<long_sha>`), phiên bản ngữ nghĩa (`vX.Y.Z`) và `latest`.
+3. **Đẩy lên Registry (GHCR):** Tự động xác thực và đẩy 2 image lên GitHub Container Registry:
+   - API: `ghcr.io/nhom6cnpm/brewlite-api`
+   - Web: `ghcr.io/nhom6cnpm/brewlite-web` (nhúng tĩnh các biến `NEXT_PUBLIC_*` thông qua `--build-arg`).
+4. **Triển khai Production (Render):** Kích hoạt webhook Render Deploy Hooks bằng secrets an toàn (`RENDER_API_DEPLOY_HOOK`, `RENDER_WEB_DEPLOY_HOOK`), không lộ secret trong mã nguồn hay log CI.
+5. **Migration an toàn:** API chạy đơn bản thể (1 replica), TypeORM tự động thực thi các migration mới trong Database Transaction khi khởi động trước khi mở cổng HTTP.
+6. **Kiểm thử khói (Smoke Test):** Script [scripts/smoke-test.mjs](scripts/smoke-test.mjs) kiểm tra thực tế:
+   - `GET /health`: Đảm bảo API online và kết nối cơ sở dữ liệu PostgreSQL lành mạnh (`200 OK`).
+   - `GET /products`: Đảm bảo dữ liệu mẫu đã được seed và ORM truy vấn bình thường (`200 OK`, mảng không rỗng).
+   - `GET /`: Đảm bảo giao diện người dùng Next.js phục vụ bình thường (`200 OK`).
+   - Hỗ trợ retry backoff (18 lần × 10 giây) để đáp ứng thời gian Render pull image và khởi động.
+7. **Dừng pipeline và Rollback:** Nếu smoke test không đạt sau các lần thử, pipeline lập tức dừng lại (đánh dấu thất bại đỏ) và in hướng dẫn rollback chi tiết.
+
+### 2. Đường dẫn Production
+| Dịch vụ | Nền tảng | URL Production |
+|---|---|---|
+| **Web Frontend** | Render Web Service | [https://brewlite-web.onrender.com](https://brewlite-web.onrender.com) |
+| **API Backend** | Render Web Service | [https://brewlite-api.onrender.com](https://brewlite-api.onrender.com) |
+| **Health Check** | API Endpoint | [https://brewlite-api.onrender.com/health](https://brewlite-api.onrender.com/health) |
+| **Swagger Docs** | API Endpoint | [https://brewlite-api.onrender.com/api/docs](https://brewlite-api.onrender.com/api/docs) |
+| **Database** | Render Managed PostgreSQL | Cổng nội bộ `:5432` (cô lập trong private network) |
+
+### 3. Quy trình Rollback
+Khi phát hiện lỗi trên production hoặc khi smoke test thất bại:
+- **Phương án 1 (Rollback tức thời):** Truy cập Render Dashboard → Chọn service (`brewlite-api` hoặc `brewlite-web`) → Tab **Events** → Chọn bản deploy thành công trước đó → Bấm **Rollback to this deploy**.
+- **Phương án 2 (Rollback theo tag):** Cập nhật Render Image URL trỏ về tag commit SHA ổn định trước đó (ví dụ: `ghcr.io/nhom6cnpm/brewlite-api:sha-<previous_sha>`) rồi nhấn Manual Deploy.
+- Chi tiết hướng dẫn: [docs/deployment.md](docs/deployment.md).
+
 
 

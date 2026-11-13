@@ -1,0 +1,219 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      skip_deploy:
+        description: 'Bỏ qua bước gọi Render Deploy Hook (chỉ build/push image và chạy smoke test)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  # 1. Quality Gate - API (NestJS, Node 24)
+  quality-gate-api:
+    name: Quality Gate - API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build API application
+        run: npm run build
+
+  # 1. Quality Gate - Web (Next.js, Node 24)
+  quality-gate-web:
+    name: Quality Gate - Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build Web application
+        env:
+          NEXT_PUBLIC_API_URL: https://brewlite-api.onrender.com
+          NEXT_PUBLIC_APP_URL: https://brewlite-web.onrender.com
+          NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES: 15
+        run: npm run build
+
+  # 2 & 3. Build multi-stage Docker images & Push to GitHub Container Registry (ghcr.io)
+  build-and-push:
+    name: Build & Push Images (ghcr.io)
+    needs: [quality-gate-api, quality-gate-web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Chuẩn bị metadata và tags cho API Image
+      - name: Extract metadata for API image
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/brewlite-api
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=sha,prefix=sha-,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Đóng gói và push API Image (Node 24 Alpine, NestJS)
+      - name: Build and push API Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Chuẩn bị metadata và tags cho Web Image
+      - name: Extract metadata for Web image
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/brewlite-web
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=sha,prefix=sha-,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Đóng gói và push Web Image (Node 24 Alpine, Next.js với build args production)
+      - name: Build and push Web Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/web
+          file: apps/web/Dockerfile
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://brewlite-api.onrender.com
+            NEXT_PUBLIC_APP_URL=https://brewlite-web.onrender.com
+            NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES=15
+          push: true
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 4 & 5. Triển khai Render qua Deploy Hook & Migration an toàn khi khởi động một bản API
+  deploy:
+    name: Deploy to Render
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook (API)
+        if: ${{ github.event.inputs.skip_deploy != true }}
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::warning::Secret RENDER_API_DEPLOY_HOOK chưa được cấu hình. Bỏ qua webhook API."
+          else
+            echo "Kích hoạt Render Deploy Hook cho brewlite-api..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$DEPLOY_HOOK")
+            echo "Kết quả Deploy Hook API: HTTP $HTTP_STATUS"
+            if [ "$HTTP_STATUS" -ge 400 ]; then
+              echo "::error::Render API Deploy Hook thất bại với mã lỗi HTTP $HTTP_STATUS"
+              exit 1
+            fi
+          fi
+
+      - name: Trigger Render Deploy Hook (Web)
+        if: ${{ github.event.inputs.skip_deploy != true }}
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_WEB_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::warning::Secret RENDER_WEB_DEPLOY_HOOK chưa được cấu hình. Bỏ qua webhook Web."
+          else
+            echo "Kích hoạt Render Deploy Hook cho brewlite-web..."
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$DEPLOY_HOOK")
+            echo "Kết quả Deploy Hook Web: HTTP $HTTP_STATUS"
+            if [ "$HTTP_STATUS" -ge 400 ]; then
+              echo "::error::Render Web Deploy Hook thất bại với mã lỗi HTTP $HTTP_STATUS"
+              exit 1
+            fi
+          fi
+
+  # 6 & 7. Smoke Test sau triển khai & Dừng pipeline, hướng dẫn rollback nếu thất bại
+  smoke-test:
+    name: Production Smoke Test
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Execute Production Smoke Test
+        env:
+          API_URL: https://brewlite-api.onrender.com
+          WEB_URL: https://brewlite-web.onrender.com
+          MAX_RETRIES: 18
+          RETRY_DELAY_SECONDS: 10
+        run: |
+          node scripts/smoke-test.mjs
