@@ -5,12 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { User } from '../auth/user.entity';
 import { Order } from './order.entity';
 import type { OrderHistoryResponseDto } from './dto/order-history-response.dto';
 import { cancellationCapabilities } from './order-cancellation';
 import { OrdersService } from './orders.service';
+import { Payment } from '../payments/entities/payment.entity';
+import { BankLedgerService } from '../mock-bank/bank-ledger.service';
 
 /** Customer views: GET /orders/me and GET /orders/:id (admin views belong to #39). */
 @Injectable()
@@ -20,6 +22,8 @@ export class OrderHistoryService {
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly dataSource: DataSource,
     private readonly ordersService: OrdersService,
+    @InjectRepository(Payment) private readonly payments: Repository<Payment>,
+    private readonly ledger: BankLedgerService,
   ) {}
 
   private async requireUser(userId: string): Promise<void> {
@@ -56,17 +60,32 @@ export class OrderHistoryService {
     orders: Order[],
   ): Promise<OrderHistoryResponseDto[]> {
     if (!orders.length) return [];
-    const now = await this.ordersService.databaseNow(this.dataSource.manager);
+    const ids = orders.map((order) => order.id);
+    const [now, payments, refunds] = await Promise.all([
+      this.ordersService.databaseNow(this.dataSource.manager),
+      this.payments.find({
+        where: { orderId: In(ids) },
+        order: { createdAt: 'DESC', id: 'DESC' },
+      }),
+      this.ledger.refundedByOrder(ids),
+    ]);
     return Promise.all(
       orders.map(async (order) => {
-        const transferReceived = await this.ordersService.hasReceivedTransfer(
-          order.id,
-          this.dataSource.manager,
+        const candidates = payments.filter(
+          (payment) => payment.orderId === order.id,
+        );
+        const payment =
+          candidates.find((candidate) => candidate.status === 'SUCCESS') ??
+          candidates[0];
+        const transferReceived = candidates.some(
+          (candidate) => candidate.status === 'TRANSFER_RECEIVED',
         );
         return {
           ...cancellationCapabilities(order, transferReceived, now),
           // Money arrived but staff have not decided: never auto-expired
           transferReceived,
+          paymentMethod: payment?.method ?? null,
+          refundedAmount: refunds.get(order.id) ?? 0,
           id: order.id,
           status: order.status,
           total: order.total,
@@ -86,6 +105,7 @@ export class OrderHistoryService {
           serverTime: now,
           canPay:
             ['PENDING', 'PAYMENT_FAILED'].includes(order.status) &&
+            !transferReceived &&
             order.cancelRequestStatus !== 'PENDING' &&
             order.expiresAt > now,
           items: [...order.items]

@@ -114,6 +114,25 @@ tự dọn container test và không dùng DB đồ án).
 Phạm vi, kết quả và phần chờ tích hợp nằm ở [PR #47](https://github.com/nhom6cnpm/brewlite-a2/pull/47)
 và [ma trận truy vết](docs/traceability-matrix.md).
 
+## Đơn hàng của khách — Issue #37
+
+Trang `/orders`, `/orders/:id` và `/orders/:id/confirmation` hiển thị lịch sử,
+snapshot tiền/voucher, hoàn tiền, điểm và tiến trình đơn; tự cập nhật lịch sử 4 giây,
+chi tiết 3 giây. Menu **Đơn hàng** mở phần này sau khi đăng nhập.
+`POST /orders/:id/cancel` hủy ngay đơn chưa có tiền về; `POST /orders/:id/cancel-request`
+nhận `{reason}` (trim, 1–500 ký tự) cho đơn đã nhận tiền hoặc PAID. Từ PREPARING
+không được hủy; gửi yêu cầu chưa làm đơn bị hủy hoặc hoàn tiền. Các API dùng JWT,
+kiểm tra chủ đơn, không nhận giá/tiền hoàn/userId từ client và có mô tả tại `/api/docs`.
+
+Kiểm tra riêng với PostgreSQL: trong `apps/api`, chạy `npm run orders:smoke`
+(Docker Engine + image `postgres:16-alpine`). Script tạo DB/container tmpfs riêng,
+tự dọn, không dùng `.env`/volume đồ án. Test gọi API #33/#34 thật để kiểm tra quyền,
+hủy đồng thời/gửi lặp, trả kho/voucher, tiền đã về quá hạn, hoàn tiền hiển thị và rollback.
+Thiết lập trạng thái pha chế/lỗi bằng SQL trong script chỉ là fixture kiểm thử.
+Checkout, storage và xóa đúng giỏ khi PAID ghép cùng #35; trang thanh toán thuộc #36.
+Nhân viên duyệt hủy/bảng pha chế thuộc #39; E2E toàn luồng thuộc #40.
+Nguồn chuyển file: A1 `92a43f4`, sửa để dùng core/payment hooks của A2; không kéo lịch sử Git A1.
+
 ## Chạy bằng Docker
 
 Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng thời cả 3 dịch vụ (**PostgreSQL**, **NestJS API**, **Next.js Web**):
