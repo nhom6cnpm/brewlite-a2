@@ -114,6 +114,66 @@ tự dọn container test và không dùng DB đồ án).
 Phạm vi, kết quả và phần chờ tích hợp nằm ở [PR #47](https://github.com/nhom6cnpm/brewlite-a2/pull/47)
 và [ma trận truy vết](docs/traceability-matrix.md).
 
+## Thanh toán Sprint 2 — Issue #36
+
+Nguồn chuyển từ A1 `Bai_Tap_Lon_CNPM`, commit `92a43f4`: trang `pay`,
+`mock-bank`, proxy ngân hàng và `lib/payments/*`; chỉnh lại theo API A2 (#34,
+PR #52). Đợt này dùng **ngân hàng giả lập + nhân viên xác nhận**, theo #36.
+
+- `/pay/order/:orderId`: chọn Ví hoặc Thẻ cho đơn đã tạo, tổng tiền lấy lại từ
+  `GET /orders/:id`. Component dùng chung:
+  [`PaymentMethodPicker`](apps/web/src/components/payments/PaymentMethodPicker.tsx).
+  Mai (#35) có thể nhúng `<PaymentMethodPicker orderId={orderId} />` trong checkout,
+  hoặc chuyển đến `paymentSelectionPath(orderId)` từ `lib/payments/links.ts`.
+- `POST /payments` gửi `{ orderId, method }` và `Idempotency-Key`, không gửi giá.
+  Khóa được lưu trước khi gửi, tách theo tài khoản/đơn/phương thức. Mất phản hồi
+  thì dùng lại khóa cũ; phiên FAILED/CANCELLED được dọn khóa tương ứng, lần thử
+  tiếp theo dùng khóa mới trên cùng đơn. Nút gửi khóa trong lúc chờ và kiểm tra
+  lại trạng thái đơn trước khi tạo phiên.
+- `/pay/:paymentId`: Ví có QR thật (`qrcode.react`) mở
+  `/mock-bank/:paymentId`; Thẻ chỉ hướng dẫn quẹt tại quầy và chờ nhân viên.
+  Không nhập số thẻ giả, không có nút khách tự xác nhận thanh toán.
+- `/mock-bank/:paymentId` **không cần đăng nhập**: số tiền cố định từ server,
+  nội dung chuyển khoản bằng mã đơn. Nút “Chuyển tiền (mô phỏng)” gọi proxy
+  `/api/mock-bank/:paymentId` → `POST /mock-bank/payments/:id/transfer`.
+  Proxy không chuyển JWT, cookie hay số tiền do trình duyệt gửi lên API.
+- Polling mỗi 3 giây: TRANSFER_RECEIVED hiển thị chờ nhân viên, đơn vẫn PENDING;
+  SUCCESS **và** đơn PAID mới chuyển đến `/orders/:id/confirmation` của Ân (#37).
+  Nếu đơn đã PREPARING/READY/COMPLETED thì mở chi tiết đơn. FAILED cho thử lại
+  cùng đơn nếu còn hạn; CANCELLED đóng thao tác thanh toán. Đồng hồ chỉ hiển thị:
+  hết giờ chờ trạng thái server, không tự hủy đơn đã nhận tiền đúng hạn.
+- Đổi/thoát tài khoản hủy yêu cầu của phiên cũ; lỗi API hiển thị để thử lại,
+  không tạo dữ liệu giả và không xóa giỏ khi thất bại.
+
+**Phối hợp còn lại:** tại main `702132f`, checkout #35 chưa được ghép và trang
+xác nhận #37 còn ở PR #53. Phần này không sửa giỏ/checkout/trang đơn của Mai và
+Ân, không tạo bản thứ hai của hook xóa giỏ khi PAID. Sau khi ghép #35/#37 cần
+kiểm tra lại luồng từ giỏ đến nội dung trang xác nhận và chỉ xóa các món thuộc
+đơn đã thanh toán theo phần #35.
+
+**Chạy thử:** theo hướng dẫn Docker bên dưới, tạo đơn bằng checkout #35 khi đã
+được ghép. Trong lúc chờ, có thể tạo đơn thật bằng Swagger `POST /orders` (JWT,
+Idempotency-Key), rồi mở `/pay/order/<orderId>`. Dùng API admin trong Swagger
+để xác nhận/từ chối (giao diện admin thuộc đợt sau). Thanh toán giả lập không
+trừ tiền thật. API quyết định giá, quyền sở hữu, hạn đơn và ghi tiền một lần.
+
+**QR bằng điện thoại:** máy và điện thoại cùng Wi-Fi, mở web qua IP LAN thay
+`localhost`. `NEXT_PUBLIC_APP_URL` là địa chỉ web mà điện thoại truy cập được
+(cần build lại nếu đổi biến public); cấu hình localhost được thay bằng origin
+LAN khi khách đang mở web bằng LAN. Proxy server dùng `API_INTERNAL_URL`
+(`http://api:3001` trong Compose), nên điện thoại không cần gọi API localhost.
+Điện thoại chỉ cần trang ngân hàng công khai; không cần đăng nhập tài khoản khách.
+
+**Kiểm tra:** Node 24, trong `apps/web`: `npm ci` → `npm run lint` → `npm test`
+→ `npm run build`. WEB-T80..T85 trong [ma trận truy vết](docs/traceability-matrix.md)
+bao gồm validate dữ liệu, khóa chống trùng, chọn phương thức, polling/kết quả,
+ngân hàng công khai và proxy. Kiểm tra trình duyệt local với API/PostgreSQL riêng:
+Ví → chuyển tiền → nhân viên xác nhận; từ chối/hoàn tiền → thử lại cùng đơn bằng
+Thẻ; khách xác nhận bị 403; đơn chưa chuyển tiền hết hạn bị CANCELLED. Đã kiểm
+tra chuyển hướng đúng URL xác nhận, chưa kiểm tra nội dung trang #37 ở main.
+Phần thanh toán vừa màn hình 390px; Header chung trên main còn tràn ngang khi
+đăng nhập trên màn hình này, nằm ngoài phần file của #36.
+
 ## Chạy bằng Docker
 
 Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng thời cả 3 dịch vụ (**PostgreSQL**, **NestJS API**, **Next.js Web**):
