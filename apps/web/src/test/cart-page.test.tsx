@@ -7,6 +7,17 @@ import { useCart, type CartItem } from "@/store/useCart";
 import { renderWithQuery } from "./render";
 import type { VoucherCartItem, VoucherOption } from "@/lib/vouchers";
 
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+  })),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+  usePathname: vi.fn(() => "/cart"),
+}));
+
 const coffee: CartItem = {
   productId: "p1",
   name: "Cà phê sữa",
