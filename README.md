@@ -118,6 +118,77 @@ tự dọn container test và không dùng DB đồ án).
 Phạm vi, kết quả và phần chờ tích hợp nằm ở [PR #47](https://github.com/nhom6cnpm/brewlite-a2/pull/47)
 và [ma trận truy vết](docs/traceability-matrix.md).
 
+## Đơn hàng của khách — Issue #37
+
+Trang `/orders`, `/orders/:id` và `/orders/:id/confirmation` hiển thị lịch sử,
+snapshot tiền/voucher, hoàn tiền, điểm và tiến trình đơn; tự cập nhật lịch sử 4 giây,
+chi tiết 3 giây. Menu **Đơn hàng** mở phần này sau khi đăng nhập.
+`POST /orders/:id/cancel` hủy ngay đơn chưa có tiền về; `POST /orders/:id/cancel-request`
+nhận `{reason}` (trim, 1–500 ký tự) cho đơn đã nhận tiền hoặc PAID. Từ PREPARING
+không được hủy; gửi yêu cầu chưa làm đơn bị hủy hoặc hoàn tiền. Các API dùng JWT,
+kiểm tra chủ đơn, không nhận giá/tiền hoàn/userId từ client và có mô tả tại `/api/docs`.
+
+Kiểm tra riêng với PostgreSQL: trong `apps/api`, chạy `npm run orders:smoke`
+(Docker Engine + image `postgres:16-alpine`). Script tạo DB/container tmpfs riêng,
+tự dọn, không dùng `.env`/volume đồ án. Test gọi API #33/#34 thật để kiểm tra quyền,
+hủy đồng thời/gửi lặp, trả kho/voucher, tiền đã về quá hạn, hoàn tiền hiển thị và rollback.
+Thiết lập trạng thái pha chế/lỗi bằng SQL trong script chỉ là fixture kiểm thử.
+Đặt đơn, trang `/checkout/:id` và xóa giỏ khi PAID thuộc #35; trang thanh toán thuộc #36.
+Nhân viên duyệt hủy/bảng pha chế thuộc #39; E2E toàn luồng thuộc #40.
+Nguồn chuyển file: A1 `92a43f4`, sửa để dùng core/payment hooks của A2; không kéo lịch sử Git A1.
+
+## Quản trị Đơn hàng và Lịch sử — Issue #39 (phần Ân)
+
+Đăng nhập bằng tài khoản `ADMIN` được seed từ `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+trong môi trường local, mở `/admin/orders` hoặc `/admin/history`. Dùng khung,
+tab Thanh toán/Nguyên liệu, HTTP client và sao kê Hiếu đã bàn giao trong PR #56.
+
+- `/admin/orders`: yêu cầu hủy PENDING ở trên, bảng pha chế ở dưới; tự tải lại
+  mỗi 4 giây và có nút cập nhật. Duyệt/từ chối cần xác nhận; từ chối cần lý do.
+  Đơn đang chờ duyệt hủy bị khóa thao tác bắt đầu pha và xác nhận thanh toán.
+- Pha chế chỉ theo **PAID → PREPARING → READY → COMPLETED**; không thu tiền,
+  trừ kho hoặc cộng điểm thêm ở các bước này. Từ PREPARING khách không được hủy.
+- Duyệt hủy gọi core/hook A2 trong một transaction: hoàn số tiền còn giữ,
+  trả đúng nguyên liệu/voucher đã giữ, thu hồi điểm một lần. Hai nhân viên duyệt
+  cùng yêu cầu hoặc gửi lặp không hoàn/trả thêm. Từ chối giữ nguyên tiền/kho/điểm.
+  `requestId` cũ không được áp lên yêu cầu mới của cùng đơn.
+- `/admin/history`: mọi trạng thái, tìm theo mã đơn/email, phân trang;
+  `/admin/history/:id`: snapshot món/giá/voucher, điểm, quyết định/người duyệt hủy,
+  mọi phiên thanh toán và `BankStatement` dùng chung. Phiên SUCCESS được giữ làm
+  lịch sử thu tiền; REFUND trong sao kê và số tiền đã hoàn thể hiện giao dịch hoàn.
+- API `GET /admin/orders`, `GET /admin/orders/history`,
+  `GET /admin/orders/:id/detail`, `PATCH /admin/orders/:id/status`,
+  `POST /admin/orders/:id/cancel`, `POST /admin/orders/:id/cancel-request/reject`
+  đều yêu cầu JWT + ADMIN; validate query/body, trả 401/403/400/404/409 rõ ràng,
+  có schema request/response ở `/api/docs`. UI hiển thị loading/rỗng/lỗi/thử lại;
+  dữ liệu tách theo tài khoản và phản hồi cũ bị bỏ khi đổi phiên.
+
+Kiểm thử: `npm run lint`, `npm test`, `npm run build` trong từng `apps/api`
+và `apps/web`; kiểm tra PostgreSQL thật riêng trong `apps/api`:
+
+```powershell
+npm run admin-orders:smoke
+```
+
+Cần Docker Engine đang chạy và image `postgres:16-alpine`. `INT-T80` tự tạo/dọn
+database/container tmpfs riêng, không dùng `.env` hoặc volume đồ án; các SQL
+đặt trạng thái/lỗi là fixture kiểm thử, không phải chức năng sản phẩm.
+Mã API-T80..T83 và WEB-T100..T104 nằm trong ma trận truy vết FR-09/FR-11/FR-12.
+Nguồn chuyển file: A1 `Bai_Tap_Lon_CNPM@92a43f4`; sửa theo core/payment hooks A2,
+không nhập lịch sử Git A1. E2E toàn luồng #40 chuẩn bị được song song theo bàn giao;
+chỉ nghiệm thu sau khi checkout #57 và các phần liên quan đã ghép.
+
+## Đặt hàng — Issue #35
+
+- Nút **Đặt hàng** ở `/cart`: chưa đăng nhập thì chuyển sang `/login?redirect=/cart`.
+- Gọi `POST /orders` kèm `Idempotency-Key` (giữ theo giỏ + voucher), bấm đúp hay mất
+  phản hồi vẫn chỉ tạo 1 đơn. Kiểm tra số ly còn bán trước khi gửi; lỗi hết nguyên liệu
+  hoặc voucher hiện rõ và giữ nguyên giỏ.
+- Đặt xong chuyển sang `/checkout/:orderId`, trang này dùng `PaymentMethodPicker` của #36
+  để chọn Ví/Thẻ. Mở lại giỏ khi đơn còn chờ thanh toán thì tiếp tục đúng đơn đó.
+- Giỏ tự xóa khi đơn PAID (`useClearPaidCart`) ở trang giỏ, chi tiết, xác nhận và lịch sử
+  đơn; chỉ xóa nếu giỏ vẫn đúng là giỏ đã đặt đơn đó. Test: WEB-T51..T54.
+
 ## Thanh toán Sprint 2 — Issue #36
 
 Nguồn chuyển từ A1 `Bai_Tap_Lon_CNPM`, commit `92a43f4`: trang `pay`,

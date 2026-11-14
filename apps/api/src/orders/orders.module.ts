@@ -13,6 +13,12 @@ import { OrderRequestKey } from './order-request-key.entity';
 import { Order } from './order.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { Payment } from '../payments/entities/payment.entity';
+import { BankLedgerModule } from '../mock-bank/bank-ledger.module';
+import { CustomerOrderCancellationService } from './customer-order-cancellation.service';
+import { CustomerOrderCancellationController } from './customer-order-cancellation.controller';
+import { AdminOrderWorkflowService } from './admin-order-workflow.service';
+import { AdminOrdersController } from './admin-orders.controller';
 
 @Module({
   imports: [
@@ -23,16 +29,24 @@ import { OrdersService } from './orders.service';
       OrderInventoryReservation,
       OrderRequestKey,
       User,
+      Payment,
     ]),
     InventoryModule,
     VouchersModule,
+    BankLedgerModule,
   ],
-  controllers: [OrdersController],
+  controllers: [
+    OrdersController,
+    CustomerOrderCancellationController,
+    AdminOrdersController,
+  ],
   providers: [
     OrdersService,
     OrderExpiryService,
     OrderHistoryService,
     OrderBenefitsService,
+    CustomerOrderCancellationService,
+    AdminOrderWorkflowService,
   ],
   // Payments (#34) call updateOrderStatus / registerPaymentHooks
   exports: [OrdersService],
