@@ -364,6 +364,26 @@ Test API client kiểm tra payload, AbortSignal, lỗi backend và dữ liệu t
 Các mã `WEB-T20..T31`, `WEB-T40..T45` được ghi trong ma trận truy vết.
 Các test này chưa chứng minh API/PostgreSQL thật chạy cùng giao diện.
 
+## E2E trình duyệt — Issue #40
+
+Cấu hình Playwright tại `apps/web/playwright.config.ts`, test trong
+`apps/web/tests/e2e/`; hướng dẫn PowerShell/Linux, stack Compose riêng và cách xem
+report tại [tests/e2e/README.md](tests/e2e/README.md). Nguồn A1 `92a43f4`:
+`frontend/playwright.config.ts`, `frontend/tests/orders.spec.ts`, `staff.ts`;
+sửa theo API/UI A2, không nhập lịch sử Git A1 hoặc chép response giả.
+
+- `npm --prefix apps/web run test:e2e:prepare`: E2E-T02, phần menu/tùy chọn/giỏ/
+  đăng nhập/voucher, không tạo đơn hoặc chuyển tiền.
+- `npm --prefix apps/web run test:e2e`: E2E-T01 toàn luồng, mặc định nhân viên
+  bấm giao diện #56; có chế độ API thật tạm thời theo bàn giao nhóm trưởng.
+- Cả hai lệnh cần **stack test riêng** đã healthy theo hướng dẫn. Không chạy
+  trên database/volume đồ án. `-- --list` chỉ liệt kê test, chưa chứng minh chạy qua.
+- Xác nhận cuối: **4/4 qua desktop + mobile, UI nhân viên, Compose, 14/11/2026,
+  trên code main `eb3ab5d` + #56**. Main `578136b` đã merge #56; code và dependency
+  trùng lượt chạy này, được nhóm trưởng chấp nhận dùng report/ảnh đã lưu làm minh chứng.
+- Không triển khai CI E2E riêng theo thống nhất của nhóm. CI api/web/integration
+  hiện có giữ nguyên; PR vẫn cần review/approve trước khi merge.
+
 ## Integration test API tạo đơn và thanh toán — Task 5.2 Đợt 2 (Issue #38)
 
 Bộ kiểm thử tích hợp (Integration Test) kiểm thử trực tiếp các API thật với cơ sở dữ liệu **PostgreSQL thật** thông qua TypeORM và Supertest, đặt tại thư mục `apps/api/test/order-payment.integration-spec.ts`.
