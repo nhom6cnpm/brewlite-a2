@@ -16,7 +16,7 @@ Hệ thống **BrewLite A2** được thiết kế để triển khai trên nề
 | **Frontend Web** (`brewlite-a2-web`) | Web Service | `https://brewlite-a2-web.onrender.com` | Next.js 15 PWA, HTTPS tự động, đóng gói Docker đa tầng từ `ghcr.io`. |
 | **Backend API** (`brewlite-a2-api`) | Web Service | `https://brewlite-a2-api-ked5.onrender.com` | NestJS 11 REST API, HTTPS tự động, CORS cấu hình tên miền Frontend. |
 | **Database** (`brewlite-a2-db`) | Managed PostgreSQL 16 | Private Network (`:5432`) | Kết nối nội bộ qua Private Network giữa API và DB trong cùng Render Region. |
-| **Health Check** | API Endpoint | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200 `{"status":"ok","database":"up","commit":"..."}`. |
+| **Health Check** | API Endpoint | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200 `{"status":"ok","commit":"..."}`. |
 | **Swagger API Docs** | API Interactive UI | `https://brewlite-a2-api-ked5.onrender.com/api/docs` | Swagger UI trực quan, hỗ trợ thử nghiệm API kèm Bearer JWT. |
 | **OpenAPI Spec** | API Raw JSON | `https://brewlite-a2-api-ked5.onrender.com/api/docs-json` | Định nghĩa OpenAPI 3.0 chuẩn cho Postman / công cụ tự động hóa. |
 
@@ -269,7 +269,7 @@ Nếu phiên bản mới đã áp dụng một migration sai lệch cấu trúc 
 
 | Dịch vụ | Đường dẫn kiểm tra | Kết quả mong đợi |
 |---|---|---|
-| **API Healthcheck** | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200, JSON: `{"status":"ok","database":"up","commit":"..."}` |
+| **API Healthcheck** | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200, JSON: `{"status":"ok","commit":"..."}` |
 | **API Danh mục món** | `https://brewlite-a2-api-ked5.onrender.com/products` | HTTP 200, danh sách mảng JSON chứa 6 sản phẩm chuẩn A2 (`p1`..`p6`) |
 | **Swagger UI** | `https://brewlite-a2-api-ked5.onrender.com/api/docs` | Giao diện tương tác Swagger UI hiển thị đầy đủ tài liệu API |
 | **OpenAPI Spec** | `https://brewlite-a2-api-ked5.onrender.com/api/docs-json` | Tệp JSON đặc tả OpenAPI 3.0 hoàn chỉnh |

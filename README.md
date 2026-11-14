@@ -589,7 +589,7 @@ Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery
 |---|---|---|---|
 | **Frontend Web** | Render Web Service | [https://brewlite-a2-web.onrender.com](https://brewlite-a2-web.onrender.com) | Next.js 15 PWA, HTTPS tự động |
 | **Backend API** | Render Web Service | [https://brewlite-a2-api-ked5.onrender.com](https://brewlite-a2-api-ked5.onrender.com) | NestJS 11 REST API, HTTPS tự động |
-| **Health Check** | API Endpoint | [https://brewlite-a2-api-ked5.onrender.com/health](https://brewlite-a2-api-ked5.onrender.com/health) | Trả về `{"status":"ok","database":"up","commit":"..."}` |
+| **Health Check** | API Endpoint | [https://brewlite-a2-api-ked5.onrender.com/health](https://brewlite-a2-api-ked5.onrender.com/health) | Trả về `{"status":"ok","commit":"..."}` |
 | **Swagger Docs** | API Endpoint | [https://brewlite-a2-api-ked5.onrender.com/api/docs](https://brewlite-a2-api-ked5.onrender.com/api/docs) | Tra cứu và thử nghiệm API với Bearer JWT |
 | **Database** | Render Managed PostgreSQL 16 | Cổng nội bộ `:5432` | Kết nối nội bộ qua Private Network giữa API và DB |
 
@@ -669,7 +669,7 @@ Bộ sưu tập Postman Collection hoàn chỉnh đã được xây dựng và �
 
 #### Kịch bản kiểm thử luồng nghiệp vụ mẫu từ A đến Z (Happy Path):
 Để kiểm tra toàn bộ luồng hoạt động của hệ thống từ lúc khách đặt món đến lúc nhân viên đối soát, thực hiện theo thứ tự sau:
-1. **Thư mục 01. Health Check**: Chạy `GET /health` → đảm bảo status: ok, database: up.
+1. **Thư mục 01. Health Check**: Chạy `GET /health` → đảm bảo status: ok, khớp commit SHA vừa deploy.
 2. **Thư mục 02. Auth**:
    - Chạy `POST /auth/register` (hoặc `POST /auth/login`) → biến `token` tự động được gán.
    - Chạy `POST /auth/login (Admin)` → biến `adminToken` tự động được gán.

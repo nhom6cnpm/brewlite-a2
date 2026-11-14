@@ -61,7 +61,7 @@
                 "health"
               ]
             },
-            "description": "Kiểm tra trạng thái hoạt động của NestJS API và kết nối Managed PostgreSQL. Trả về status: ok, database: up và commit SHA."
+            "description": "Kiểm tra trạng thái hoạt động của NestJS API và kết nối Managed PostgreSQL. Trả về status: ok và commit SHA."
           }
         }
       ]
@@ -1016,7 +1016,7 @@
         {
           "name": "Admin - Update Order Preparation Status",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [
               {
                 "key": "Content-Type",
@@ -1124,7 +1124,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/admin/orders/history?page=1&limit=10",
+              "raw": "{{baseUrl}}/admin/orders/history?page=1&pageSize=10",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1139,7 +1139,7 @@
                   "value": "1"
                 },
                 {
-                  "key": "limit",
+                  "key": "pageSize",
                   "value": "10"
                 }
               ]
