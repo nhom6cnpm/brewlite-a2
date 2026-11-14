@@ -29,7 +29,7 @@ Hệ thống **BrewLite A2** được thiết kế để triển khai trên nề
 > [!WARNING]
 > **Vòng đời Database miễn phí trên Render (30 ngày):**  
 > Theo chính sách của Render Free tier, database PostgreSQL miễn phí sẽ tự động hết hạn sau **30 ngày** (kèm 14 ngày gia hạn trước khi bị xóa hoàn toàn).  
-> Nhóm tuân thủ đúng khuyến nghị của đề tài: **Khởi tạo database Render sát thời điểm nghiệm thu Task 5**. Đồng thời, hệ thống tích hợp sẵn cơ chế **TypeORM migration tự động chạy khi container API khởi động** (trong migration đã nhúng sẵn dữ liệu mẫu về danh mục, món `p1`..`p6`, công thức nguyên liệu, tài khoản quản trị và voucher), kết hợp tệp sao lưu dữ liệu `pg_dump`. Do đó, nếu database bị xóa hoặc reset, hệ thống có thể **tái lập 100% cấu trúc và dữ liệu chỉ trong vòng dưới 2 phút** mà không cần thao tác thủ công.
+> Nhóm tuân thủ đúng khuyến nghị của đề tài: **Khởi tạo database Render sát thời điểm nghiệm thu Task 5**. Đồng thời, hệ thống tích hợp sẵn cơ chế **TypeORM migration tự động chạy khi container API khởi động** (trong migration đã nhúng sẵn dữ liệu mẫu về danh mục, món `p1`..`p6`, công thức nguyên liệu, tài khoản quản trị và voucher). Do đó, nếu database bị xóa hoặc reset, hệ thống có thể **tự động tái lập 100% cấu trúc và dữ liệu mẫu** ngay khi khởi động lại API mà không cần thao tác thủ công.
 
 ---
 
@@ -257,7 +257,7 @@ Nếu phiên bản mới đã áp dụng một migration sai lệch cấu trúc 
 Để đảm bảo hệ thống luôn sẵn sàng phục vụ việc chấm điểm mà không bị ảnh hưởng bởi chính sách xóa database miễn phí sau 30 ngày của Render:
 
 1. **Khởi tạo muộn nhất có thể:** Chỉ tạo instance PostgreSQL trên Render trước mốc nghiệm thu Sprint 2 / Task 5 từ 3–5 ngày.
-2. **Kịch bản phục hồi thảm họa trong 2 phút:**
+2. **Kịch bản phục hồi thảm họa tự động qua Migration:**
    - Toàn bộ bảng dữ liệu, khóa ngoại, chỉ mục và dữ liệu mẫu đều được quản lý 100% bằng mã nguồn TypeORM Migration trong `apps/api/src/migrations/`.
    - Khi database hết hạn hoặc bị reset: Chỉ cần tạo database mới trên Render → copy chuỗi kết nối vào biến `DATABASE_URL` của `brewlite-a2-api` → API khởi động sẽ tự động dựng lại toàn bộ cấu trúc và nạp đầy đủ dữ liệu mẫu hoàn chỉnh.
 

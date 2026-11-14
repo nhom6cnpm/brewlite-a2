@@ -54,8 +54,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Kiểm tra trạng thái hoạt động của NestJS API và kết nối Managed PostgreSQL. Trả về status: ok, database: up và commit SHA."
           }
@@ -97,8 +101,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             },
             "description": "Đăng ký tài khoản khách hàng mới. Trả về thông tin tài khoản và access_token."
           }
@@ -135,8 +144,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Đăng nhập khách hàng. Tự động lưu access_token vào biến collection {{token}}."
           }
@@ -173,8 +187,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             },
             "description": "Đăng nhập quản trị viên mặc định (admin@brewlite.vn). Tự động lưu access_token vào biến collection {{adminToken}}."
           }
@@ -191,8 +210,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
             },
             "description": "Xem thông tin tài khoản hiện tại, email, vai trò (role) và điểm tích lũy thành viên (loyaltyPoints)."
           }
@@ -209,8 +233,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
             },
             "description": "Xem danh sách toàn bộ người dùng trong hệ thống (chỉ dành cho ADMIN)."
           }
@@ -227,8 +256,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
             },
             "description": "Lấy danh sách 6 món cà phê chuẩn A2 (p1..p6)."
           }
@@ -239,9 +272,14 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["products", "1"]
+              "raw": "{{baseUrl}}/products/p1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "p1"
+              ]
             },
             "description": "Lấy thông tin chi tiết một sản phẩm theo ID (ví dụ sản phẩm 1)."
           }
@@ -252,9 +290,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/1/availability?size=L&toppingIds=cream,pearls",
-              "host": ["{{baseUrl}}"],
-              "path": ["products", "1", "availability"],
+              "raw": "{{baseUrl}}/products/p1/availability?size=L&toppingIds=cream,pearls",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "p1",
+                "availability"
+              ],
               "query": [
                 {
                   "key": "size",
@@ -281,12 +325,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"productId\": \"1\", \"size\": \"M\", \"toppingIds\": [\"cream\"], \"qty\": 2 },\n    { \"productId\": \"2\", \"size\": \"L\", \"toppingIds\": [], \"qty\": 1 }\n  ]\n}"
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"M\", \"toppingIds\": [\"cream\"], \"qty\": 2 },\n    { \"productId\": \"p2\", \"size\": \"L\", \"toppingIds\": [], \"qty\": 1 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products/availability",
-              "host": ["{{baseUrl}}"],
-              "path": ["products", "availability"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "availability"
+              ]
             },
             "description": "Kiểm tra khả năng đáp ứng nguyên liệu chung của toàn giỏ hàng."
           }
@@ -303,8 +352,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/vouchers",
-              "host": ["{{baseUrl}}"],
-              "path": ["vouchers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers"
+              ]
             },
             "description": "Lấy danh sách mã giảm giá đang kích hoạt (THU5K, BREW10, NHOM15K)."
           }
@@ -321,12 +374,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"productId\": \"1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 2 }\n  ]\n}"
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 2 }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/vouchers/quote",
-              "host": ["{{baseUrl}}"],
-              "path": ["vouchers", "quote"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers",
+                "quote"
+              ]
             },
             "description": "Tính toán giá giỏ hàng không áp dụng mã voucher."
           }
@@ -343,12 +401,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"productId\": \"1\", \"size\": \"M\", \"toppingIds\": [\"cream\"], \"qty\": 2 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"M\", \"toppingIds\": [\"cream\"], \"qty\": 2 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/vouchers/quote",
-              "host": ["{{baseUrl}}"],
-              "path": ["vouchers", "quote"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers",
+                "quote"
+              ]
             },
             "description": "Báo giá giỏ hàng kèm voucher THU5K, kiểm tra giảm giá hợp lệ."
           }
@@ -369,12 +432,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"productId\": \"1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 1 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 1 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/vouchers/quote",
-              "host": ["{{baseUrl}}"],
-              "path": ["vouchers", "quote"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers",
+                "quote"
+              ]
             },
             "description": "Báo giá giỏ hàng có JWT để kiểm tra giới hạn 3 lượt dùng/khách hàng của mã voucher."
           }
@@ -429,12 +497,16 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"productId\": \"1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 1 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 1 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/orders",
-              "host": ["{{baseUrl}}"],
-              "path": ["orders"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
             },
             "description": "Tạo đơn hàng PENDING. Khóa nguyên liệu kho, lưu snapshot giá, hạn 15 phút, lưu Idempotency-Key chống tạo trùng."
           }
@@ -451,8 +523,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/orders/me",
-              "host": ["{{baseUrl}}"],
-              "path": ["orders", "me"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "me"
+              ]
             },
             "description": "Lấy danh sách lịch sử đơn hàng của tài khoản đang đăng nhập."
           }
@@ -469,28 +546,79 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/orders/{{orderId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["orders", "{{orderId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}"
+              ]
             },
             "description": "Xem chi tiết đơn hàng theo ID, trạng thái đơn, danh sách món và hạn thanh toán."
           }
         },
         {
-          "name": "Get All Orders (Admin View)",
+          "name": "Cancel Order (Before Transfer Received)",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [
               {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
                 "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
+                "value": "Bearer {{token}}"
               }
             ],
-            "url": {
-              "raw": "{{baseUrl}}/orders",
-              "host": ["{{baseUrl}}"],
-              "path": ["orders"]
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Khách đổi ý muốn đặt món khác\"\n}"
             },
-            "description": "Xem toàn bộ danh sách đơn hàng trong hệ thống (dành cho Admin)."
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "cancel"
+              ]
+            },
+            "description": "Hủy ngay đơn hàng PENDING khi chưa có tiền về. Hoàn lại nguyên liệu kho và lượt voucher."
+          }
+        },
+        {
+          "name": "Request Order Cancellation (After Paid/Transfer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Đặt nhầm món, yêu cầu hủy đơn hoàn tiền\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/cancel-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "cancel-request"
+              ]
+            },
+            "description": "Gửi yêu cầu hủy đơn khi đơn đã thanh toán hoặc đã chuyển khoản, chờ nhân viên duyệt."
           }
         }
       ]
@@ -547,8 +675,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/payments",
-              "host": ["{{baseUrl}}"],
-              "path": ["payments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
             },
             "description": "Tạo phiên thanh toán bằng Ví. Server tự lấy tổng tiền từ đơn hàng, sinh mã thanh toán và lưu paymentId."
           }
@@ -577,8 +709,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/payments",
-              "host": ["{{baseUrl}}"],
-              "path": ["payments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
             },
             "description": "Tạo phiên thanh toán bằng Thẻ tại quầy."
           }
@@ -595,8 +731,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/payments/{{paymentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["payments", "{{paymentId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{paymentId}}"
+              ]
             },
             "description": "Xem trạng thái phiên thanh toán (PENDING, TRANSFER_RECEIVED, SUCCESS, FAILED)."
           }
@@ -613,8 +754,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/mock-bank/payments/{{paymentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["mock-bank", "payments", "{{paymentId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-bank",
+                "payments",
+                "{{paymentId}}"
+              ]
             },
             "description": "API công khai không cần token: lấy thông tin chuyển khoản ngân hàng (số tài khoản, số tiền cố định, nội dung)."
           }
@@ -626,8 +773,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/mock-bank/payments/{{paymentId}}/transfer",
-              "host": ["{{baseUrl}}"],
-              "path": ["mock-bank", "payments", "{{paymentId}}", "transfer"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-bank",
+                "payments",
+                "{{paymentId}}",
+                "transfer"
+              ]
             },
             "description": "Mô phỏng khách bấm nút chuyển tiền: ghi nhận giao dịch IN vào sổ sao kê ngân hàng. Phiên chuyển sang TRANSFER_RECEIVED, đơn vẫn giữ PENDING chờ nhân viên đối soát."
           }
@@ -649,8 +803,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/admin/payments",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "payments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments"
+              ]
             },
             "description": "Danh sách các phiên thanh toán chờ nhân viên xác nhận (ưu tiên phiên đã có tiền TRANSFER_RECEIVED lên đầu)."
           }
@@ -675,8 +834,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "payments", "{{paymentId}}", "confirm"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "{{paymentId}}",
+                "confirm"
+              ]
             },
             "description": "Nhân viên xác nhận tiền về: phiên chuyển SUCCESS, đơn hàng chuyển PAID, tích điểm thưởng cho khách."
           }
@@ -701,8 +867,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/reject",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "payments", "{{paymentId}}", "reject"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "{{paymentId}}",
+                "reject"
+              ]
             },
             "description": "Nhân viên từ chối phiên thanh toán: phiên chuyển FAILED, đơn chuyển PAYMENT_FAILED, ghi nhận giao dịch REFUND hoàn tiền đúng 1 lần."
           }
@@ -719,8 +892,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/admin/payments",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "payments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments"
+              ]
             },
             "description": "Kiểm thử bảo mật: Khách hàng thường gọi API của Admin bị chặn ngay với HTTP 403 Forbidden."
           }
@@ -742,8 +920,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/admin/bank-transactions?orderId={{orderId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "bank-transactions"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "bank-transactions"
+              ],
               "query": [
                 {
                   "key": "orderId",
@@ -766,8 +949,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/admin/ingredients",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "ingredients"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "ingredients"
+              ]
             },
             "description": "Xem bảng tổng quan nguyên liệu tồn kho, số lượng đang giữ chỗ (reserved), cảnh báo sắp hết và số ly còn bán."
           }

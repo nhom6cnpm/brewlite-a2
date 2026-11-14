@@ -605,7 +605,7 @@ Bộ sưu tập Postman Collection hoàn chỉnh đã được xây dựng và �
    - Chạy `GET /auth/me` → xem thông tin người dùng và điểm tích lũy.
 3. **Thư mục 03. Products & Availability**:
    - Chạy `GET /products` → xem 6 món cà phê A2.
-   - Chạy `GET /products/1/availability?size=L&toppingIds=cream,pearls` → xem số ly còn làm được.
+   - Chạy `GET /products/p1/availability?size=L&toppingIds=cream,pearls` → xem số ly còn làm được.
 4. **Thư mục 04. Vouchers**:
    - Chạy `GET /vouchers` → xem danh sách voucher kích hoạt (`THU5K`, `BREW10`, `NHOM15K`).
    - Chạy `POST /vouchers/quote` (có mã `THU5K`) → xem giảm giá 5.000đ.
