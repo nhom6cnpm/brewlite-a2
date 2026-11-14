@@ -50,10 +50,7 @@ export class InventoryService {
     private readonly toppingRecipeRepository: Repository<ToppingRecipe>,
   ) {}
 
-  /**
-   * Bảng nguyên liệu cho trang quản trị (#39): tồn, đang giữ cho đơn chưa thanh toán, số ly.
-   * Cần bảng orders / order_ingredient_reservations của #33, nên chưa gắn controller ở #28.
-   */
+  /** Bảng nguyên liệu cho trang quản trị (#39): tồn, đang giữ cho đơn chưa thanh toán, số ly. */
   async getAdminOverview(): Promise<InventoryOverview> {
     const [book, ingredients, products, reservedRows] = await Promise.all([
       this.getRecipeBook(),

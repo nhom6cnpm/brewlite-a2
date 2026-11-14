@@ -1,0 +1,47 @@
+import type { Order } from "@/types/order";
+
+export const orderFixture: Order = {
+  id: "ORD-customer-test",
+  status: "PENDING",
+  subtotal: 40000,
+  discount: 5000,
+  total: 35000,
+  voucherCode: "THU5K",
+  voucherTitle: "Giảm 5.000đ",
+  createdAt: "2026-11-13T12:00:00Z",
+  serverTime: "2026-11-13T12:01:00Z",
+  expiresAt: "2026-11-13T12:15:00Z",
+  cancelledAt: null,
+  cancelReason: null,
+  paymentMethod: null,
+  refundedAmount: 0,
+  transferReceived: false,
+  canPay: true,
+  canCancelImmediately: true,
+  canRequestCancellation: false,
+  cancelRequest: null,
+  benefitsPolicyVersion: 1,
+  pointsEarned: 0,
+  pointsReversed: 0,
+  pointsAwardedAt: null,
+  pointsReversedAt: null,
+  items: [
+    {
+      id: "line-1",
+      productId: "p1",
+      name: "Americano",
+      imageUrl: "/images/americano.jpg",
+      size: "M",
+      toppingIds: ["cream"],
+      qty: 1,
+      unitPrice: 40000,
+      lineTotal: 40000,
+    },
+  ],
+};
+export const customerProfile = {
+  id: "12345678-1234-4234-9234-123456789012",
+  email: "customer@example.test",
+  role: "CUSTOMER" as const,
+  loyaltyPoints: 0,
+};
