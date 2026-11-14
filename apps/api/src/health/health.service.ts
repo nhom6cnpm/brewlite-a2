@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 
 export interface HealthStatus {
   status: 'ok';
+  commit?: string;
 }
 
 @Injectable()
@@ -15,12 +16,16 @@ export class HealthService {
 
   /**
    * Kiểm tra trạng thái API và kết nối tới PostgreSQL.
-   * Trả về `{ status: 'ok' }` khi database sẵn sàng, ném 503 khi mất kết nối.
+   * Trả về `{ status: 'ok', commit?: string }` khi database sẵn sàng, ném 503 khi mất kết nối.
    */
   async check(): Promise<HealthStatus> {
     try {
       await this.dataSource.query('SELECT 1');
-      return { status: 'ok' };
+      const commit = process.env.GIT_SHA || process.env.RENDER_GIT_COMMIT;
+      return {
+        status: 'ok',
+        ...(commit ? { commit } : {}),
+      };
     } catch {
       throw new ServiceUnavailableException({
         status: 'error',
@@ -29,4 +34,3 @@ export class HealthService {
     }
   }
 }
-
