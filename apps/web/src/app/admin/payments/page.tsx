@@ -1,0 +1,463 @@
+"use client";
+
+import AdminGate from "@/components/admin/AdminGate";
+import AdminNav from "@/components/admin/AdminNav";
+import BankStatement from "@/components/admin/BankStatement";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatPrice } from "@/lib/formatPrice";
+import {
+  listAdminPayments,
+  reviewPayment,
+  type AdminPayment,
+  type AdminPaymentFilter,
+  type PaymentStatus,
+} from "@/lib/admin/payments";
+import { AdminApiError } from "@/lib/admin/request";
+import { useServerClock } from "@/hooks/useServerClock";
+
+type BoardView = AdminPaymentFilter | "STATEMENT";
+
+// Polling (no WebSocket/SSE): ask the backend again every few seconds
+const POLL_INTERVAL_MS = 4000;
+const TOAST_MS = 6000;
+const BASE_TITLE = "Xác nhận thanh toán · BrewLite";
+
+const STATUS_LABEL: Record<PaymentStatus, { text: string; className: string }> =
+  {
+    PENDING: {
+      text: "Chưa thấy tiền về",
+      className: "bg-stone-100 text-stone-700",
+    },
+    TRANSFER_RECEIVED: {
+      text: "Tiền đã về",
+      className: "bg-sky-100 text-sky-900",
+    },
+    SUCCESS: { text: "Đã xác nhận", className: "bg-green-100 text-green-800" },
+    FAILED: { text: "Đã từ chối", className: "bg-red-100 text-red-800" },
+  };
+
+interface Toast {
+  id: string;
+  text: string;
+}
+
+function playBeep() {
+  try {
+    const AudioCtx =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.frequency.value = 880;
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    oscillator.connect(gain).connect(ctx.destination);
+    oscillator.start();
+    oscillator.stop(ctx.currentTime + 0.4);
+    oscillator.onended = () => void ctx.close();
+  } catch {
+    // Browsers may block sound until the page has been clicked once
+  }
+}
+
+function formatTime(value: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "—"
+    : date.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+}
+
+function formatRemaining(expiresAt: string | null, now: number | null): string {
+  if (!expiresAt || now === null) return "—";
+  const ms = Date.parse(expiresAt) - now;
+  if (!Number.isFinite(ms)) return "—";
+  if (ms <= 0) return "Quá hạn";
+  const seconds = Math.ceil(ms / 1000);
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function AdminPaymentsBoard({ token }: { token: string }) {
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const [view, setView] = useState<BoardView>("ACTIVE");
+  const filter: AdminPaymentFilter = view === "STATEMENT" ? "ACTIVE" : view;
+  const [orderSearch, setOrderSearch] = useState(
+    () => searchParams.get("orderId") ?? "",
+  );
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [actionError, setActionError] = useState("");
+  const seenReported = useRef<Set<string> | null>(null);
+
+  const pushToast = useCallback((text: string) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setToasts((current) => [...current, { id, text }]);
+    window.setTimeout(
+      () => setToasts((current) => current.filter((t) => t.id !== id)),
+      TOAST_MS,
+    );
+  }, []);
+
+  // Detect payments whose money just arrived in the mock bank since the last poll
+  const notifyNewReports = useCallback(
+    (rows: AdminPayment[]) => {
+      const reported = rows.filter((row) => row.status === "TRANSFER_RECEIVED");
+      if (seenReported.current === null) {
+        seenReported.current = new Set(reported.map((row) => row.paymentId));
+        return;
+      }
+      const fresh = reported.filter(
+        (row) => !seenReported.current?.has(row.paymentId),
+      );
+      fresh.forEach((row) => {
+        seenReported.current?.add(row.paymentId);
+        pushToast(`Đơn ${row.orderId}: tiền đã về ${formatPrice(row.amount)}`);
+      });
+      if (fresh.length > 0) playBeep();
+    },
+    [pushToast],
+  );
+
+  const query = useQuery({
+    queryKey: ["admin-payments", token, filter, orderSearch.trim()],
+    queryFn: async ({ signal }) => {
+      const rows = await listAdminPayments(token, filter, orderSearch, signal);
+      notifyNewReports(rows);
+      return rows;
+    },
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+    retry: false,
+  });
+
+  const rows = query.data ?? [];
+  const now = useServerClock(rows[0]?.serverTime, query.dataUpdatedAt);
+  const waitingCount = rows.filter(
+    (row) => row.status === "TRANSFER_RECEIVED",
+  ).length;
+
+  // Waiting count in the browser tab, visible even when staff are on another tab
+  useEffect(() => {
+    document.title =
+      waitingCount > 0 ? `(${waitingCount}) ${BASE_TITLE}` : BASE_TITLE;
+  }, [waitingCount]);
+  useEffect(
+    () => () => {
+      document.title = "BrewLite";
+    },
+    [],
+  );
+
+  const review = useMutation({
+    mutationFn: ({
+      paymentId,
+      decision,
+      note,
+    }: {
+      paymentId: string;
+      decision: "confirm" | "reject";
+      note?: string;
+    }) => reviewPayment(token, paymentId, decision, note),
+    onMutate: () => setActionError(""),
+    onSuccess: (payment) => {
+      pushToast(
+        payment.status === "SUCCESS"
+          ? `Đã xác nhận đơn ${payment.orderId} → PAID`
+          : `Đã từ chối đơn ${payment.orderId} → PAYMENT_FAILED`,
+      );
+    },
+    onError: (cause) =>
+      setActionError(
+        cause instanceof Error ? cause.message : "Không xử lý được thanh toán.",
+      ),
+    onSettled: () =>
+      void queryClient.invalidateQueries({ queryKey: ["admin-payments"] }),
+  });
+
+  function handleConfirm(row: AdminPayment) {
+    const question =
+      row.method === "WALLET" && row.status !== "TRANSFER_RECEIVED"
+        ? `Sao kê chưa thấy tiền về cho đơn ${row.orderId}.\nVẫn xác nhận đã nhận ${formatPrice(row.amount)}?`
+        : `Xác nhận đã nhận ${formatPrice(row.amount)} cho đơn ${row.orderId}?`;
+    if (window.confirm(question)) {
+      review.mutate({ paymentId: row.paymentId, decision: "confirm" });
+    }
+  }
+
+  function handleReject(row: AdminPayment) {
+    const refundNotice =
+      row.status === "TRANSFER_RECEIVED"
+        ? `\nHệ thống sẽ hoàn ${formatPrice(row.amount)} cho khách.`
+        : "";
+    const note = window.prompt(
+      `Từ chối thanh toán đơn ${row.orderId}?${refundNotice}\nLý do (khách sẽ thấy):`,
+      row.status === "TRANSFER_RECEIVED"
+        ? "Thông tin chuyển khoản không khớp"
+        : "Chưa nhận được tiền",
+    );
+    if (note !== null)
+      review.mutate({ paymentId: row.paymentId, decision: "reject", note });
+  }
+
+  const loadError = query.error;
+  const forbidden =
+    loadError instanceof AdminApiError && loadError.status === 403;
+  const expired =
+    loadError instanceof AdminApiError && loadError.status === 401;
+
+  return (
+    <section className="mx-auto max-w-6xl px-4 py-8">
+      <AdminNav />
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-amber-800">
+            Quản trị
+          </p>
+          <h1 className="mt-1 text-3xl font-bold text-stone-900">
+            Xác nhận thanh toán
+          </h1>
+          <p className="mt-1 text-sm text-stone-600">
+            Tự làm mới mỗi {POLL_INTERVAL_MS / 1000} giây · {waitingCount} đơn
+            đã có tiền về, chờ xác nhận
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={orderSearch}
+            onChange={(event) => setOrderSearch(event.target.value)}
+            placeholder="Tìm mã đơn (ORD-…)"
+            aria-label="Tìm theo mã đơn"
+            className="w-52 rounded-xl border border-stone-300 px-3 py-2 text-sm focus:outline-2 focus:outline-amber-800"
+          />
+          {(["ACTIVE", "ALL", "STATEMENT"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setView(option)}
+              aria-pressed={view === option}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${view === option ? "bg-amber-800 text-white" : "border border-stone-300 text-stone-700 hover:bg-stone-100"}`}
+            >
+              {option === "ACTIVE"
+                ? "Đang chờ"
+                : option === "ALL"
+                  ? "Tất cả"
+                  : "Sao kê"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {actionError && (
+        <p
+          role="alert"
+          className="mt-5 rounded-xl bg-red-50 p-3 text-sm text-red-800"
+        >
+          {actionError}
+        </p>
+      )}
+
+      <div className="mt-6">
+        {view === "STATEMENT" ? (
+          <BankStatement token={token} orderId={orderSearch} />
+        ) : query.isPending ? (
+          <p className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+            Đang tải danh sách thanh toán…
+          </p>
+        ) : loadError && rows.length === 0 ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-white p-8 text-center"
+          >
+            <p className="font-semibold text-red-800">
+              {forbidden
+                ? "Tài khoản này không có quyền quản trị."
+                : expired
+                  ? "Phiên đăng nhập đã hết hạn."
+                  : loadError.message}
+            </p>
+            {expired && (
+              <Link
+                href="/login?redirect=/admin/payments"
+                className="mt-3 inline-block font-semibold text-amber-800 underline"
+              >
+                Đăng nhập lại
+              </Link>
+            )}
+            {!forbidden && !expired && (
+              <button
+                type="button"
+                onClick={() => void query.refetch()}
+                className="mt-3 font-semibold text-amber-800 underline"
+              >
+                Thử lại
+              </button>
+            )}
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="rounded-2xl border border-stone-200 bg-white p-8 text-center text-stone-600">
+            {orderSearch.trim()
+              ? `Không có thanh toán nào cho đơn “${orderSearch.trim()}”.`
+              : "Không có thanh toán chờ xác nhận."}
+          </p>
+        ) : (
+          <ul className="grid min-w-0 grid-cols-1 gap-3">
+            {rows.map((row) => {
+              const label = STATUS_LABEL[row.status];
+              const inTime =
+                now !== null &&
+                !!row.expiresAt &&
+                Date.parse(row.expiresAt) > now;
+              const moneyArrived = row.status === "TRANSFER_RECEIVED";
+              // Money that arrived in time keeps the order open after the deadline
+              const active =
+                row.orderStatus === "PENDING" &&
+                (moneyArrived || (row.status === "PENDING" && inTime));
+              const busy =
+                review.isPending &&
+                review.variables?.paymentId === row.paymentId;
+              return (
+                <li
+                  key={row.paymentId}
+                  className={`min-w-0 rounded-2xl border bg-white p-4 shadow-sm sm:p-5 ${moneyArrived ? "border-sky-300 ring-1 ring-sky-200" : "border-stone-200"}`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 max-w-full">
+                      <p className="break-all font-mono text-sm font-bold text-stone-900">
+                        {row.orderId}
+                      </p>
+                      <p className="truncate text-sm text-stone-600">
+                        {row.customerEmail ?? "Khách hàng"} · {row.itemCount}{" "}
+                        món
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${label.className}`}
+                    >
+                      {label.text}
+                    </span>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-5">
+                    <div>
+                      <dt className="text-stone-500">Số tiền</dt>
+                      <dd className="font-bold text-amber-900">
+                        {formatPrice(row.amount)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-stone-500">Phương thức</dt>
+                      <dd>
+                        {row.method === "WALLET"
+                          ? "Chuyển khoản / Ví"
+                          : "Thẻ tại quầy"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-stone-500">Tạo lúc</dt>
+                      <dd>{formatTime(row.createdAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-stone-500">Tiền về lúc</dt>
+                      <dd>{formatTime(row.receivedAt)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-stone-500">
+                        {active ? "Còn lại" : "Trạng thái đơn"}
+                      </dt>
+                      <dd>
+                        {active
+                          ? moneyArrived && !inTime
+                            ? "Quá hạn (đã có tiền)"
+                            : formatRemaining(row.expiresAt, now)
+                          : (row.orderStatus ?? "—")}
+                      </dd>
+                    </div>
+                  </dl>
+                  {row.reviewNote && (
+                    <p className="mt-2 text-sm text-stone-600">
+                      Ghi chú: {row.reviewNote}
+                    </p>
+                  )}
+                  {row.cancellationPending && (
+                    <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+                      Đơn đang chờ duyệt hủy.{" "}
+                      <Link
+                        href="/admin/orders"
+                        className="font-semibold underline"
+                      >
+                        Xử lý yêu cầu hủy
+                      </Link>{" "}
+                      trước khi xác nhận hoặc từ chối thanh toán.
+                    </p>
+                  )}
+                  {active && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleConfirm(row)}
+                        disabled={busy || row.cancellationPending}
+                        className="rounded-xl bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+                      >
+                        {busy && review.variables?.decision === "confirm"
+                          ? "Đang xác nhận…"
+                          : "Xác nhận đã nhận tiền"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleReject(row)}
+                        disabled={busy || row.cancellationPending}
+                        className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-800 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {busy && review.variables?.decision === "reject"
+                          ? "Đang từ chối…"
+                          : "Từ chối"}
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div
+        aria-live="polite"
+        className="fixed bottom-4 right-4 z-20 grid w-[min(22rem,calc(100vw-2rem))] gap-2"
+      >
+        {toasts.map((toast) => (
+          <p
+            key={toast.id}
+            className="rounded-xl bg-stone-900 px-4 py-3 text-sm font-medium text-white shadow-lg"
+          >
+            {toast.text}
+          </p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function AdminPaymentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <p className="mx-auto max-w-6xl px-4 py-12 text-stone-600">Đang tải…</p>
+      }
+    >
+      <AdminGate redirect="/admin/payments">
+        {(token) => <AdminPaymentsBoard key={token} token={token} />}
+      </AdminGate>
+    </Suspense>
+  );
+}

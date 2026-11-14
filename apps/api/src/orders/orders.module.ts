@@ -17,6 +17,8 @@ import { Payment } from '../payments/entities/payment.entity';
 import { BankLedgerModule } from '../mock-bank/bank-ledger.module';
 import { CustomerOrderCancellationService } from './customer-order-cancellation.service';
 import { CustomerOrderCancellationController } from './customer-order-cancellation.controller';
+import { AdminOrderWorkflowService } from './admin-order-workflow.service';
+import { AdminOrdersController } from './admin-orders.controller';
 
 @Module({
   imports: [
@@ -33,13 +35,18 @@ import { CustomerOrderCancellationController } from './customer-order-cancellati
     VouchersModule,
     BankLedgerModule,
   ],
-  controllers: [OrdersController, CustomerOrderCancellationController],
+  controllers: [
+    OrdersController,
+    CustomerOrderCancellationController,
+    AdminOrdersController,
+  ],
   providers: [
     OrdersService,
     OrderExpiryService,
     OrderHistoryService,
     OrderBenefitsService,
     CustomerOrderCancellationService,
+    AdminOrderWorkflowService,
   ],
   // Payments (#34) call updateOrderStatus / registerPaymentHooks
   exports: [OrdersService],
