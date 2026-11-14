@@ -324,7 +324,7 @@ npm run test:integration
   ```
 - **Kiểm thử trực tiếp trên môi trường live production**:
   ```powershell
-  $env:RENDER_API_BASE_URL = "https://brewlite-a2-api.onrender.com"
+  $env:RENDER_API_BASE_URL = "https://brewlite-a2-api-ked5.onrender.com"
   $env:RENDER_WEB_BASE_URL = "https://brewlite-a2-web.onrender.com"
   node scripts/smoke-test.mjs
   ```
@@ -517,9 +517,9 @@ Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery
 | Dịch vụ | Nền tảng | URL Production (A2) | Ghi chú & Bảo mật |
 |---|---|---|---|
 | **Frontend Web** | Render Web Service | [https://brewlite-a2-web.onrender.com](https://brewlite-a2-web.onrender.com) | Next.js 15 PWA, HTTPS tự động |
-| **Backend API** | Render Web Service | [https://brewlite-a2-api.onrender.com](https://brewlite-a2-api.onrender.com) | NestJS 11 REST API, HTTPS tự động |
-| **Health Check** | API Endpoint | [https://brewlite-a2-api.onrender.com/health](https://brewlite-a2-api.onrender.com/health) | Trả về `{"status":"ok","database":"up","commit":"..."}` |
-| **Swagger Docs** | API Endpoint | [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs) | Tra cứu và thử nghiệm API với Bearer JWT |
+| **Backend API** | Render Web Service | [https://brewlite-a2-api-ked5.onrender.com](https://brewlite-a2-api-ked5.onrender.com) | NestJS 11 REST API, HTTPS tự động |
+| **Health Check** | API Endpoint | [https://brewlite-a2-api-ked5.onrender.com/health](https://brewlite-a2-api-ked5.onrender.com/health) | Trả về `{"status":"ok","database":"up","commit":"..."}` |
+| **Swagger Docs** | API Endpoint | [https://brewlite-a2-api-ked5.onrender.com/api/docs](https://brewlite-a2-api-ked5.onrender.com/api/docs) | Tra cứu và thử nghiệm API với Bearer JWT |
 | **Database** | Render Managed PostgreSQL 16 | Cổng nội bộ `:5432` | Kết nối nội bộ qua Private Network giữa API và DB |
 
 ### 3. Quy trình Triển khai & Phục hồi / Rollback
@@ -542,13 +542,13 @@ Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery
   👉 [`docs/api/openapi.json`](docs/api/openapi.json)
 - Endpoint phục vụ trực tiếp từ API server:
   - Local: `http://localhost:3001/api/docs-json`
-  - Production: [https://brewlite-a2-api.onrender.com/api/docs-json](https://brewlite-a2-api.onrender.com/api/docs-json)
+  - Production: [https://brewlite-a2-api-ked5.onrender.com/api/docs-json](https://brewlite-a2-api-ked5.onrender.com/api/docs-json)
 
 ### 2. Kiểm thử tương tác trực tiếp qua Swagger UI
 Swagger UI là công cụ trực quan chạy ngay trên trình duyệt, không yêu cầu cài đặt thêm bất kỳ phần mềm nào:
 - **Địa chỉ truy cập**:
   - Khi chạy Local: `http://localhost:3001/api/docs`
-  - Trên Production Cloud: [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs)
+  - Trên Production Cloud: [https://brewlite-a2-api-ked5.onrender.com/api/docs](https://brewlite-a2-api-ked5.onrender.com/api/docs)
 
 #### Cách lấy JWT Token để xác thực trên Swagger:
 Hệ thống hỗ trợ 2 vai trò: Khách hàng (`CUSTOMER`) và Quản trị viên (`ADMIN`).
@@ -562,7 +562,7 @@ Hệ thống hỗ trợ 2 vai trò: Khách hàng (`CUSTOMER`) và Quản trị v
      ```json
      {
        "email": "admin@brewlite.vn",
-       "password": "change_me"
+       "password": "admin123"
      }
      ```
      *(Lưu ý: Nếu mật khẩu đã đổi theo cấu hình A1, dùng `admin123`).*
@@ -588,7 +588,7 @@ Bộ sưu tập Postman Collection hoàn chỉnh đã được xây dựng và �
    - Bấm chọn vào tên Collection **BrewLite A2 - Complete API Collection** → chọn tab **Variables**:
      | Biến | Giá trị mặc định (Local) | Giá trị Production | Ghi chú |
      |---|---|---|---|
-     | `baseUrl` | `http://localhost:3001` | `https://brewlite-a2-api.onrender.com` | Địa chỉ API server |
+     | `baseUrl` | `http://localhost:3001` | `https://brewlite-a2-api-ked5.onrender.com` | Địa chỉ API server |
      | `token` | *(Tự động gán)* | *(Tự động gán)* | JWT của khách hàng |
      | `adminToken` | *(Tự động gán)* | *(Tự động gán)* | JWT của quản trị viên |
      | `orderId` | *(Tự động gán)* | *(Tự động gán)* | ID đơn hàng vừa tạo |

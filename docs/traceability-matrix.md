@@ -137,10 +137,10 @@ Hệ thống BrewLite A2 được hoàn thiện cấu hình chuẩn bị bàn gi
 - Tài liệu triển khai & vận hành: [docs/deployment.md](deployment.md)
 - Quyết định kiến trúc nền tảng: [ADR-008](architecture/adr/008-nen-tang-trien-khai.md)
 - Frontend Web HTTPS: `https://brewlite-a2-web.onrender.com`
-- Backend API HTTPS: `https://brewlite-a2-api.onrender.com`
+- Backend API HTTPS: `https://brewlite-a2-api-ked5.onrender.com`
 - Database Production: Managed PostgreSQL trên Render kết nối qua Private Network nội bộ (`:5432`) bảo mật giữa API và Database.
-- Tài liệu kiểm thử tương tác API (Swagger UI): [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs)
-- Định nghĩa chuẩn OpenAPI 3.0 JSON: [https://brewlite-a2-api.onrender.com/api/docs-json](https://brewlite-a2-api.onrender.com/api/docs-json)
+- Tài liệu kiểm thử tương tác API (Swagger UI): [https://brewlite-a2-api-ked5.onrender.com/api/docs](https://brewlite-a2-api-ked5.onrender.com/api/docs)
+- Định nghĩa chuẩn OpenAPI 3.0 JSON: [https://brewlite-a2-api-ked5.onrender.com/api/docs-json](https://brewlite-a2-api-ked5.onrender.com/api/docs-json)
 - Tệp đặc tả OpenAPI 3.0: [docs/api/openapi.json](api/openapi.json)
 - Bộ sưu tập kiểm thử Postman: [docs/api/brewlite.postman_collection.json](api/brewlite.postman_collection.json)
 - Hướng dẫn kiểm thử Swagger / Postman và lấy JWT: [README.md](../README.md#kiểm-thử-api-bằng-swagger-ui--postman-task-54--phúc)

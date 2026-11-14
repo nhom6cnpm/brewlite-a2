@@ -10,7 +10,7 @@
       "key": "baseUrl",
       "value": "http://localhost:3001",
       "type": "string",
-      "description": "URL API Backend (Local: http://localhost:3001 hoặc Production: https://brewlite-a2-api.onrender.com)"
+      "description": "URL API Backend (Local: http://localhost:3001 hoặc Production: https://brewlite-a2-api-ked5.onrender.com)"
     },
     {
       "key": "token",
@@ -22,7 +22,7 @@
       "key": "adminToken",
       "value": "",
       "type": "string",
-      "description": "JWT Bearer token của quản trị viên (admin@brewlite.vn / change_me)"
+      "description": "JWT Bearer token của quản trị viên (admin@brewlite.vn / admin123)"
     },
     {
       "key": "orderId",
@@ -169,7 +169,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@brewlite.vn\",\n  \"password\": \"change_me\"\n}"
+              "raw": "{\n  \"email\": \"admin@brewlite.vn\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",

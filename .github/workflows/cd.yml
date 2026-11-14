@@ -74,7 +74,7 @@ jobs:
 
       - name: Build Web application
         env:
-          NEXT_PUBLIC_API_URL: https://brewlite-a2-api.onrender.com
+          NEXT_PUBLIC_API_URL: https://brewlite-a2-api-ked5.onrender.com
           NEXT_PUBLIC_APP_URL: https://brewlite-a2-web.onrender.com
           NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES: 15
         run: npm run build
@@ -157,7 +157,7 @@ jobs:
           context: apps/web
           file: apps/web/Dockerfile
           build-args: |
-            NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com
+            NEXT_PUBLIC_API_URL=https://brewlite-a2-api-ked5.onrender.com
             NEXT_PUBLIC_APP_URL=https://brewlite-a2-web.onrender.com
             NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES=15
           push: true
@@ -248,7 +248,7 @@ jobs:
 
       - name: Execute Production Smoke Test
         env:
-          API_URL: https://brewlite-a2-api.onrender.com
+          API_URL: https://brewlite-a2-api-ked5.onrender.com
           WEB_URL: https://brewlite-a2-web.onrender.com
           EXPECTED_COMMIT: ${{ !inputs.skip_deploy && needs.build-and-push.outputs.short_sha || '' }}
           MAX_RETRIES: 24

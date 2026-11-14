@@ -14,11 +14,11 @@ Hệ thống **BrewLite A2** được thiết kế để triển khai trên nề
 | Thành phần | Dịch vụ Render | URL Production / Endpoint | Ghi chú & Bảo mật |
 |---|---|---|---|
 | **Frontend Web** (`brewlite-a2-web`) | Web Service | `https://brewlite-a2-web.onrender.com` | Next.js 15 PWA, HTTPS tự động, đóng gói Docker đa tầng từ `ghcr.io`. |
-| **Backend API** (`brewlite-a2-api`) | Web Service | `https://brewlite-a2-api.onrender.com` | NestJS 11 REST API, HTTPS tự động, CORS cấu hình tên miền Frontend. |
+| **Backend API** (`brewlite-a2-api`) | Web Service | `https://brewlite-a2-api-ked5.onrender.com` | NestJS 11 REST API, HTTPS tự động, CORS cấu hình tên miền Frontend. |
 | **Database** (`brewlite-a2-db`) | Managed PostgreSQL 16 | Private Network (`:5432`) | Kết nối nội bộ qua Private Network giữa API và DB trong cùng Render Region. |
-| **Health Check** | API Endpoint | `https://brewlite-a2-api.onrender.com/health` | HTTP 200 `{"status":"ok","database":"up","commit":"..."}`. |
-| **Swagger API Docs** | API Interactive UI | `https://brewlite-a2-api.onrender.com/api/docs` | Swagger UI trực quan, hỗ trợ thử nghiệm API kèm Bearer JWT. |
-| **OpenAPI Spec** | API Raw JSON | `https://brewlite-a2-api.onrender.com/api/docs-json` | Định nghĩa OpenAPI 3.0 chuẩn cho Postman / công cụ tự động hóa. |
+| **Health Check** | API Endpoint | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200 `{"status":"ok","database":"up","commit":"..."}`. |
+| **Swagger API Docs** | API Interactive UI | `https://brewlite-a2-api-ked5.onrender.com/api/docs` | Swagger UI trực quan, hỗ trợ thử nghiệm API kèm Bearer JWT. |
+| **OpenAPI Spec** | API Raw JSON | `https://brewlite-a2-api-ked5.onrender.com/api/docs-json` | Định nghĩa OpenAPI 3.0 chuẩn cho Postman / công cụ tự động hóa. |
 
 > [!NOTE]
 > **Hiện trạng triển khai & Kế hoạch hoàn thiện:**
@@ -127,7 +127,7 @@ Do Next.js nhúng tĩnh các biến có tiền tố `NEXT_PUBLIC_*` vào mã ngu
 
 | Build Arg | Giá trị trên Production | Mục đích |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | `https://brewlite-a2-api.onrender.com` | Địa chỉ API để trình duyệt của người dùng gửi yêu cầu HTTP |
+| `NEXT_PUBLIC_API_URL` | `https://brewlite-a2-api-ked5.onrender.com` | Địa chỉ API để trình duyệt của người dùng gửi yêu cầu HTTP |
 | `NEXT_PUBLIC_APP_URL` | `https://brewlite-a2-web.onrender.com` | Địa chỉ gốc của Frontend Web |
 
 ### 4.2. GitHub Actions Secrets (Dành cho CI/CD Pipeline)
@@ -137,7 +137,7 @@ Cấu hình tại **GitHub Repository → Settings → Secrets and variables →
 |---|:---:|---|
 | `RENDER_API_DEPLOY_HOOK` | ✅ | Webhook URL kích hoạt Render deploy dịch vụ `brewlite-a2-api` (thiếu secret sẽ dừng pipeline với lỗi exit 1) |
 | `RENDER_WEB_DEPLOY_HOOK` | ✅ | Webhook URL kích hoạt Render deploy dịch vụ `brewlite-a2-web` (thiếu secret sẽ dừng pipeline với lỗi exit 1) |
-| `PROD_API_URL` | ⬜ | URL API để chạy smoke test (mặc định fallback: `https://brewlite-a2-api.onrender.com`) |
+| `PROD_API_URL` | ⬜ | URL API để chạy smoke test (mặc định fallback: `https://brewlite-a2-api-ked5.onrender.com`) |
 | `PROD_WEB_URL` | ⬜ | URL Web để chạy smoke test (mặc định fallback: `https://brewlite-a2-web.onrender.com`) |
 | `GITHUB_TOKEN` | ✅ | Token do GitHub Actions tự động cung cấp có quyền `packages: write` để push image lên GHCR |
 
@@ -163,7 +163,7 @@ Cấu hình tại mục **Environment** của từng dịch vụ trên Render Da
 |---|---|:---:|
 | `NODE_ENV` | `production` | ✅ |
 | `PORT` | `3000` | ✅ |
-| `API_INTERNAL_URL` | `https://brewlite-a2-api.onrender.com` (gọi API từ SSR) | ✅ |
+| `API_INTERNAL_URL` | `https://brewlite-a2-api-ked5.onrender.com` (gọi API từ SSR) | ✅ |
 
 ---
 
@@ -269,15 +269,15 @@ Nếu phiên bản mới đã áp dụng một migration sai lệch cấu trúc 
 
 | Dịch vụ | Đường dẫn kiểm tra | Kết quả mong đợi |
 |---|---|---|
-| **API Healthcheck** | `https://brewlite-a2-api.onrender.com/health` | HTTP 200, JSON: `{"status":"ok","database":"up","commit":"..."}` |
-| **API Danh mục món** | `https://brewlite-a2-api.onrender.com/products` | HTTP 200, danh sách mảng JSON chứa 6 sản phẩm chuẩn A2 (`p1`..`p6`) |
-| **Swagger UI** | `https://brewlite-a2-api.onrender.com/api/docs` | Giao diện tương tác Swagger UI hiển thị đầy đủ tài liệu API |
-| **OpenAPI Spec** | `https://brewlite-a2-api.onrender.com/api/docs-json` | Tệp JSON đặc tả OpenAPI 3.0 hoàn chỉnh |
+| **API Healthcheck** | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200, JSON: `{"status":"ok","database":"up","commit":"..."}` |
+| **API Danh mục món** | `https://brewlite-a2-api-ked5.onrender.com/products` | HTTP 200, danh sách mảng JSON chứa 6 sản phẩm chuẩn A2 (`p1`..`p6`) |
+| **Swagger UI** | `https://brewlite-a2-api-ked5.onrender.com/api/docs` | Giao diện tương tác Swagger UI hiển thị đầy đủ tài liệu API |
+| **OpenAPI Spec** | `https://brewlite-a2-api-ked5.onrender.com/api/docs-json` | Tệp JSON đặc tả OpenAPI 3.0 hoàn chỉnh |
 | **Giao diện Web** | `https://brewlite-a2-web.onrender.com` | Trang chủ BrewLite hiển thị menu thức uống, PWA header, giỏ hàng |
 
 ### 9.2. Hướng dẫn Thử nghiệm API trên Swagger Production
 
-1. Truy cập trang Swagger UI tại: [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs)
+1. Truy cập trang Swagger UI tại: [https://brewlite-a2-api-ked5.onrender.com/api/docs](https://brewlite-a2-api-ked5.onrender.com/api/docs)
 2. **Đăng nhập lấy Token:**
    - Mở nhóm API **Auth** → chọn `POST /auth/login`.
    - Bấm **Try it out**, điền thông tin đăng nhập:
