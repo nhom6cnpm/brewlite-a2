@@ -72,8 +72,8 @@ describe('Trang Giỏ Hàng - Đặt hàng (Task 5.2)', () => {
     });
   });
 
-  // WEB-T70
-  it('WEB-T70: Chưa đăng nhập thì chuyển hướng sang trang đăng nhập', async () => {
+  // WEB-T51
+  it('WEB-T51: Chưa đăng nhập thì chuyển hướng sang trang đăng nhập', async () => {
     vi.mocked(getStoredToken).mockReturnValue(null);
     vi.mocked(useAuth).mockReturnValue({ user: null, token: null } as unknown as ReturnType<typeof useAuth>);
 
@@ -86,8 +86,8 @@ describe('Trang Giỏ Hàng - Đặt hàng (Task 5.2)', () => {
     });
   });
 
-  // WEB-T71
-  it('WEB-T71: Bấm đúp "Đặt hàng" chỉ gọi API 1 lần với cùng Idempotency-Key', async () => {
+  // WEB-T52
+  it('WEB-T52: Bấm đúp "Đặt hàng" chỉ gọi API 1 lần với cùng Idempotency-Key', async () => {
     vi.mocked(getStoredToken).mockReturnValue('mock-token');
     vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1' }, token: 'mock-token' } as unknown as ReturnType<typeof useAuth>);
     
@@ -109,8 +109,8 @@ describe('Trang Giỏ Hàng - Đặt hàng (Task 5.2)', () => {
     });
   });
 
-  // WEB-T72
-  it('WEB-T72: API trả lỗi hết nguyên liệu thì hiện lỗi và không xóa giỏ', async () => {
+  // WEB-T53
+  it('WEB-T53: API trả lỗi hết nguyên liệu thì hiện lỗi và không xóa giỏ', async () => {
     vi.mocked(getStoredToken).mockReturnValue('mock-token');
     vi.mocked(useAuth).mockReturnValue({ user: { id: 'u1' }, token: 'mock-token' } as unknown as ReturnType<typeof useAuth>);
     

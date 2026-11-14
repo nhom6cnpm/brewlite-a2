@@ -1,9 +1,10 @@
-import { OrderCheckout } from "@/components/orders/OrderCheckout";
+import PaymentMethodPicker from "@/components/payments/PaymentMethodPicker";
+
 export default async function CheckoutPage({
   params,
 }: {
   params: Promise<{ orderId: string }>;
 }) {
   const { orderId } = await params;
-  return <OrderCheckout key={orderId} id={orderId} />;
+  return <PaymentMethodPicker key={orderId} orderId={orderId} />;
 }

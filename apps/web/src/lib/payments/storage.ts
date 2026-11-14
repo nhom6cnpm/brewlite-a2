@@ -1,4 +1,3 @@
-import type { PaymentMethod } from "./api";
 import { getStoredToken, getStoredUser } from "@/lib/auth";
 import { getLineKey, type CartItem } from "@/store/useCart";
 import { newIdempotencyKey } from "@/lib/idempotency";
@@ -11,21 +10,6 @@ export interface CheckoutSnapshot {
   cartFingerprint: string;
 }
 
-export interface PaymentAttempt {
-  orderId: string;
-  method: PaymentMethod;
-  idempotencyKey: string;
-  paymentId?: string;
-}
-
-export interface PaymentSession {
-  paymentId: string;
-  orderId: string;
-  method: PaymentMethod;
-  amount: number;
-  startedAt: number;
-}
-
 const checkoutKey = (orderId: string) => `brewlite-checkout:${orderId}`;
 const activeCheckoutKey = "brewlite-active-checkout";
 const orderAttemptKey = "brewlite-order-attempt";
@@ -35,10 +19,6 @@ interface OrderAttempt {
   voucherCode: string;
   idempotencyKey: string;
 }
-const attemptKey = (orderId: string, method: PaymentMethod) =>
-  `brewlite-payment-attempt:${orderId}:${method}`;
-const sessionKey = (paymentId: string) =>
-  `brewlite-payment-session:${paymentId}`;
 
 function scopedKey(key: string): string | null {
   const owner = getStoredUser()?.id;
@@ -72,11 +52,6 @@ function writeStored(key: string, value: unknown): void {
     localStorage.setItem(scoped, JSON.stringify(value));
 }
 
-/**
- * Idempotency-Key for POST /orders. Pressing "Đặt hàng" again for the same cart
- * (double click, lost response, network retry) reuses the key, so the backend
- * returns the same order instead of creating a second one.
- */
 export function getOrderRequestKey(
   cartFingerprint: string,
   voucherCode: string,
@@ -98,7 +73,6 @@ export function getOrderRequestKey(
   return idempotencyKey;
 }
 
-/** The order exists now: the next order (even with the same cart) gets a new key. */
 export function clearOrderRequestKey(): void {
   const scoped = scopedKey(orderAttemptKey);
   if (typeof window !== "undefined" && scoped) localStorage.removeItem(scoped);
@@ -124,7 +98,6 @@ export function getActiveCheckout(
   const snapshot = readStored<CheckoutSnapshot>(activeCheckoutKey);
   if (!snapshot || snapshot.cartFingerprint !== cartFingerprint) return null;
   const saved = getCheckout(snapshot.orderId);
-  // The backend decides expiry; browser clock changes must not create another order.
   return saved;
 }
 
@@ -133,39 +106,4 @@ export function clearActiveCheckout(orderId: string): void {
   const scoped = scopedKey(activeCheckoutKey);
   if (active?.orderId === orderId && typeof window !== "undefined" && scoped)
     localStorage.removeItem(scoped);
-}
-
-export function getAttempt(
-  orderId: string,
-  method: PaymentMethod,
-): PaymentAttempt | null {
-  const attempt = readStored<PaymentAttempt>(attemptKey(orderId, method));
-  return attempt?.orderId === orderId &&
-    attempt.method === method &&
-    typeof attempt.idempotencyKey === "string"
-    ? attempt
-    : null;
-}
-
-export function saveAttempt(attempt: PaymentAttempt): void {
-  writeStored(attemptKey(attempt.orderId, attempt.method), attempt);
-}
-
-export function removeAttempt(orderId: string, method: PaymentMethod): void {
-  const scoped = scopedKey(attemptKey(orderId, method));
-  if (typeof window !== "undefined" && scoped) localStorage.removeItem(scoped);
-}
-
-export function savePaymentSession(session: PaymentSession): void {
-  writeStored(sessionKey(session.paymentId), session);
-}
-
-export function getPaymentSession(paymentId: string): PaymentSession | null {
-  const session = readStored<PaymentSession>(sessionKey(paymentId));
-  return session?.paymentId === paymentId &&
-    typeof session.orderId === "string" &&
-    (session.method === "WALLET" || session.method === "CARD") &&
-    Number.isFinite(session.startedAt)
-    ? session
-    : null;
 }
