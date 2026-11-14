@@ -59,7 +59,7 @@ function validCancellation(value: Record<string, unknown>): boolean {
     value.canRequestCancellation === undefined &&
     value.cancelRequest === undefined
   )
-    return true;
+    return false;
   if (
     typeof value.canCancelImmediately !== "boolean" ||
     typeof value.canRequestCancellation !== "boolean" ||
@@ -96,7 +96,7 @@ const benefitKeys = [
   "pointsReversedAt",
 ] as const;
 function validBenefits(value: Record<string, unknown>): boolean {
-  if (benefitKeys.every((key) => value[key] === undefined)) return true;
+  if (benefitKeys.some((key) => value[key] === undefined)) return false;
   return (
     (value.benefitsPolicyVersion === 0 || value.benefitsPolicyVersion === 1) &&
     money(value.pointsEarned) &&
@@ -131,11 +131,14 @@ function isOrder(value: unknown): value is OrderWire {
       value.paymentMethod === "CARD" ||
       value.paymentMethod === "WALLET") &&
     typeof value.canPay === "boolean" &&
-    (value.refundedAmount === undefined || money(value.refundedAmount)) &&
-    (value.transferReceived === undefined ||
-      typeof value.transferReceived === "boolean") &&
+    money(value.refundedAmount) &&
+    typeof value.transferReceived === "boolean" &&
     Array.isArray(value.items) &&
-    value.items.every(isItem)
+    value.items.length > 0 &&
+    value.items.every(isItem) &&
+    value.items.every((item) => item.lineTotal === item.unitPrice * item.qty) &&
+    value.subtotal ===
+      value.items.reduce((sum, item) => sum + item.lineTotal, 0)
   );
 }
 

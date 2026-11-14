@@ -17,6 +17,7 @@
     "test:watch": "node --experimental-vm-modules --experimental-require-module ./node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules --experimental-require-module ./node_modules/jest/bin/jest.js --coverage",
     "vouchers:smoke": "npm run build && node test/vouchers.smoke.cjs",
+    "orders:smoke": "npm run build && node test/customer-orders.smoke.cjs",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- -d data-source.ts migration:generate src/migrations/",
     "migration:run": "npm run typeorm -- -d data-source.ts migration:run",
