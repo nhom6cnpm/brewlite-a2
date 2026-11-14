@@ -129,3 +129,13 @@ Pipeline Continuous Delivery tự động kích hoạt trên GitHub Actions khi 
 - Script kiểm thử khói: [scripts/smoke-test.mjs](../scripts/smoke-test.mjs)
 - Unit test hợp đồng Smoke Test (`CD-T01`): [smoke-test.test.mjs](../tests/smoke-test.test.mjs)
 - Hướng dẫn triển khai & rollback chi tiết: [docs/deployment.md](deployment.md)
+
+## E2E trình duyệt — Issue #40 (chuẩn bị, chưa nghiệm thu)
+
+| Mã | Luồng/yêu cầu | Tệp | Trạng thái |
+|---|---|---|---|
+| E2E-T01 | UC-CK; FR-02/03/04/05/07/08/12/13: menu → tùy chọn → giỏ → login → tạo đơn Idempotency-Key → Ví/QR → chuyển tiền → nhân viên → confirmation PAID, snapshot/điểm/lịch sử/xóa giỏ | [checkout.spec.ts](../apps/web/tests/e2e/checkout.spec.ts), [helpers](../apps/web/tests/e2e/helpers.ts), [Playwright config](../apps/web/playwright.config.ts), [Compose test](../tests/e2e/compose.e2e.yml) | Đã viết, chưa chạy toàn luồng; chờ #57 và #56 cho UI nhân viên. Không dùng kết quả --list hoặc E2E-T02 thay cho mã này. |
+| E2E-T02 | Phần chuẩn bị trên main: menu/tùy chọn/giỏ/persist/login/voucher, không tạo đơn | [cart-login.spec.ts](../apps/web/tests/e2e/cart-login.spec.ts) | Đã viết và thu thập được test; chưa chạy browser trên stack Docker E2E. |
+| WEB-T110 | Từ chối stack/project/cổng/DB/volume sai trước khi E2E ghi dữ liệu | [e2e-stack-guard.test.ts](../apps/web/src/test/e2e-stack-guard.test.ts), [setup](../apps/web/tests/e2e/setup.ts), [guard](../apps/web/tests/e2e/stack-guard.ts) | Unit test riêng; không thay kết quả browser E2E-T01/T02. |
+
+Cách chạy và phần phụ thuộc: [tests/e2e/README.md](../tests/e2e/README.md). Giữ nguyên mã unit/integration của các thành viên.
