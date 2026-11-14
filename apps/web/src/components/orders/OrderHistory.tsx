@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useOrderClock, useOrderHistory } from "@/hooks/useOrderHistory";
+import { useClearPaidCart } from "@/hooks/useClearPaidCart";
 import { isActive } from "@/lib/orderUtils";
 import ReadyOrdersNotice from "./ReadyOrdersNotice";
 import {
@@ -21,6 +22,9 @@ export function OrderHistory() {
   const query = useOrderHistory();
   const [filter, setFilter] = useState("all");
   const orders = query.data ?? [];
+  useClearPaidCart(
+    query.authenticated && !query.isError ? orders : undefined,
+  );
   useRewardsProfile();
   useOrderRewardsSync(query.authenticated && !query.isError ? orders : []);
   const now = useOrderClock(orders[0]?.serverTime, query.dataUpdatedAt);
