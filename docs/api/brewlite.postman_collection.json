@@ -963,10 +963,10 @@
       ]
     },
     {
-      "name": "10. Admin Orders & Preparation Board",
+      "name": "10. Admin Orders Management (Issue #39)",
       "item": [
         {
-          "name": "Admin - List Preparation Orders (PAID, PREPARING, READY)",
+          "name": "Admin - List Active Orders (Preparation Board)",
           "request": {
             "method": "GET",
             "header": [
@@ -985,13 +985,38 @@
                 "orders"
               ]
             },
-            "description": "Danh sách đơn hàng chờ xử lý tại quầy pha chế (sắp xếp đơn cũ nhất lên trước)."
+            "description": "Xem danh sách các đơn hàng đang hoạt động (PENDING, PAID, PREPARING, READY) trên bảng pha chế."
           }
         },
         {
-          "name": "Admin - Advance Preparation Status",
+          "name": "Admin - Order Detail",
           "request": {
-            "method": "PATCH",
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders/{{orderId}}/detail",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "orders",
+                "{{orderId}}",
+                "detail"
+              ]
+            },
+            "description": "Xem chi tiết một đơn hàng, khách hàng, món và nguyên liệu cần pha chế."
+          }
+        },
+        {
+          "name": "Admin - Update Order Preparation Status",
+          "request": {
+            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
@@ -1018,66 +1043,7 @@
                 "status"
               ]
             },
-            "description": "Cập nhật tiến độ pha chế: PAID -> PREPARING -> READY -> COMPLETED."
-          }
-        },
-        {
-          "name": "Admin - Order History (Pagination & Filter)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/orders/history?page=1&limit=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "orders",
-                "history"
-              ],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "20"
-                }
-              ]
-            },
-            "description": "Xem toàn bộ lịch sử đơn hàng của hệ thống có phân trang và lọc theo trạng thái."
-          }
-        },
-        {
-          "name": "Admin - Order Detail (Full Snapshot)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/admin/orders/{{orderId}}/detail",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "admin",
-                "orders",
-                "{{orderId}}",
-                "detail"
-              ]
-            },
-            "description": "Chi tiết snapshot đơn hàng, thông tin duyệt hủy và tất cả phiên thanh toán."
+            "description": "Nhân viên cập nhật trạng thái đơn (PAID -> PREPARING -> READY -> COMPLETED)."
           }
         },
         {
@@ -1096,7 +1062,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"requestId\": \"req-sample\",\n  \"note\": \"Duyệt yêu cầu hủy đơn\"\n}"
+              "raw": "{\n  \"note\": \"Đã duyệt hoàn tiền cho khách\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/admin/orders/{{orderId}}/cancel",
@@ -1110,7 +1076,7 @@
                 "cancel"
               ]
             },
-            "description": "Duyệt yêu cầu hủy đơn của khách: hoàn tiền, trả kho và thu hồi điểm thưởng trong 1 transaction."
+            "description": "Nhân viên duyệt yêu cầu hủy đơn: hoàn nguyên liệu kho và ghi nhận hoàn tiền."
           }
         },
         {
@@ -1129,7 +1095,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"requestId\": \"req-sample\",\n  \"reason\": \"Món đã pha chế xong, không thể hủy\"\n}"
+              "raw": "{\n  \"reason\": \"Đồ uống đã làm xong, không thể hủy đơn\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/admin/orders/{{orderId}}/cancel-request/reject",
@@ -1144,7 +1110,41 @@
                 "reject"
               ]
             },
-            "description": "Từ chối yêu cầu hủy đơn kèm lý do bắt buộc; giữ nguyên trạng thái đơn."
+            "description": "Nhân viên từ chối yêu cầu hủy đơn của khách."
+          }
+        },
+        {
+          "name": "Admin - Order History (Pagination & Filter)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders/history?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "orders",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Xem lịch sử toàn bộ các đơn hàng đã hoàn tất hoặc bị hủy trong hệ thống."
           }
         }
       ]
