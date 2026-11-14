@@ -36,7 +36,7 @@ export async function adminRequest(
   path: string,
   token: string,
   options: {
-    method?: "GET" | "POST";
+    method?: "GET" | "POST" | "PATCH";
     body?: unknown;
     signal?: AbortSignal;
     fallback?: string;
