@@ -72,15 +72,15 @@ rectangle "CI (GitHub Actions)" as ci #FEF9C3 {
 }
 
 rectangle "Production (Render Cloud)" as prod #F0FDF4 {
-  node "brewlite-web (Render Web Service)\nhttps://brewlite-web.onrender.com" <<executionEnvironment>> as web_prod {
+  node "brewlite-a2-web (Render Web Service)\nhttps://brewlite-a2-web.onrender.com" <<executionEnvironment>> as web_prod {
     artifact "Docker Image\n(ghcr.io/nhom6cnpm/brewlite-web:<tag>)" as web_art
   }
 
-  node "brewlite-api (Render Web Service)\nhttps://brewlite-api.onrender.com" <<executionEnvironment>> as api_prod {
+  node "brewlite-a2-api (Render Web Service)\nhttps://brewlite-a2-api-ked5.onrender.com" <<executionEnvironment>> as api_prod {
     artifact "Docker Image\n(ghcr.io/nhom6cnpm/brewlite-api:<tag>)" as api_art
   }
 
-  database "brewlite-db (Managed PostgreSQL)\n[Persistent Storage]" as db_prod
+  database "brewlite-a2-db (Managed PostgreSQL)\n[Persistent Storage]" as db_prod
 }
 
 pwa --> web_prod : HTTPS :443\n(Tải PWA bundle)
@@ -98,10 +98,10 @@ note right of web_prod
   <b>Logs:</b> Render Runtime Logs
   <b>Runtime Env:</b>
   * PORT=3000
-  * API_INTERNAL_URL=https://brewlite-api.onrender.com
+  * API_INTERNAL_URL=https://brewlite-a2-api-ked5.onrender.com
   * NEXT_PUBLIC_APP_URL
   <b>Build Args (CI):</b>
-  * NEXT_PUBLIC_API_URL=https://brewlite-api.onrender.com
+  * NEXT_PUBLIC_API_URL=https://brewlite-a2-api-ked5.onrender.com
 end note
 
 note bottom of api_prod
@@ -110,7 +110,7 @@ note bottom of api_prod
   <b>Runtime Env (Render Secrets):</b>
   * DATABASE_URL (Internal Database URL)
   * JWT_SECRET, JWT_EXPIRES_IN
-  * FRONTEND_URL=https://brewlite-web.onrender.com
+  * FRONTEND_URL=https://brewlite-a2-web.onrender.com
   * NODE_ENV=production, PORT=3001
   * ADMIN_EMAIL, ADMIN_PASSWORD
 end note

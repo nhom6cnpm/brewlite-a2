@@ -17,6 +17,8 @@ async function bootstrap() {
       'Tài liệu và công cụ kiểm thử API cho hệ thống đặt thức uống không dùng tiền mặt BrewLite',
     )
     .setVersion('2.0')
+    .addServer('https://brewlite-a2-api-ked5.onrender.com', 'Render Production Cloud')
+    .addServer('http://localhost:3001', 'Local Development Server')
     .addBearerAuth(
       {
         type: 'http',

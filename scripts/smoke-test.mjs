@@ -10,7 +10,7 @@
  * Khi thất bại, script trả về exit code 1 và hiển thị hướng dẫn rollback chi tiết.
  */
 
-const API_URL = (process.env.API_URL || 'https://brewlite-a2-api.onrender.com').replace(/\/$/, '');
+const API_URL = (process.env.API_URL || 'https://brewlite-a2-api-ked5.onrender.com').replace(/\/$/, '');
 const WEB_URL = (process.env.WEB_URL || 'https://brewlite-a2-web.onrender.com').replace(/\/$/, '');
 const EXPECTED_COMMIT = (process.env.EXPECTED_COMMIT || '').trim();
 const MAX_RETRIES = parseInt(process.env.MAX_RETRIES || '24', 10);
