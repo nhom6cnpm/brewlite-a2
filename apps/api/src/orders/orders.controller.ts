@@ -22,6 +22,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateOrderResponseDto } from './dto/order-mutation-response.dto';
 import { OrderHistoryService } from './order-history.service';
 import { OrdersService } from './orders.service';
+import { CustomerOrderViewDto } from './dto/customer-order-view.dto';
 
 interface AuthenticatedRequest {
   user: AuthenticatedUser;
@@ -81,7 +82,11 @@ export class OrdersController {
   @Get('me')
   @Header('Cache-Control', 'private, no-store')
   @ApiOperation({ summary: 'Danh sách đơn của tôi (mới nhất trước)' })
-  @ApiResponse({ status: 200, description: 'Danh sách đơn kèm món' })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách đơn kèm món',
+    type: [CustomerOrderViewDto],
+  })
   mine(@Req() req: AuthenticatedRequest) {
     return this.history.findMine(req.user.userId);
   }
@@ -89,7 +94,11 @@ export class OrdersController {
   @Get(':id')
   @Header('Cache-Control', 'private, no-store')
   @ApiOperation({ summary: 'Chi tiết một đơn của tôi' })
-  @ApiResponse({ status: 200, description: 'Chi tiết đơn' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chi tiết đơn',
+    type: CustomerOrderViewDto,
+  })
   @ApiResponse({
     status: 404,
     description: 'Không có đơn này hoặc đơn của người khác',
