@@ -26,7 +26,7 @@ test("E2E-T02 @prepare menu → tùy chọn → giỏ → đăng nhập; chưa �
     await expect(
       page.getByRole("heading", { name: product.name, exact: true }),
     ).toBeVisible();
-    // main chưa có checkout #57: mở form đăng nhập thật, không giả lập nút đặt đơn.
+    // Phần chuẩn bị mở form thật trực tiếp; E2E-T01 kiểm tra nút đặt đơn dẫn tới login.
     await page.goto("/login?redirect=/cart");
     const auth = await loginCustomer(page, customer);
     const mine = await request.get(E2E.api + "/orders/me", {

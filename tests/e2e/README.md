@@ -1,29 +1,30 @@
 # E2E trình duyệt thật — Issue #40
 
-**Trạng thái:** chuẩn bị trên nhánh `feature/task-5-2-e2e`, từ main `7ea8b1d`.
-Tại mốc 14/11/2026, #53 đã merge; #57 (checkout) và #56 (admin) chưa merge.
-Chưa nghiệm thu E2E-T01. Đã chạy browser trên bản ghép local với API/PostgreSQL
-Docker và Web host; kết quả, lỗi tích hợp và giới hạn môi trường ghi bên dưới.
+**Trạng thái:** đã triển khai trên nhánh `feature/task-5-2-e2e`, cập nhật main
+`eb3ab5d` sau khi #57 merge. Ngày 14/11/2026, **4/4 bài browser qua** trên Compose
+đủ web/api/db của bản ghép riêng với admin #56 `23ec7e2`. #56 chưa merge vào main;
+cần ghép và kiểm tra trên main đủ phụ thuộc trước khi nghiệm thu/merge #40.
 
 ## Kết quả kiểm tra bản ghép local — 14/11/2026
 
-Bản ghép riêng gồm main `7ea8b1d`, checkout #57 `1c413d3`, admin #56 `23ec7e2`
-và phần E2E. Không đưa code nhánh chưa merge của người khác vào nhánh E2E để push.
+Bản ghép riêng `a18b15b` gồm main `eb3ab5d`, bản sửa checkout `32cf6f0`, admin #56
+`23ec7e2` và phần E2E. Không đưa code admin chưa merge vào nhánh E2E để push.
 
 | Bài kiểm tra | Desktop / mobile | Kết quả |
 |---|---|---|
 | E2E-T02 chuẩn bị | Cả hai qua | Menu, tùy chọn, giỏ giữ món sau reload/đăng nhập, nhập THU5K; không tạo đơn |
-| E2E-T01 toàn luồng | Cả hai lỗi tại bước kiểm tra giỏ sau PAID | Đã đặt đơn từ UI, chọn Ví/QR, chuyển tiền ở ngân hàng công khai, nhân viên xác nhận bằng UI riêng, tới confirmation PAID và kiểm tra snapshot/điểm; giỏ vẫn còn 1 dòng thay vì 0 |
+| E2E-T01 toàn luồng | Cả hai qua | Đặt đơn từ UI + Idempotency-Key, chọn Ví/QR, chuyển tiền ngân hàng công khai, đơn vẫn PENDING tới khi nhân viên xác nhận bằng UI riêng, confirmation PAID, snapshot/điểm/lịch sử và giỏ tự xóa trước khi quay lại cart; không lỗi JavaScript |
 
-Tổng **2 passed, 2 failed**. Lịch sử và giỏ rỗng ở phần sau assertion chưa được chạy.
-Nguồn checkout hiện chỉ gọi `useClearPaidCart` ở cart; cần nối hook có sẵn vào
-confirmation theo phân công #57. Không thay hook/storage của Mai hoặc bỏ assertion
-để làm test xanh. Sau khi Mai bổ sung, ghép commit mới và chạy lại.
+Tổng **4 passed (28,7 giây)**. Chạy cấu hình Playwright/global setup của repo:
+đủ ba container healthy có nhãn project riêng, database tmpfs và cổng riêng.
+Web build production bằng Dockerfile của nhóm với bản sao local chỉ giới hạn
+1 worker/heap 1,5 GiB ở bước build; không thay cấu hình ứng dụng hay CI. Report và
+ảnh mốc giữ ngoài Git; tài khoản, tiền chuyển và database đều là fixture test.
 
-Môi trường lượt này là **Docker API/PostgreSQL + Web host** do hạn chế tài nguyên;
-không thay thế nghiệm thu Compose đủ web/api/db. Report/trace/screenshot giữ ngoài
-Git, chỉ chứa tài khoản và database test riêng. Cần chạy lại trên bản đã review/merge
-và stack Compose ba dịch vụ trước khi đánh dấu #40 hoàn tất.
+Lượt trước trên Web host + API/PostgreSQL Docker có 2 qua/2 lỗi vì giỏ chưa xóa
+tại confirmation. Nhóm đã nối `useClearPaidCart` trong `32cf6f0`, merge qua #57;
+lượt Compose mới ở trên xác nhận lỗi đã hết. Không sửa thay hook/storage hoặc bỏ
+assertion để làm test xanh.
 
 ## Phạm vi và nguồn
 
@@ -82,8 +83,8 @@ docker compose --env-file .env.example -p brewlite-a2-e2e -f docker-compose.yml 
   Các credential trong override chỉ dành cho môi trường test này.
 - Mỗi lần test dùng email CUSTOMER ngẫu nhiên; để lặp trên database seed mới,
   dừng stack theo lệnh bên dưới rồi khởi động lại. Không dọn DB đồ án.
-- Cần đủ dung lượng và RAM để build hai image mới. Đã build/chạy API và PostgreSQL
-  riêng; lượt browser ghi ở trên dùng Web host, chưa nghiệm thu stack đủ ba dịch vụ.
+- Cần đủ dung lượng và RAM để build hai image mới. Lượt kiểm tra mới nhất đã dùng
+  đủ ba dịch vụ; trên máy ít tài nguyên cần theo dõi dung lượng/RAM trong khi build.
 
 ## Chạy và xem kết quả
 
@@ -100,8 +101,8 @@ Chạy phần chuẩn bị đã có trên main, **sau khi stack test riêng đã
 npm --prefix apps/web run test:e2e:prepare
 ```
 
-Sau khi #57 và #56 đã merge: ghép main mới vào nhánh test, kiểm tra lại selector
-theo giao diện checkout đã review, build lại stack rồi chạy toàn bộ:
+Checkout #57 đã merge. Sau khi admin #56 merge: ghép main mới vào nhánh test,
+build lại stack từ source đã review rồi chạy toàn bộ:
 
 ```powershell
 npm --prefix apps/web run test:e2e
@@ -154,11 +155,13 @@ trên project đồ án để chuẩn bị E2E.
 - [x] Cấu hình/fixtures/selector bám API và UI A2 đã có; hai project browser.
 - [x] Viết E2E-T01/T02 và unit test chặn dùng sai stack.
 - [x] Compose config: ba service riêng, không cổng/volume dự án.
-- [ ] Checkout #57 đã ghép, rà lại selector/hook xóa giỏ trên bản đã review.
-- [ ] Admin #56 đã ghép để E2E-T01 chạy mặc định bằng UI nhân viên.
-- [ ] Build stack mới, chạy E2E-T01/T02 thật qua cả desktop/mobile, lưu kết quả.
-- [ ] Thêm CI E2E riêng khi luồng đủ; chưa đổi CI hiện tại để tránh báo xanh giả.
-- [ ] Người dùng cho phép push; review Hiếu, CI xanh, merge commit; không tự merge.
+- [x] Checkout #57 đã ghép từ main, xác nhận hook xóa giỏ sau bản sửa `32cf6f0`.
+- [x] Build stack mới, E2E-T01/T02 qua desktop/mobile bằng UI nhân viên trên bản ghép #56, lưu kết quả.
+- [ ] Admin #56 merge vào main; ghép lại và kiểm tra bản đủ phụ thuộc để nghiệm thu.
+- [ ] PR được Hiếu review/approve, CI xanh, merge commit; không tự merge.
+
+CI E2E riêng là tùy chọn của #40, chưa thêm trong PR này. CI api/web/integration
+hiện có vẫn chạy bình thường; kết quả local không được dùng thay cho CI hoặc review.
 
 Tham khảo công cụ: [Playwright configuration](https://playwright.dev/docs/test-configuration),
 [test.step](https://playwright.dev/docs/api/class-test#test-step),
