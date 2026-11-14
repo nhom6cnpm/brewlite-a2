@@ -130,7 +130,7 @@ Pipeline Continuous Delivery tự động kích hoạt trên GitHub Actions khi 
 - Unit test hợp đồng Smoke Test (`CD-T01`): [smoke-test.test.mjs](../tests/smoke-test.test.mjs)
 - Hướng dẫn triển khai & rollback chi tiết: [docs/deployment.md](deployment.md)
 
-### Triển khai Production & Bàn giao (Deployment-01) — Task 5.4 (Lương)
+### Triển khai Production & Bàn giao (Deployment-01) — Task 5.4 (Lương, Phúc)
 
 Hệ thống BrewLite A2 được hoàn thiện cấu hình chuẩn bị bàn giao vận hành trên nền tảng cloud Render:
 
@@ -141,5 +141,8 @@ Hệ thống BrewLite A2 được hoàn thiện cấu hình chuẩn bị bàn gi
 - Database Production: Managed PostgreSQL trên Render kết nối qua Private Network nội bộ (`:5432`) bảo mật giữa API và Database.
 - Tài liệu kiểm thử tương tác API (Swagger UI): [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs)
 - Định nghĩa chuẩn OpenAPI 3.0 JSON: [https://brewlite-a2-api.onrender.com/api/docs-json](https://brewlite-a2-api.onrender.com/api/docs-json)
+- Tệp đặc tả OpenAPI 3.0: [docs/api/openapi.json](api/openapi.json)
+- Bộ sưu tập kiểm thử Postman: [docs/api/brewlite.postman_collection.json](api/brewlite.postman_collection.json)
+- Hướng dẫn kiểm thử Swagger / Postman và lấy JWT: [README.md](../README.md#kiểm-thử-api-bằng-swagger-ui--postman-task-54--phúc)
 - Bảo mật thông tin: Không commit file `.env`, toàn bộ secret được lưu trên Render Environment Variables và GitHub Actions Secrets.
 - Chiến lược phục hồi: Hỗ trợ rollback tức thì trong ≤ 30 giây qua Render Events Dashboard và redeploy theo tag commit SHA bất kỳ.

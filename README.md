@@ -55,6 +55,9 @@ brewlite-a2/
 | 2.3 | Class diagram (Class-01) | [class.tex](docs/diagrams/class.tex) · [sơ đồ lớp](docs/diagrams/class-domain.svg) · [enum](docs/diagrams/class-domain-enums.svg) ([.puml](docs/diagrams/class-domain.puml)) |
 | 3.1 | Kiến trúc hệ thống và ADR (Architecture-01) | [architecture.tex](docs/architecture/architecture.tex) · [sơ đồ](docs/diagrams/architecture-c4.svg) ([.puml](docs/diagrams/architecture-c4.puml)) · [ADR](docs/architecture/adr/) |
 | 3.2 | Deployment diagram | [deployment.tex](docs/architecture/deployment.tex) · [sơ đồ](docs/diagrams/deployment.svg) ([.puml](docs/diagrams/deployment.puml)) · [deployment.md](docs/deployment.md) · [ADR-008](docs/architecture/adr/008-nen-tang-trien-khai.md) |
+| 5.2 | Integration test API tạo đơn và thanh toán | [order-payment.integration-spec.ts](apps/api/test/order-payment.integration-spec.ts) |
+| 5.3 | Pipeline Continuous Delivery (CD) | [.github/workflows/cd.yml](.github/workflows/cd.yml) |
+| 5.4 | Triển khai production, bàn giao & API Spec | [deployment.md](docs/deployment.md) · [openapi.json](docs/api/openapi.json) · [Postman](docs/api/brewlite.postman_collection.json) |
 | — | Ma trận truy vết | [traceability-matrix.md](docs/traceability-matrix.md) |
 
 Mỗi khi một task được merge, cập nhật dòng tương ứng trong bảng này.
@@ -175,11 +178,14 @@ tra chuyển hướng đúng URL xác nhận, chưa kiểm tra nội dung trang 
 Phần thanh toán vừa màn hình 390px; Header chung trên main còn tràn ngang khi
 đăng nhập trên màn hình này, nằm ngoài phần file của #36.
 
-## Chạy bằng Docker
+## Hướng dẫn Chạy cục bộ (Local Development)
 
-Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng thời cả 3 dịch vụ (**PostgreSQL**, **NestJS API**, **Next.js Web**):
+Người đánh giá hoặc nhà phát triển bên ngoài có thể khởi chạy toàn bộ hệ thống BrewLite A2 trên máy cá nhân theo 1 trong 2 phương án:
 
-1. (Tuỳ chọn) Tạo file `.env` từ mẫu nếu muốn tuỳ chỉnh biến môi trường:
+### Phương án 1: Khởi chạy nhanh bằng Docker Compose (Khuyên dùng)
+Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng thời cả 3 dịch vụ (**PostgreSQL 16**, **NestJS API**, **Next.js Web**):
+
+1. Tạo file `.env` từ mẫu nếu muốn tuỳ chỉnh biến môi trường:
    ```powershell
    Copy-Item .env.example .env
    ```
@@ -188,7 +194,7 @@ Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng t
    docker compose up --build
    ```
    - `postgres`: chạy PostgreSQL 16 (port `5432`), lưu dữ liệu vào volume `pgdata`.
-   - `api`: chờ `postgres` healthy rồi khởi động ở port `3001`, tự động chạy TypeORM migration để tạo bảng và seed dữ liệu mẫu khi khởi động.
+   - `api`: chờ `postgres` healthy rồi khởi động ở port `3001`, tự động chạy TypeORM migration để tạo bảng và seed dữ liệu mẫu (`p1`..`p6`, công thức, admin) khi khởi động.
    - `web`: chờ `api` healthy (qua `GET /health`) rồi khởi động Next.js ở port `3000`. Các biến `NEXT_PUBLIC_*` được truyền qua `build-arg` lúc đóng gói image.
 
 3. Kiểm tra hoạt động:
@@ -203,6 +209,127 @@ Dùng một lệnh ở thư mục gốc repository để khởi chạy đồng t
    docker compose up --build
    ```
    Khi khởi động lại, toàn bộ bảng và dữ liệu mẫu sẽ được tạo lại tự động từ migration.
+
+---
+
+### Phương án 2: Chạy trực tiếp bằng Node.js & PostgreSQL cục bộ (Native Dev)
+
+Dành cho phát triển hoặc kiểm thử độc lập từng service với hot-reload:
+
+1. **Yêu cầu môi trường**:
+   - Node.js 24.x LTS (khớp phiên bản CI & Docker).
+   - PostgreSQL 16 (chạy tại `localhost:5432`). Tạo cơ sở dữ liệu `brewlite`:
+     ```powershell
+     & "psql" -U brewlite -d postgres -c "CREATE DATABASE brewlite;"
+     ```
+
+2. **Cấu hình biến môi trường**:
+   - Thư mục gốc repo:
+     ```powershell
+     Copy-Item .env.example .env
+     ```
+   - Thư mục `apps/web`:
+     ```powershell
+     cd apps/web
+     Copy-Item .env.example .env.local
+     cd ../..
+     ```
+
+3. **Khởi chạy Backend NestJS API (`apps/api`)**:
+   ```powershell
+   cd apps/api
+   npm ci
+   npm run start:dev
+   ```
+   - API lắng nghe tại `http://localhost:3001`.
+   - TypeORM migrations tự động chạy khi khởi động, nạp đầy đủ 6 sản phẩm `p1`..`p6`, công thức định lượng nguyên liệu kho, tài khoản admin `admin@brewlite.vn` và các voucher mặc định.
+   - Swagger UI tương tác sẵn sàng tại `http://localhost:3001/api/docs`.
+
+4. **Khởi chạy Frontend Next.js Web (`apps/web`)**:
+   Mở terminal riêng:
+   ```powershell
+   cd apps/web
+   npm ci
+   npm run dev
+   ```
+   - Ứng dụng web PWA mở tại `http://localhost:3000` (truy cập `http://localhost:3000/menu`).
+
+---
+
+## Hướng dẫn Đóng gói & Build (Production Build)
+
+Toàn bộ hai phân hệ được đóng gói và biên dịch sẵn sàng cho môi trường production:
+
+### 1. Build Backend API (`apps/api`)
+```powershell
+cd apps/api
+npm ci
+npm run build
+```
+- Nest CLI biên dịch mã nguồn TypeScript thành JavaScript chuẩn trong thư mục `apps/api/dist/`. Điểm khởi chạy: `dist/main.js`.
+
+### 2. Build Frontend Web PWA (`apps/web`)
+```powershell
+cd apps/web
+npm ci
+npm run build
+```
+- Next.js 15 đóng gói giao diện, nhúng tĩnh các biến `NEXT_PUBLIC_*` và xuất bản bản build production tối ưu hóa tại thư mục `.next/`.
+
+---
+
+## Hướng dẫn Kiểm thử Hệ thống (Testing Guide)
+
+Hệ thống hỗ trợ đầy đủ các cấp độ kiểm thử tự động, có thể thực thi độc lập cục bộ:
+
+### 1. Kiểm tra quy chuẩn cú pháp (Linting)
+- **Frontend Web**:
+  ```powershell
+  cd apps/web
+  npm run lint
+  ```
+- **Backend API**:
+  ```powershell
+  cd apps/api
+  npm run lint
+  ```
+
+### 2. Chạy Unit Tests
+- **Frontend Web (Vitest)**:
+  ```powershell
+  cd apps/web
+  npm test
+  ```
+  *(Chạy 20 test files với hơn 152 bài kiểm thử cho toàn bộ components, hooks, giỏ hàng, vouchers, thanh toán và trang quản trị).*
+- **Backend API (Jest)**:
+  ```powershell
+  cd apps/api
+  npm test
+  ```
+  *(Chạy 23 test suites với hơn 273 bài kiểm thử cho services, controllers, guards, máy trạng thái).*
+
+### 3. Chạy Integration Tests (PostgreSQL thật)
+Kiểm thử tích hợp luồng nghiệp vụ tạo đơn và thanh toán trực tiếp với PostgreSQL thật:
+```powershell
+cd apps/api
+$env:TEST_DATABASE_URL = "postgresql://brewlite:brewlite@localhost:5432/brewlite_test"
+npm run test:integration
+```
+*(Chi tiết 10 kịch bản kiểm thử xem tại mục bên dưới).*
+
+### 4. Chạy Smoke Tests (Kiểm thử khói môi trường CD)
+- **Kiểm thử hợp đồng Smoke Test cục bộ**:
+  ```powershell
+  node --test tests/smoke-test.test.mjs
+  ```
+- **Kiểm thử trực tiếp trên môi trường live production**:
+  ```powershell
+  $env:RENDER_API_BASE_URL = "https://brewlite-a2-api.onrender.com"
+  $env:RENDER_WEB_BASE_URL = "https://brewlite-a2-web.onrender.com"
+  node scripts/smoke-test.mjs
+  ```
+
+---
 
 ## Chạy Web Sprint 1 (Task 4.3)
 
@@ -400,5 +527,118 @@ Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery
 
 > Chi tiết cấu hình biến môi trường, tài liệu kiến trúc [ADR-008](docs/architecture/adr/008-nen-tang-trien-khai.md) và hướng dẫn triển khai xem tại [docs/deployment.md](docs/deployment.md).
 
+## Kiểm thử API bằng Swagger UI & Postman (Task 5.4 — Phúc)
 
+Để phục vụ công tác bàn giao, kiểm định độc lập và kiểm tra trực tiếp từ giảng viên, toàn bộ hệ thống API của BrewLite A2 được cung cấp đầy đủ qua **Swagger UI chuẩn OpenAPI 3.0** và **Bộ sưu tập kiểm thử Postman Collection** có sẵn biến môi trường.
 
+### 1. Tài liệu OpenAPI Spec 3.0 JSON
+- Định nghĩa OpenAPI 3.0 hoàn chỉnh được trích xuất trực tiếp từ mã nguồn backend tại:
+  👉 [`docs/api/openapi.json`](docs/api/openapi.json)
+- Endpoint phục vụ trực tiếp từ API server:
+  - Local: `http://localhost:3001/api/docs-json`
+  - Production: [https://brewlite-a2-api.onrender.com/api/docs-json](https://brewlite-a2-api.onrender.com/api/docs-json)
+
+### 2. Kiểm thử tương tác trực tiếp qua Swagger UI
+Swagger UI là công cụ trực quan chạy ngay trên trình duyệt, không yêu cầu cài đặt thêm bất kỳ phần mềm nào:
+- **Địa chỉ truy cập**:
+  - Khi chạy Local: `http://localhost:3001/api/docs`
+  - Trên Production Cloud: [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs)
+
+#### Cách lấy JWT Token để xác thực trên Swagger:
+Hệ thống hỗ trợ 2 vai trò: Khách hàng (`CUSTOMER`) và Quản trị viên (`ADMIN`).
+1. **Lấy Token Khách hàng**:
+   - Trong Swagger UI, tìm nhóm **Auth** → mở endpoint `POST /auth/register` (hoặc `POST /auth/login`).
+   - Nhập body JSON (ví dụ email: `customer_test@example.com`, password: `Password123!`) → bấm **Execute**.
+   - Copy chuỗi `access_token` trong JSON phản hồi (Status `200` hoặc `201`).
+2. **Lấy Token Quản trị viên (Admin)**:
+   - Mở endpoint `POST /auth/login`.
+   - Nhập thông tin tài khoản admin mặc định:
+     ```json
+     {
+       "email": "admin@brewlite.vn",
+       "password": "change_me"
+     }
+     ```
+     *(Lưu ý: Nếu mật khẩu đã đổi theo cấu hình A1, dùng `admin123`).*
+   - Bấm **Execute** và copy chuỗi `access_token`.
+3. **Kích hoạt xác thực (Authorize)**:
+   - Kéo lên đầu trang Swagger, bấm nút **Authorize** có biểu tượng ổ khóa [🔒].
+   - Tại ô **Value**, dán token vừa copy vào (Swagger đã cấu hình Bearer Auth).
+   - Bấm **Authorize** → bấm **Close**.
+   - Biểu tượng ổ khóa sẽ chuyển sang trạng thái đã khóa [🔒]. Từ đây, mọi request gửi từ Swagger sẽ tự động đính kèm header `Authorization: Bearer <token>`.
+
+---
+
+### 3. Kiểm thử tự động bằng Postman Collection
+Bộ sưu tập Postman Collection hoàn chỉnh đã được xây dựng và đóng gói sẵn tại:
+👉 [`docs/api/brewlite.postman_collection.json`](docs/api/brewlite.postman_collection.json)
+
+#### Các bước thiết lập trong Postman:
+1. **Import Collection**:
+   - Mở phần mềm Postman (hoặc Postman for Web).
+   - Bấm nút **Import** ở góc trên bên trái → chọn file `docs/api/brewlite.postman_collection.json`.
+   - Collection mang tên **"BrewLite A2 - Complete API Collection"** với 9 thư mục nghiệp vụ sẽ xuất hiện.
+2. **Cấu hình biến môi trường (Variables)**:
+   - Bấm chọn vào tên Collection **BrewLite A2 - Complete API Collection** → chọn tab **Variables**:
+     | Biến | Giá trị mặc định (Local) | Giá trị Production | Ghi chú |
+     |---|---|---|---|
+     | `baseUrl` | `http://localhost:3001` | `https://brewlite-a2-api.onrender.com` | Địa chỉ API server |
+     | `token` | *(Tự động gán)* | *(Tự động gán)* | JWT của khách hàng |
+     | `adminToken` | *(Tự động gán)* | *(Tự động gán)* | JWT của quản trị viên |
+     | `orderId` | *(Tự động gán)* | *(Tự động gán)* | ID đơn hàng vừa tạo |
+     | `paymentId` | *(Tự động gán)* | *(Tự động gán)* | ID phiên thanh toán |
+     | `voucherCode`| `THU5K` | `THU5K` | Mã voucher mẫu |
+   - *(Bộ test script đã được viết sẵn trong collection để tự động lưu `token`, `adminToken`, `orderId`, `paymentId` vào biến sau mỗi request thành công).*
+
+#### Kịch bản kiểm thử luồng nghiệp vụ mẫu từ A đến Z (Happy Path):
+Để kiểm tra toàn bộ luồng hoạt động của hệ thống từ lúc khách đặt món đến lúc nhân viên đối soát, thực hiện theo thứ tự sau:
+1. **Thư mục 01. Health Check**: Chạy `GET /health` → đảm bảo status: ok, database: up.
+2. **Thư mục 02. Auth**:
+   - Chạy `POST /auth/register` (hoặc `POST /auth/login`) → biến `token` tự động được gán.
+   - Chạy `POST /auth/login (Admin)` → biến `adminToken` tự động được gán.
+   - Chạy `GET /auth/me` → xem thông tin người dùng và điểm tích lũy.
+3. **Thư mục 03. Products & Availability**:
+   - Chạy `GET /products` → xem 6 món cà phê A2.
+   - Chạy `GET /products/1/availability?size=L&toppingIds=cream,pearls` → xem số ly còn làm được.
+4. **Thư mục 04. Vouchers**:
+   - Chạy `GET /vouchers` → xem danh sách voucher kích hoạt (`THU5K`, `BREW10`, `NHOM15K`).
+   - Chạy `POST /vouchers/quote` (có mã `THU5K`) → xem giảm giá 5.000đ.
+5. **Thư mục 05. Orders**:
+   - Chạy `POST /orders` (với `Idempotency-Key` ngẫu nhiên sinh tự động) → đơn tạo ở trạng thái `PENDING`, hạn 15 phút, kho bị trừ nguyên liệu, biến `orderId` tự động được lưu.
+   - Chạy `GET /orders/me` → xem đơn hàng trong danh sách của khách.
+6. **Thư mục 06. Payments**:
+   - Chạy `POST /payments` (phương thức `WALLET`) → tạo phiên thanh toán ví, biến `paymentId` tự động được lưu.
+7. **Thư mục 07. Mock Bank (Khách chuyển tiền)**:
+   - Chạy `GET /mock-bank/payments/:id` (công khai không cần token) → lấy số tiền và thông tin tài khoản ngân hàng.
+   - Chạy `POST /mock-bank/payments/:id/transfer` → mô phỏng chuyển tiền, phiên thanh toán chuyển sang `TRANSFER_RECEIVED` (ghi nhận sao kê `IN`), đơn hàng vẫn giữ nguyên `PENDING` chờ đối soát.
+8. **Thư mục 08. Admin Payments (Nhân viên đối soát & xác nhận)**:
+   - Chạy `GET /admin/payments` (dùng `{{adminToken}}`) → xem danh sách phiên có tiền chờ duyệt.
+   - Chạy `POST /admin/payments/:id/confirm` → nhân viên bấm xác nhận: phiên chuyển `SUCCESS`, đơn hàng chuyển `PAID`, điểm thưởng thành viên được cộng.
+9. **Kiểm tra phân quyền bảo mật (RBAC)**:
+   - Chạy `GET /admin/payments (Test 403)` (dùng `{{token}}` của khách thường) → hệ thống lập tức từ chối với mã **HTTP 403 Forbidden**.
+
+---
+
+## Quy trình Phát hành & Gắn thẻ phiên bản (Release & Version Tagging)
+
+Sau khi hoàn tất nghiệm thu toàn bộ Sprint 2 và các tiêu chuẩn kiểm thử CI/CD, phiên bản chính thức **v1.0.0** được phát hành theo quy trình sau:
+
+1. **Kiểm tra trạng thái nhánh `main`**: Đảm bảo tất cả Pull Requests thuộc Task 5 đã được merge vào `main` và các luồng CI/CD đều đạt trạng thái xanh (Passed).
+2. **Tạo và đẩy Git Release Tag**:
+   ```bash
+   git checkout main
+   git pull origin main
+   git tag -a v1.0.0 -m "Release v1.0.0: Hoàn tất toàn bộ yêu cầu đồ án BrewLite A2 (Sprint 1 + Sprint 2, CI/CD, Production Deployment)"
+   git push origin v1.0.0
+   ```
+3. **Kích hoạt tự động CD Release**:
+   Khi tag `v1.0.0` được đẩy lên GitHub, workflow `.github/workflows/cd.yml` sẽ tự động kích hoạt:
+   - Đóng gói Docker images gắn nhãn `v1.0.0` và `latest`.
+   - Đẩy images lên GitHub Container Registry (`ghcr.io`).
+   - Kích hoạt triển khai lên Render Production.
+   - Chạy Smoke Test kiểm tra nghiệm thu.
+4. **Tạo Release Notes trên GitHub**:
+   - Truy cập: `https://github.com/nhom6cnpm/brewlite-a2/releases/new`
+   - Chọn tag: `v1.0.0`
+   - Tiêu đề Release: `BrewLite A2 - Version 1.0.0 Official Release`
+   - Nội dung đính kèm danh sách tính năng hoàn thành, liên kết tài liệu SRS, sơ đồ thiết kế, ma trận truy vết, hướng dẫn triển khai và các bài kiểm thử nghiệm thu.
