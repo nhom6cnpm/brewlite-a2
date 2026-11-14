@@ -334,6 +334,9 @@ sửa theo API/UI A2, không nhập lịch sử Git A1 hoặc chép response gi�
 - Chưa nghiệm thu E2E-T01: cần checkout #57 đã ghép; UI nhân viên cần #56. Sau khi
   đủ phụ thuộc, ghép main, rà selector và build lại stack rồi chạy desktop/mobile.
   Không skip bước thiếu để báo xanh; chưa thêm job E2E vào CI hiện tại.
+- Bản ghép local 14/11/2026 (Web host + API/PostgreSQL Docker): E2E-T02 qua
+  desktop/mobile; E2E-T01 đều tới confirmation PAID nhưng lỗi giỏ chưa xóa.
+  Chờ nối `useClearPaidCart` theo #57; chưa thay thế nghiệm thu Compose ba dịch vụ.
 
 ## Integration test API tạo đơn và thanh toán — Task 5.2 Đợt 2 (Issue #38)
 

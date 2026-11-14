@@ -2,7 +2,28 @@
 
 **Trạng thái:** chuẩn bị trên nhánh `feature/task-5-2-e2e`, từ main `7ea8b1d`.
 Tại mốc 14/11/2026, #53 đã merge; #57 (checkout) và #56 (admin) chưa merge.
-Chưa nghiệm thu E2E-T01 và chưa có kết quả browser chạy trên stack Docker E2E.
+Chưa nghiệm thu E2E-T01. Đã chạy browser trên bản ghép local với API/PostgreSQL
+Docker và Web host; kết quả, lỗi tích hợp và giới hạn môi trường ghi bên dưới.
+
+## Kết quả kiểm tra bản ghép local — 14/11/2026
+
+Bản ghép riêng gồm main `7ea8b1d`, checkout #57 `1c413d3`, admin #56 `23ec7e2`
+và phần E2E. Không đưa code nhánh chưa merge của người khác vào nhánh E2E để push.
+
+| Bài kiểm tra | Desktop / mobile | Kết quả |
+|---|---|---|
+| E2E-T02 chuẩn bị | Cả hai qua | Menu, tùy chọn, giỏ giữ món sau reload/đăng nhập, nhập THU5K; không tạo đơn |
+| E2E-T01 toàn luồng | Cả hai lỗi tại bước kiểm tra giỏ sau PAID | Đã đặt đơn từ UI, chọn Ví/QR, chuyển tiền ở ngân hàng công khai, nhân viên xác nhận bằng UI riêng, tới confirmation PAID và kiểm tra snapshot/điểm; giỏ vẫn còn 1 dòng thay vì 0 |
+
+Tổng **2 passed, 2 failed**. Lịch sử và giỏ rỗng ở phần sau assertion chưa được chạy.
+Nguồn checkout hiện chỉ gọi `useClearPaidCart` ở cart; cần nối hook có sẵn vào
+confirmation theo phân công #57. Không thay hook/storage của Mai hoặc bỏ assertion
+để làm test xanh. Sau khi Mai bổ sung, ghép commit mới và chạy lại.
+
+Môi trường lượt này là **Docker API/PostgreSQL + Web host** do hạn chế tài nguyên;
+không thay thế nghiệm thu Compose đủ web/api/db. Report/trace/screenshot giữ ngoài
+Git, chỉ chứa tài khoản và database test riêng. Cần chạy lại trên bản đã review/merge
+và stack Compose ba dịch vụ trước khi đánh dấu #40 hoàn tất.
 
 ## Phạm vi và nguồn
 
@@ -61,8 +82,8 @@ docker compose --env-file .env.example -p brewlite-a2-e2e -f docker-compose.yml 
   Các credential trong override chỉ dành cho môi trường test này.
 - Mỗi lần test dùng email CUSTOMER ngẫu nhiên; để lặp trên database seed mới,
   dừng stack theo lệnh bên dưới rồi khởi động lại. Không dọn DB đồ án.
-- Cần đủ dung lượng và RAM để build hai image mới. Ở bản chuẩn bị này đã kiểm tra
-  cấu hình Compose; chưa build stack mới hoặc chạy browser trên stack này.
+- Cần đủ dung lượng và RAM để build hai image mới. Đã build/chạy API và PostgreSQL
+  riêng; lượt browser ghi ở trên dùng Web host, chưa nghiệm thu stack đủ ba dịch vụ.
 
 ## Chạy và xem kết quả
 
