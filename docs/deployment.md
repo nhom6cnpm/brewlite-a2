@@ -80,25 +80,41 @@ flowchart TD
 
 ---
 
-## 3. Cấu hình Quyền Container Registry (`ghcr.io`) trên Render
+## 3. Ba việc bắt buộc trước lần chạy CD đầu tiên (Tránh lỗi Pipeline Đỏ)
 
-Mặc định, GitHub Container Registry (`ghcr.io`) tạo package ở chế độ **Private**, dẫn đến việc Render không thể kéo image về và báo lỗi `unauthorized: authentication required`. Nhóm cấu hình theo 1 trong 2 cách sau:
+Để quy trình Continuous Delivery (CD) trên GitHub Actions chạy **XANH** ngay từ lần đầu tiên merge vào nhánh `main`, kỹ sư vận hành bắt buộc phải hoàn tất 3 bước chuẩn bị sau trên Render Dashboard và GitHub:
 
-### Cách 1: Thiết lập Package sang chế độ Public (Khuyến nghị cho bài tập lớn)
-1. Truy cập trang GitHub cá nhân/tổ chức: `https://github.com/orgs/nhom6cnpm/packages` (hoặc mục Packages của tác giả).
-2. Chọn từng package: `brewlite-api` và `brewlite-web`.
-3. Điều hướng tới **Package settings** → cuộn xuống mục **Danger Zone** → bấm **Change package visibility** → chọn **Public** → gõ xác nhận để lưu.
-4. Sau khi chuyển sang Public, Render có thể tự do kéo image theo URL `ghcr.io/nhom6cnpm/brewlite-api:sha-...` mà không cần cấu hình thêm secret.
+### Việc 1: Chuyển 2 dịch vụ Render sang deploy từ Container Image (`Existing Image`)
+- **Nguyên nhân kỹ thuật:** Webhook Render Deploy Hook **chỉ tiếp nhận và áp dụng tham số `&imgURL=` khi Web Service được tạo ở chế độ "Deploy an existing image"**. Nếu service được liên kết từ Git repository (Build & deploy from a Git repository), Render sẽ **bỏ qua `imgURL`**, tiếp tục deploy mã nguồn cũ từ Git và không cập nhật container A2 mới, khiến bước kiểm tra commit SHA trong Smoke Test thất bại.
+- **Thao tác thiết lập:**
+  1. Trên [Render Dashboard](https://dashboard.render.com), truy cập 2 dịch vụ: `brewlite-a2-api` và `brewlite-a2-web`.
+  2. Tại mục cấu hình nguồn triển khai, chuyển sang **Deploy an existing image** (hoặc tạo mới Web Service chọn loại *Existing Image*).
+  3. Nhập đường dẫn image khởi tạo:
+     - API: `ghcr.io/nhom6cnpm/brewlite-api`
+     - Web: `ghcr.io/nhom6cnpm/brewlite-web`
 
-### Cách 2: Cấu hình Registry Credentials trong Render Dashboard
-Nếu giữ package ở chế độ Private:
-1. Tạo một GitHub Personal Access Token (Classic) có quyền `read:packages`.
-2. Truy cập [Render Dashboard](https://dashboard.render.com) → vào mục **Account Settings** (hoặc Workspace Settings) → chọn **Registry Credentials** → bấm **Add Credential**.
-3. Điền thông tin:
-   - **Registry:** `ghcr.io`
-   - **Username:** Tên tài khoản GitHub (ví dụ: `DucLuong2201`)
-   - **Token / Password:** Dán token GitHub vừa tạo.
-4. Gán Registry Credential này vào 2 Web Service `brewlite-a2-api` và `brewlite-a2-web`.
+### Việc 2: Thêm 2 Secret Deploy Hook vào GitHub Repository
+- **Nguyên nhân kỹ thuật:** Pipeline CD tại `.github/workflows/cd.yml` gọi Render Deploy Hook để cập nhật container. Nếu thiếu secret trên nhánh `main`, step xác thực bí mật (`Validate deployment secrets`) sẽ lập tức dừng pipeline với mã lỗi `exit 1` (được thiết kế để ngăn ngừa tình trạng deploy giả xanh).
+- **Thao tác thiết lập:**
+  1. Trên [Render Dashboard](https://dashboard.render.com) → vào từng dịch vụ → **Settings** → cuộn xuống mục **Deploy Hook** → copy đường dẫn webhook (`https://api.render.com/deploy/srv-xxxxxx?key=yyyyyy`).
+  2. Truy cập GitHub repository: [nhom6cnpm/brewlite-a2](https://github.com/nhom6cnpm/brewlite-a2) → **Settings** → **Secrets and variables** → **Actions** → bấm **New repository secret**.
+  3. Thêm đủ 2 secret:
+     - `RENDER_API_DEPLOY_HOOK`: Dán URL Deploy Hook của `brewlite-a2-api`.
+     - `RENDER_WEB_DEPLOY_HOOK`: Dán URL Deploy Hook của `brewlite-a2-web`.
+
+### Việc 3: Phân quyền Container Registry (`ghcr.io`) sau lần push image đầu tiên
+- **Nguyên nhân kỹ thuật:** Mặc định, GitHub Container Registry (`ghcr.io`) tạo package ở chế độ **Private**. Trong lần chạy đầu tiên, sau khi job `build-and-push` tải image lên GHCR thành công, Render sẽ bị từ chối truy cập khi kéo image về và báo lỗi `unauthorized: authentication required` nếu package chưa được công khai.
+- **Thao tác thiết lập (chọn 1 trong 2 cách):**
+  - **Cách A — Chuyển Package sang chế độ Public (Khuyến nghị cho bài tập lớn):**
+    1. Ngay sau khi CD chạy xong bước `build-and-push` lần đầu, truy cập trang GitHub Packages: `https://github.com/users/nhom6cnpm/packages`.
+    2. Chọn từng package: `brewlite-api` và `brewlite-web`.
+    3. Điều hướng tới **Package settings** → cuộn xuống mục **Danger Zone** → bấm **Change package visibility** → chọn **Public** → gõ xác nhận để lưu.
+    4. Sau khi chuyển sang Public, Render có thể tự do kéo image theo URL `ghcr.io/nhom6cnpm/brewlite-api:sha-...` mà không cần cấu hình thêm token.
+  - **Cách B — Cấu hình Registry Credentials trong Render Dashboard:**
+    1. Tạo một GitHub Personal Access Token (Classic) có quyền `read:packages`.
+    2. Truy cập [Render Dashboard](https://dashboard.render.com) → vào mục **Account Settings** → chọn **Registry Credentials** → bấm **Add Credential**.
+    3. Điền thông tin: Registry `ghcr.io`, Username GitHub, Token vừa tạo, sau đó gán vào 2 Web Service `brewlite-a2-api` và `brewlite-a2-web`.
+
 
 ---
 

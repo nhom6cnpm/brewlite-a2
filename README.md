@@ -380,6 +380,12 @@ Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery
    - Hỗ trợ retry backoff (24 lần × 10 giây) để đáp ứng thời gian Render pull image và khởi động.
 7. **Dừng pipeline và Rollback:** Nếu smoke test không đạt sau các lần thử, pipeline lập tức dừng lại (đánh dấu thất bại đỏ) và in hướng dẫn rollback chi tiết.
 
+> [!IMPORTANT]
+> **3 việc bắt buộc trước khi merge CD vào `main` để pipeline chạy XANH:**
+> 1. **Đổi 2 service Render sang deploy từ Image:** Cấu hình `brewlite-a2-api` và `brewlite-a2-web` sang chế độ *Deploy an existing image* (`ghcr.io/nhom6cnpm/brewlite-api` và `brewlite-web`), vì Deploy Hook chỉ nhận tham số `&imgURL=` khi service chạy từ image.
+> 2. **Thêm 2 secret Deploy Hook vào GitHub:** Cấu hình `RENDER_API_DEPLOY_HOOK` và `RENDER_WEB_DEPLOY_HOOK` trong repository secrets (`Settings → Secrets and variables → Actions`).
+> 3. **Phân quyền GHCR sau lần push đầu tiên:** Sau khi pipeline push image lần đầu, chuyển 2 package trên GitHub Packages (`ghcr.io`) sang chế độ Public (hoặc cấu hình Registry Credential trên Render) để Render có quyền kéo image.
+
 ### 2. Địa chỉ dịch vụ Production (Cụm A2)
 | Dịch vụ | Nền tảng | URL Production (A2) | Ghi chú & Bảo mật |
 |---|---|---|---|
