@@ -130,14 +130,20 @@ Kiểm tra riêng với PostgreSQL: trong `apps/api`, chạy `npm run orders:smo
 tự dọn, không dùng `.env`/volume đồ án. Test gọi API #33/#34 thật để kiểm tra quyền,
 hủy đồng thời/gửi lặp, trả kho/voucher, tiền đã về quá hạn, hoàn tiền hiển thị và rollback.
 Thiết lập trạng thái pha chế/lỗi bằng SQL trong script chỉ là fixture kiểm thử.
-Checkout, storage và xóa đúng giỏ khi PAID ghép cùng #35; trang thanh toán thuộc #36.
-Theo review #57, thứ tự merge là **#54 → #53 → #57**; phần #37 có thể được
-review/merge trước checkout của Mai. Trong khoảng chờ #57, giỏ chưa tự xóa khi
-PAID và link `/checkout/:id` từ chi tiết đơn chưa có trang đích. Hai phần này
-thuộc #35/#57: Mai dùng lại các file đơn hàng trên main và nối `useClearPaidCart`
-vào trang xác nhận; #37 không tạo hook/storage thay thế.
+Đặt đơn, trang `/checkout/:id` và xóa giỏ khi PAID thuộc #35; trang thanh toán thuộc #36.
 Nhân viên duyệt hủy/bảng pha chế thuộc #39; E2E toàn luồng thuộc #40.
 Nguồn chuyển file: A1 `92a43f4`, sửa để dùng core/payment hooks của A2; không kéo lịch sử Git A1.
+
+## Đặt hàng — Issue #35
+
+- Nút **Đặt hàng** ở `/cart`: chưa đăng nhập thì chuyển sang `/login?redirect=/cart`.
+- Gọi `POST /orders` kèm `Idempotency-Key` (giữ theo giỏ + voucher), bấm đúp hay mất
+  phản hồi vẫn chỉ tạo 1 đơn. Kiểm tra số ly còn bán trước khi gửi; lỗi hết nguyên liệu
+  hoặc voucher hiện rõ và giữ nguyên giỏ.
+- Đặt xong chuyển sang `/checkout/:orderId`, trang này dùng `PaymentMethodPicker` của #36
+  để chọn Ví/Thẻ. Mở lại giỏ khi đơn còn chờ thanh toán thì tiếp tục đúng đơn đó.
+- Giỏ tự xóa khi đơn PAID (`useClearPaidCart`) ở trang giỏ, chi tiết, xác nhận và lịch sử
+  đơn; chỉ xóa nếu giỏ vẫn đúng là giỏ đã đặt đơn đó. Test: WEB-T51..T54.
 
 ## Thanh toán Sprint 2 — Issue #36
 

@@ -1,11 +1,27 @@
 "use client";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart, getLineKey } from "@/store/useCart";
 import { useHydrated } from "@/hooks/useHydrated";
 import { useAvailability } from "@/hooks/useAvailability";
 import { formatPrice } from "@/lib/formatPrice";
 import { toppingOptions } from "@/lib/productOptions";
 import CartVoucherSummary from "@/components/CartVoucherSummary";
+import { getStoredToken } from "@/lib/auth";
+import { submitOrderApi } from "@/lib/orders/orders";
+import { useClearPaidCart } from "@/hooks/useClearPaidCart";
+import {
+  clearActiveCheckout,
+  getActiveCheckout,
+  getCartFingerprint,
+  saveCheckout,
+  getOrderRequestKey,
+  clearOrderRequestKey,
+} from "@/lib/payments/storage";
+import { useOwnOrder, useOrderClock } from "@/hooks/useOrderHistory";
+import { getMyOrder, OrderApiError } from "@/lib/orders/history";
+import { canPay, isPaid } from "@/lib/orderUtils";
 
 const toppingLabel = (ids: string[]) =>
   ids.length
@@ -17,9 +33,107 @@ const toppingLabel = (ids: string[]) =>
 export default function CartPage() {
   const hydrated = useHydrated();
   const items = useCart((s) => s.items);
+  const voucherCode = useCart((s) => s.voucherCode);
   const setQty = useCart((s) => s.setQty);
   const removeItem = useCart((s) => s.removeItem);
+  const router = useRouter();
   const availability = useAvailability(items, hydrated);
+
+  const candidate =
+    hydrated && items.length
+      ? getActiveCheckout(getCartFingerprint(items))
+      : null;
+  const activeOrder = useOwnOrder(candidate?.orderId ?? "");
+    // The order of this cart was paid (staff confirmed while the customer was
+  // elsewhere): empty the cart as soon as it is opened
+  useClearPaidCart(
+    candidate && activeOrder.data && !activeOrder.isError
+      ? [activeOrder.data]
+      : undefined,
+  );
+  const now = useOrderClock(
+    activeOrder.data?.serverTime,
+    activeOrder.dataUpdatedAt,
+  );
+  const resume =
+    !!candidate &&
+    !!activeOrder.data &&
+    (canPay(activeOrder.data, now) || isPaid(activeOrder.data.status));
+  const requestInFlight = useRef(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleCheckout = async () => {
+    if (requestInFlight.current) return;
+    setErrorMessage(null);
+
+    // Not logged in yet: go to login, then come back to the cart
+    if (!getStoredToken()) {
+      router.push("/login?redirect=/cart");
+      return;
+    }
+
+    const fingerprint = getCartFingerprint(items);
+    requestInFlight.current = true;
+    setLoading(true);
+    try {
+      if (candidate) {
+        try {
+          const current = await getMyOrder(candidate.orderId);
+          if (current.canPay) {
+            router.push(`/checkout/${encodeURIComponent(current.id)}`);
+            return;
+          }
+          if (isPaid(current.status)) {
+            useCart.getState().clear();
+            clearActiveCheckout(current.id);
+            router.push(
+              `/orders/${encodeURIComponent(current.id)}${current.status === "PAID" ? "/confirmation" : ""}`,
+            );
+            return;
+          }
+          clearActiveCheckout(candidate.orderId);
+        } catch (cause) {
+          if (cause instanceof OrderApiError && cause.status === 404)
+            clearActiveCheckout(candidate.orderId);
+          else throw cause;
+        }
+      }
+      const latest = await availability.refetch();
+      if (latest.isError || !latest.data) {
+        throw new Error("Không kiểm tra được số ly còn bán. Vui lòng thử lại.");
+      }
+      if (!latest.data.available) {
+        throw new Error(
+          "Giỏ hàng vượt số ly còn bán. Vui lòng giảm số lượng hoặc đổi lựa chọn.",
+        );
+      }
+      const data = await submitOrderApi(
+        items,
+        voucherCode || undefined,
+        getOrderRequestKey(fingerprint, voucherCode || ""),
+      );
+      clearOrderRequestKey();
+      saveCheckout({
+        orderId: data.orderId,
+        total: data.total,
+        createdAt: data.createdAt,
+        expiresAt: data.expiresAt,
+        cartFingerprint: fingerprint,
+      });
+      router.push(`/checkout/${encodeURIComponent(data.orderId)}`);
+    } catch (err: unknown) {
+        // Keep the cart unchanged so the user can try again
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Đã có lỗi xảy ra khi kết nối tới máy chủ.",
+      );
+    } finally {
+      requestInFlight.current = false;
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
@@ -67,7 +181,8 @@ export default function CartPage() {
                         <p className="text-sm text-stone-500">
                           {formatPrice(item.unitPrice)} / ly
                         </p>
-                        {availability.data &&
+                        {!resume &&
+                          availability.data &&
                           !availability.isError &&
                           stock !== undefined && (
                             <p
@@ -81,6 +196,7 @@ export default function CartPage() {
                           )}
                       </div>
                       <button
+                        disabled={loading}
                         onClick={() => removeItem(key)}
                         className="shrink-0 text-sm font-medium text-red-700 hover:underline"
                       >
@@ -92,7 +208,7 @@ export default function CartPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setQty(key, item.qty - 1)}
-                          disabled={item.qty <= 1}
+                          disabled={loading || item.qty <= 1}
                           aria-label="Giảm số lượng"
                           className="h-8 w-8 rounded-full border border-stone-300 disabled:opacity-40"
                         >
@@ -103,6 +219,7 @@ export default function CartPage() {
                         </span>
                         <button
                           disabled={
+                            loading ||
                             availability.isPending ||
                             availability.isFetching ||
                             availability.isError ||
@@ -128,18 +245,22 @@ export default function CartPage() {
 
           <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-4">
             <div role="status" className="mb-4 text-sm text-stone-600">
-              {availability.isPending
-                ? "Đang kiểm tra số ly còn bán…"
-                : availability.isError
-                  ? "Không kiểm tra được nguyên liệu. Vui lòng thử lại."
-                  : availability.data?.available
-                    ? "Đủ nguyên liệu theo lựa chọn hiện tại."
-                    : "Chưa đủ nguyên liệu cho toàn bộ giỏ hàng. Vui lòng điều chỉnh số lượng."}
-              <p className="mt-1">
-                Số ly của mỗi món đã tính phần nguyên liệu dành cho các món khác
-                trong giỏ.
-              </p>
-              {availability.isError && (
+              {resume
+                ? "Bạn có đơn hàng cho giỏ này. Tiếp tục để kiểm tra và thanh toán."
+                : availability.isPending
+                  ? "Đang kiểm tra số ly còn bán…"
+                  : availability.isError
+                    ? "Không kiểm tra được nguyên liệu. Vui lòng thử lại."
+                    : availability.data?.available
+                      ? "Đủ nguyên liệu theo lựa chọn hiện tại."
+                      : "Chưa đủ nguyên liệu cho toàn bộ giỏ hàng. Vui lòng điều chỉnh số lượng."}
+              {!resume && (
+                <p className="mt-1">
+                  Số ly của mỗi món đã tính phần nguyên liệu dành cho các món
+                  khác trong giỏ.
+                </p>
+              )}
+              {!resume && availability.isError && (
                 <button
                   type="button"
                   onClick={() => void availability.refetch()}
@@ -153,6 +274,15 @@ export default function CartPage() {
 
             <CartVoucherSummary />
 
+            {errorMessage && (
+              <div
+                role="alert"
+                className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+              >
+                {errorMessage}
+              </div>
+            )}
+
             <div className="mt-4 flex flex-col gap-2 sm:flex-row">
               <Link
                 href="/menu"
@@ -160,7 +290,25 @@ export default function CartPage() {
               >
                 Tiếp tục mua
               </Link>
-              {/* Nút "Đặt hàng" thuộc task thanh toán, không làm ở Task 5.1 */}
+              <button
+                onClick={handleCheckout}
+                disabled={
+                  loading ||
+                  (!!candidate && activeOrder.isPending) ||
+                  (!resume &&
+                    (availability.isPending ||
+                      availability.isFetching ||
+                      availability.isError ||
+                      !availability.data?.available))
+                }
+                className="flex-1 rounded-full bg-amber-700 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-800 disabled:opacity-50"
+              >
+                {loading
+                  ? "Đang xử lý…"
+                  : resume
+                    ? "Tiếp tục đơn hàng"
+                    : "Đặt hàng"}
+              </button>
             </div>
           </div>
         </>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useOrderClock, useOwnOrder } from "@/hooks/useOrderHistory";
+import { useClearPaidCart } from "@/hooks/useClearPaidCart";
 import { formatDate, orderStatusLabel } from "@/lib/orderUtils";
 import OrderRewards from "./OrderRewards";
 import OrderCancellation from "./OrderCancellation";
@@ -36,6 +37,7 @@ export function OrderDetail({
   const query = useOwnOrder(id);
   const router = useRouter();
   const order = query.data;
+  useClearPaidCart(order && !query.isError ? [order] : undefined);
   useRewardsProfile();
   useOrderRewardsSync(order && !query.isError ? [order] : []);
   const now = useOrderClock(order?.serverTime, query.dataUpdatedAt);
