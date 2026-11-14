@@ -176,7 +176,6 @@ jobs:
       - name: Trigger Render Deploy Hook (API)
         env:
           DEPLOY_HOOK: ${{ secrets.RENDER_API_DEPLOY_HOOK }}
-          REPO_OWNER: ${{ needs.build-and-push.outputs.repo_owner }}
           SHORT_SHA: ${{ needs.build-and-push.outputs.short_sha }}
         run: |
           if [ -z "$DEPLOY_HOOK" ]; then
@@ -204,7 +203,6 @@ jobs:
       - name: Trigger Render Deploy Hook (Web)
         env:
           DEPLOY_HOOK: ${{ secrets.RENDER_WEB_DEPLOY_HOOK }}
-          REPO_OWNER: ${{ needs.build-and-push.outputs.repo_owner }}
           SHORT_SHA: ${{ needs.build-and-push.outputs.short_sha }}
         run: |
           if [ -z "$DEPLOY_HOOK" ]; then
@@ -252,7 +250,7 @@ jobs:
         env:
           API_URL: https://brewlite-a2-api.onrender.com
           WEB_URL: https://brewlite-a2-web.onrender.com
-          EXPECTED_COMMIT: ${{ needs.build-and-push.outputs.short_sha }}
+          EXPECTED_COMMIT: ${{ !inputs.skip_deploy && needs.build-and-push.outputs.short_sha || '' }}
           MAX_RETRIES: 24
           RETRY_DELAY_SECONDS: 10
         run: |

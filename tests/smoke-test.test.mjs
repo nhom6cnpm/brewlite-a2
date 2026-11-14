@@ -18,6 +18,11 @@ describe('Production Smoke Test Contract (CD-T01)', () => {
       assert.equal(err, null);
     });
 
+    test('từ chối khi có expectedCommit nhưng payload thiếu commit (bản cũ)', () => {
+      const err = validateHealthPayload({ status: 'ok' }, 'new-commit');
+      assert.ok(err && err.includes('Bản deploy chưa trả commit, chưa phải bản mới'));
+    });
+
     test('từ chối khi commit deploy chưa khớp commit mong đợi (đang deploy bản cũ)', () => {
       const err = validateHealthPayload({ status: 'ok', commit: 'old-commit' }, 'new-commit');
       assert.ok(err && err.includes('chưa khớp commit mong đợi'));
@@ -35,13 +40,25 @@ describe('Production Smoke Test Contract (CD-T01)', () => {
   });
 
   describe('validateProductsPayload (Chuẩn A2)', () => {
-    test('chấp nhận danh sách sản phẩm chuẩn A2 với ID dạng chuỗi (p1..p6 hoặc string)', () => {
+    test('chấp nhận danh sách sản phẩm chuẩn A2 với đầy đủ mã p1..p6', () => {
       const products = [
         { id: 'p1', name: 'Americano', price: 30000 },
         { id: 'p2', name: 'Bạc xỉu', price: 32000 },
+        { id: 'p3', name: 'Cappuccino', price: 40000 },
+        { id: 'p4', name: 'Cà phê sữa', price: 29000 },
+        { id: 'p5', name: 'Trà vải', price: 38000 },
+        { id: 'p6', name: 'Trà đào', price: 38000 },
       ];
       const err = validateProductsPayload(products);
       assert.equal(err, null);
+    });
+
+    test('từ chối ID sản phẩm không khớp mã p1..p6 (ví dụ: "americano")', () => {
+      const products = [
+        { id: 'americano', name: 'Americano', price: 40000 },
+      ];
+      const err = validateProductsPayload(products);
+      assert.ok(err && err.includes('không đúng chuẩn A2 (yêu cầu p1..p6)'));
     });
 
     test('từ chối dữ liệu A1 có ID dạng số nguyên', () => {
@@ -55,6 +72,14 @@ describe('Production Smoke Test Contract (CD-T01)', () => {
     test('từ chối khi danh sách rỗng', () => {
       const err = validateProductsPayload([]);
       assert.ok(err && err.includes('rỗng'));
+    });
+
+    test('từ chối khi danh sách thiếu các mã sản phẩm A2 bắt buộc', () => {
+      const partialProducts = [
+        { id: 'p1', name: 'Americano', price: 30000 },
+      ];
+      const err = validateProductsPayload(partialProducts);
+      assert.ok(err && err.includes('thiếu các mã A2 bắt buộc'));
     });
 
     test('từ chối khi sản phẩm thiếu trường bắt buộc', () => {

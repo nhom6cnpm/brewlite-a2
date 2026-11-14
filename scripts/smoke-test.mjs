@@ -30,7 +30,10 @@ export function validateHealthPayload(body, expectedCommit = '') {
   if (body.status !== 'ok') {
     return `Trường status không hợp lệ: ${String(body.status)}`;
   }
-  if (expectedCommit && body.commit) {
+  if (expectedCommit) {
+    if (!body.commit) {
+      return 'Bản deploy chưa trả commit, chưa phải bản mới';
+    }
     const deployedCommit = String(body.commit).trim();
     const exp = String(expectedCommit).trim();
     if (!deployedCommit.startsWith(exp) && !exp.startsWith(deployedCommit)) {
@@ -50,16 +53,26 @@ export function validateProductsPayload(body) {
   if (body.length === 0) {
     return 'Danh sách sản phẩm rỗng (seed data chưa nạp hoặc database chưa có dữ liệu)';
   }
+  const expectedA2Ids = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
+  const ids = [];
   for (const item of body) {
     if (!item || typeof item !== 'object') {
       return 'Phần tử sản phẩm không hợp lệ';
     }
     if (typeof item.id === 'number') {
-      return 'Phát hiện ID sản phẩm dạng số (dữ liệu A1 cũ), hệ thống A2 yêu cầu ID dạng chuỗi (p1..p6 hoặc string id)';
+      return 'Phát hiện ID sản phẩm dạng số (dữ liệu A1 cũ), hệ thống A2 yêu cầu ID dạng chuỗi (p1..p6)';
     }
     if (!item.id || typeof item.name !== 'string' || typeof item.price !== 'number') {
       return 'Sản phẩm thiếu các trường bắt buộc (id, name, price)';
     }
+    if (!/^p[1-6]$/.test(item.id)) {
+      return `ID sản phẩm '${item.id}' không đúng chuẩn A2 (yêu cầu p1..p6)`;
+    }
+    ids.push(item.id);
+  }
+  const missing = expectedA2Ids.filter((id) => !ids.includes(id));
+  if (missing.length > 0) {
+    return `Danh sách sản phẩm thiếu các mã A2 bắt buộc: ${missing.join(', ')}`;
   }
   return null;
 }
