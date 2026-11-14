@@ -1,0 +1,56 @@
+# Override the team's Compose; do not run this file alone. Requires Compose >=2.24.4.
+# Fixed test-only project: brewlite-a2-e2e. No project database volume is mounted.
+services:
+  postgres:
+    container_name: !reset null
+    restart: "no"
+    labels:
+      brewlite.e2e: task-40
+    environment:
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e-local-only-password
+      POSTGRES_DB: brewlite_e2e_test
+    ports: !override
+      - "127.0.0.1:35432:5432"
+    volumes: !reset []
+    tmpfs:
+      - /var/lib/postgresql/data:rw,size=192m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d brewlite_e2e_test"]
+
+  api:
+    container_name: !reset null
+    restart: "no"
+    labels:
+      brewlite.e2e: task-40
+    image: brewlite-a2-e2e-api
+    environment:
+      DATABASE_URL: postgresql://e2e:e2e-local-only-password@postgres:5432/brewlite_e2e_test
+      FRONTEND_URL: http://127.0.0.1:3200
+      JWT_SECRET: e2e-local-only-jwt-secret-not-for-production
+      JWT_EXPIRES_IN: 1d
+      ADMIN_EMAIL: staff@brewlite-e2e.test
+      ADMIN_PASSWORD: E2e-Local-Only-Password!24
+      ORDER_PAYMENT_TIMEOUT_MINUTES: "15"
+    ports: !override
+      - "127.0.0.1:3201:3001"
+
+  web:
+    container_name: !reset null
+    restart: "no"
+    labels:
+      brewlite.e2e: task-40
+    image: brewlite-a2-e2e-web
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:3201
+        NEXT_PUBLIC_APP_URL: http://127.0.0.1:3200
+        NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES: "15"
+    environment:
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:3201
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3200
+      API_INTERNAL_URL: http://api:3001
+    ports: !override
+      - "127.0.0.1:3200:3000"
+
+volumes: !reset {}

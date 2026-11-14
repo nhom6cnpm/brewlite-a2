@@ -131,6 +131,16 @@ Pipeline Continuous Delivery tự động kích hoạt trên GitHub Actions khi 
 - Unit test hợp đồng Smoke Test (`CD-T01`): [smoke-test.test.mjs](../tests/smoke-test.test.mjs)
 - Hướng dẫn triển khai & rollback chi tiết: [docs/deployment.md](deployment.md)
 
+## E2E trình duyệt — Issue #40
+
+| Mã | Luồng/yêu cầu | Tệp | Trạng thái |
+|---|---|---|---|
+| E2E-T01 | UC-CK; FR-02/03/04/05/07/08/12/13: menu → tùy chọn → giỏ → login → tạo đơn Idempotency-Key → Ví/QR → chuyển tiền → nhân viên → confirmation PAID, snapshot/điểm/lịch sử/xóa giỏ | [checkout.spec.ts](../apps/web/tests/e2e/checkout.spec.ts), [helpers](../apps/web/tests/e2e/helpers.ts), [Playwright config](../apps/web/playwright.config.ts), [Compose test](../tests/e2e/compose.e2e.yml) | 4/4 qua desktop + mobile, UI nhân viên, Compose, 14/11, trên code main eb3ab5d + #56 |
+| E2E-T02 | Phần chuẩn bị trên main: menu/tùy chọn/giỏ/persist/login/voucher, không tạo đơn | [cart-login.spec.ts](../apps/web/tests/e2e/cart-login.spec.ts) | 4/4 qua desktop + mobile, UI nhân viên, Compose, 14/11, trên code main eb3ab5d + #56 |
+| WEB-T110 | Từ chối stack/project/cổng/DB/volume sai trước khi E2E ghi dữ liệu | [e2e-stack-guard.test.ts](../apps/web/src/test/e2e-stack-guard.test.ts), [setup](../apps/web/tests/e2e/setup.ts), [guard](../apps/web/tests/e2e/stack-guard.ts) | Unit test riêng; không thay kết quả browser E2E-T01/T02. |
+
+Cách chạy và xác nhận cuối: [tests/e2e/README.md](../tests/e2e/README.md). Tổng E2E-T01/T02 là 4 bài trên hai project browser. Nhóm trưởng chấp nhận lượt chạy trên code trùng main `578136b` sau merge #56; report/ảnh giữ ngoài Git. Không triển khai CI E2E riêng. Giữ nguyên mã unit/integration của các thành viên.
+
 ### Triển khai Production & Bàn giao (Deployment-01) — Task 5.4 (Lương, Phúc)
 
 Hệ thống BrewLite A2 được hoàn thiện cấu hình chuẩn bị bàn giao vận hành trên nền tảng cloud Render:
