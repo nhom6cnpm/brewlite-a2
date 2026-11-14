@@ -22,6 +22,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Commit SHA for build tracking and CD smoke testing
+ARG GIT_SHA=development
+ENV GIT_SHA=$GIT_SHA
+
 # Copy production node_modules, compiled dist (including migrations) and package manifests
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
@@ -30,4 +34,3 @@ COPY --from=builder /app/package*.json ./
 EXPOSE 3001
 
 CMD ["node", "dist/main"]
-

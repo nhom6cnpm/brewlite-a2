@@ -1,6 +1,7 @@
 # ☕ BrewLite – Assignment 2
 
 [![CI](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml/badge.svg)](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/ci.yml)
+[![CD](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/cd.yml/badge.svg)](https://github.com/nhom6cnpm/brewlite-a2/actions/workflows/cd.yml)
 
 Ứng dụng đặt cà phê không dùng tiền mặt — Bài tập lớn môn Công nghệ Phần mềm, Trường Đại học Sài Gòn (HK I, 2026–2027).
 Assignment 2: **Requirements to Deployment** — từ khai thác yêu cầu, mô hình hóa, thiết kế kiến trúc đến hai Sprint, CI/CD và triển khai production.
@@ -113,6 +114,66 @@ Kiểm tra PostgreSQL riêng: trong `apps/api`, chạy `npm run vouchers:smoke`
 tự dọn container test và không dùng DB đồ án).
 Phạm vi, kết quả và phần chờ tích hợp nằm ở [PR #47](https://github.com/nhom6cnpm/brewlite-a2/pull/47)
 và [ma trận truy vết](docs/traceability-matrix.md).
+
+## Thanh toán Sprint 2 — Issue #36
+
+Nguồn chuyển từ A1 `Bai_Tap_Lon_CNPM`, commit `92a43f4`: trang `pay`,
+`mock-bank`, proxy ngân hàng và `lib/payments/*`; chỉnh lại theo API A2 (#34,
+PR #52). Đợt này dùng **ngân hàng giả lập + nhân viên xác nhận**, theo #36.
+
+- `/pay/order/:orderId`: chọn Ví hoặc Thẻ cho đơn đã tạo, tổng tiền lấy lại từ
+  `GET /orders/:id`. Component dùng chung:
+  [`PaymentMethodPicker`](apps/web/src/components/payments/PaymentMethodPicker.tsx).
+  Mai (#35) có thể nhúng `<PaymentMethodPicker orderId={orderId} />` trong checkout,
+  hoặc chuyển đến `paymentSelectionPath(orderId)` từ `lib/payments/links.ts`.
+- `POST /payments` gửi `{ orderId, method }` và `Idempotency-Key`, không gửi giá.
+  Khóa được lưu trước khi gửi, tách theo tài khoản/đơn/phương thức. Mất phản hồi
+  thì dùng lại khóa cũ; phiên FAILED/CANCELLED được dọn khóa tương ứng, lần thử
+  tiếp theo dùng khóa mới trên cùng đơn. Nút gửi khóa trong lúc chờ và kiểm tra
+  lại trạng thái đơn trước khi tạo phiên.
+- `/pay/:paymentId`: Ví có QR thật (`qrcode.react`) mở
+  `/mock-bank/:paymentId`; Thẻ chỉ hướng dẫn quẹt tại quầy và chờ nhân viên.
+  Không nhập số thẻ giả, không có nút khách tự xác nhận thanh toán.
+- `/mock-bank/:paymentId` **không cần đăng nhập**: số tiền cố định từ server,
+  nội dung chuyển khoản bằng mã đơn. Nút “Chuyển tiền (mô phỏng)” gọi proxy
+  `/api/mock-bank/:paymentId` → `POST /mock-bank/payments/:id/transfer`.
+  Proxy không chuyển JWT, cookie hay số tiền do trình duyệt gửi lên API.
+- Polling mỗi 3 giây: TRANSFER_RECEIVED hiển thị chờ nhân viên, đơn vẫn PENDING;
+  SUCCESS **và** đơn PAID mới chuyển đến `/orders/:id/confirmation` của Ân (#37).
+  Nếu đơn đã PREPARING/READY/COMPLETED thì mở chi tiết đơn. FAILED cho thử lại
+  cùng đơn nếu còn hạn; CANCELLED đóng thao tác thanh toán. Đồng hồ chỉ hiển thị:
+  hết giờ chờ trạng thái server, không tự hủy đơn đã nhận tiền đúng hạn.
+- Đổi/thoát tài khoản hủy yêu cầu của phiên cũ; lỗi API hiển thị để thử lại,
+  không tạo dữ liệu giả và không xóa giỏ khi thất bại.
+
+**Phối hợp còn lại:** tại main `702132f`, checkout #35 chưa được ghép và trang
+xác nhận #37 còn ở PR #53. Phần này không sửa giỏ/checkout/trang đơn của Mai và
+Ân, không tạo bản thứ hai của hook xóa giỏ khi PAID. Sau khi ghép #35/#37 cần
+kiểm tra lại luồng từ giỏ đến nội dung trang xác nhận và chỉ xóa các món thuộc
+đơn đã thanh toán theo phần #35.
+
+**Chạy thử:** theo hướng dẫn Docker bên dưới, tạo đơn bằng checkout #35 khi đã
+được ghép. Trong lúc chờ, có thể tạo đơn thật bằng Swagger `POST /orders` (JWT,
+Idempotency-Key), rồi mở `/pay/order/<orderId>`. Dùng API admin trong Swagger
+để xác nhận/từ chối (giao diện admin thuộc đợt sau). Thanh toán giả lập không
+trừ tiền thật. API quyết định giá, quyền sở hữu, hạn đơn và ghi tiền một lần.
+
+**QR bằng điện thoại:** máy và điện thoại cùng Wi-Fi, mở web qua IP LAN thay
+`localhost`. `NEXT_PUBLIC_APP_URL` là địa chỉ web mà điện thoại truy cập được
+(cần build lại nếu đổi biến public); cấu hình localhost được thay bằng origin
+LAN khi khách đang mở web bằng LAN. Proxy server dùng `API_INTERNAL_URL`
+(`http://api:3001` trong Compose), nên điện thoại không cần gọi API localhost.
+Điện thoại chỉ cần trang ngân hàng công khai; không cần đăng nhập tài khoản khách.
+
+**Kiểm tra:** Node 24, trong `apps/web`: `npm ci` → `npm run lint` → `npm test`
+→ `npm run build`. WEB-T80..T85 trong [ma trận truy vết](docs/traceability-matrix.md)
+bao gồm validate dữ liệu, khóa chống trùng, chọn phương thức, polling/kết quả,
+ngân hàng công khai và proxy. Kiểm tra trình duyệt local với API/PostgreSQL riêng:
+Ví → chuyển tiền → nhân viên xác nhận; từ chối/hoàn tiền → thử lại cùng đơn bằng
+Thẻ; khách xác nhận bị 403; đơn chưa chuyển tiền hết hạn bị CANCELLED. Đã kiểm
+tra chuyển hướng đúng URL xác nhận, chưa kiểm tra nội dung trang #37 ở main.
+Phần thanh toán vừa màn hình 390px; Header chung trên main còn tràn ngang khi
+đăng nhập trên màn hình này, nằm ngoài phần file của #36.
 
 ## Chạy bằng Docker
 
@@ -300,36 +361,44 @@ Nhánh `main` được áp dụng branch protection với các chính sách bắ
 - **CI phát hiện lỗi**: [Pull Request #25](https://github.com/nhom6cnpm/brewlite-a2/pull/25) (cố ý làm hỏng test), [Workflow Run #42592401582](https://github.com/nhom6cnpm/brewlite-a2/actions/runs/42592401582) — job `web` dừng ở bước test. Log: [docs/ci/ci-failure-log.txt](docs/ci/ci-failure-log.txt), ảnh: [docs/ci/ci-failure.png](docs/ci/ci-failure.png)
 - Chi tiết: [docs/ci/README.md](docs/ci/README.md)
 
-## Triển khai Production & Rollback (Task 5.4 — Lương)
+## Continuous Delivery (CD) & Triển khai Production
 
-Hệ thống được triển khai trên nền tảng đám mây **Render** kết hợp **GitHub Container Registry (`ghcr.io`)** với bảo vệ HTTPS tự động.
+Hệ thống áp dụng quy trình phân phối liên tục (Continuous Delivery) tự động hóa thông qua GitHub Actions tại workflow [cd.yml](.github/workflows/cd.yml), đáp ứng đầy đủ các tiêu chuẩn của đề tài (Task 5.3 & Task 5.4):
 
-### 1. Địa chỉ dịch vụ Production (Cụm A2)
+### 1. Quy trình 7 bước (The 7-Step Pipeline)
+1. **Quality Gate:** Tự động chạy lại toàn bộ quy trình kiểm thử chất lượng (`npm ci` → `npm run lint` → `npm test` → `npm run build`) song song cho cả `apps/api` và `apps/web`.
+2. **Gắn thẻ Container Image:** Đóng gói Docker image đa tầng dựa trên **Node 24 Alpine** (`node:24-alpine`). Gắn thẻ theo commit SHA (`sha-<short_sha>`, `sha-<long_sha>`), phiên bản ngữ nghĩa (`vX.Y.Z`) và `latest`.
+3. **Đẩy lên Registry (GHCR):** Tự động xác thực và đẩy 2 image lên GitHub Container Registry:
+   - API: `ghcr.io/nhom6cnpm/brewlite-api`
+   - Web: `ghcr.io/nhom6cnpm/brewlite-web` (nhúng tĩnh các biến `NEXT_PUBLIC_*` thông qua `--build-arg`).
+4. **Triển khai Production (Render):** Kích hoạt webhook Render Deploy Hooks bằng secrets an toàn (`RENDER_API_DEPLOY_HOOK`, `RENDER_WEB_DEPLOY_HOOK`), không lộ secret trong mã nguồn hay log CI.
+5. **Migration an toàn:** API chạy đơn bản thể (1 replica), TypeORM tự động thực thi các migration mới trong Database Transaction khi khởi động trước khi mở cổng HTTP.
+6. **Kiểm thử khói (Smoke Test):** Script [scripts/smoke-test.mjs](scripts/smoke-test.mjs) kiểm tra thực tế:
+   - `GET /health`: Đảm bảo API online, kết nối PostgreSQL lành mạnh, và khớp đúng commit vừa deploy (`200 OK`).
+   - `GET /products`: Đảm bảo dữ liệu mẫu A2 (`p1`..`p6`) đã sẵn sàng và ORM truy vấn bình thường (`200 OK`).
+   - `GET /`: Đảm bảo giao diện người dùng Next.js phục vụ bình thường (`200 OK`).
+   - Hỗ trợ retry backoff (24 lần × 10 giây) để đáp ứng thời gian Render pull image và khởi động.
+7. **Dừng pipeline và Rollback:** Nếu smoke test không đạt sau các lần thử, pipeline lập tức dừng lại (đánh dấu thất bại đỏ) và in hướng dẫn rollback chi tiết.
 
-| Dịch vụ | URL Production | Mô tả |
-|---|---|---|
-| **Frontend Web** | [https://brewlite-a2-web.onrender.com](https://brewlite-a2-web.onrender.com) | Next.js 15 PWA giao diện đặt hàng |
-| **Backend API** | [https://brewlite-a2-api.onrender.com](https://brewlite-a2-api.onrender.com) | NestJS 11 REST API |
-| **API Healthcheck** | [https://brewlite-a2-api.onrender.com/health](https://brewlite-a2-api.onrender.com/health) | Trả về `{"status":"ok","database":"up"}` |
-| **Tài liệu Swagger UI** | [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs) | Tra cứu và thử nghiệm API với Bearer JWT |
-| **Cơ sở dữ liệu** | Render PostgreSQL 16 (Private Network) | Kết nối nội bộ qua `:5432`, **tắt Public Network** |
+### 2. Địa chỉ dịch vụ Production (Cụm A2)
+| Dịch vụ | Nền tảng | URL Production (A2) | Ghi chú & Bảo mật |
+|---|---|---|---|
+| **Frontend Web** | Render Web Service | [https://brewlite-a2-web.onrender.com](https://brewlite-a2-web.onrender.com) | Next.js 15 PWA, HTTPS tự động |
+| **Backend API** | Render Web Service | [https://brewlite-a2-api.onrender.com](https://brewlite-a2-api.onrender.com) | NestJS 11 REST API, HTTPS tự động |
+| **Health Check** | API Endpoint | [https://brewlite-a2-api.onrender.com/health](https://brewlite-a2-api.onrender.com/health) | Trả về `{"status":"ok","database":"up","commit":"..."}` |
+| **Swagger Docs** | API Endpoint | [https://brewlite-a2-api.onrender.com/api/docs](https://brewlite-a2-api.onrender.com/api/docs) | Tra cứu và thử nghiệm API với Bearer JWT |
+| **Database** | Render Managed PostgreSQL 16 | Cổng nội bộ `:5432` | Kết nối nội bộ qua Private Network giữa API và DB |
 
-### 2. Quy trình Triển khai (Deploy)
-1. **Tự động qua CD Pipeline**: Khi mã nguồn được merge vào `main` hoặc tạo tag `v*`, workflow `.github/workflows/cd.yml` tự động:
-   - Chạy Quality Gate (Lint, Test, Build).
-   - Đóng gói Docker image Node 24 Alpine, gắn tag commit SHA và push lên `ghcr.io`.
-   - Kích hoạt Render Deploy Hook kèm URL image tương ứng để cập nhật dịch vụ.
-   - Khi khởi động, API (1 replica) tự động chạy TypeORM migration trong transaction để tạo bảng và nạp dữ liệu mẫu mà không cần lệnh riêng.
-   - Thực thi Smoke Test tự động gọi `/health` và `/products` để nghiệm thu.
-2. **Kích hoạt thủ công**: Chạy workflow Continuous Delivery tại tab GitHub Actions hoặc bấm *Manual Deploy* trên Render Dashboard.
-
-### 3. Quy trình Phục hồi / Quay lui (Rollback)
-- **Cách 1 (Nhanh nhất)**: Truy cập Render Dashboard $\rightarrow$ Web Service $\rightarrow$ tab **Events** $\rightarrow$ chọn bản deploy ổn định trước đó $\rightarrow$ bấm **Rollback to this deploy** (thực hiện trong $\le$ 30 giây).
-- **Cách 2**: Kích hoạt Render Deploy Hook trỏ về image commit SHA trước đó:
+### 3. Quy trình Triển khai & Phục hồi / Rollback
+- **Tự động qua CD Pipeline**: Khi mã nguồn được merge vào `main` hoặc tạo tag `v*`, workflow `.github/workflows/cd.yml` tự động đóng gói, push image lên GHCR, kích hoạt Render hook và smoke test nghiệm thu.
+- **Phương án 1 (Rollback tức thời qua Render Dashboard)**: Truy cập Render Dashboard → Chọn service (`brewlite-a2-api` hoặc `brewlite-a2-web`) → Tab **Events** → Chọn bản deploy thành công trước đó → Bấm **Rollback to this deploy** (thực hiện trong ≤ 30 giây).
+- **Phương án 2 (Rollback theo tag qua Deploy Hook / Manual Deploy)**: Gọi Render Deploy Hook kèm tham số `imgURL` trỏ về image commit SHA trước đó:
   ```bash
   curl -fsS -X POST "${RENDER_API_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-api:sha-<commit_cu>"
   ```
+  hoặc cập nhật Image URL trên Render Dashboard về tag commit SHA ổn định rồi bấm *Manual Deploy*.
 
-> Chi tiết toàn bộ cấu hình biến môi trường, bảo mật secrets và hướng dẫn chi tiết xem tại [docs/deployment.md](docs/deployment.md).
+> Chi tiết cấu hình biến môi trường, tài liệu kiến trúc [ADR-008](docs/architecture/adr/008-nen-tang-trien-khai.md) và hướng dẫn triển khai xem tại [docs/deployment.md](docs/deployment.md).
+
 
 
