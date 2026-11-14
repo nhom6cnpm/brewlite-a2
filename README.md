@@ -364,7 +364,7 @@ Test API client kiểm tra payload, AbortSignal, lỗi backend và dữ liệu t
 Các mã `WEB-T20..T31`, `WEB-T40..T45` được ghi trong ma trận truy vết.
 Các test này chưa chứng minh API/PostgreSQL thật chạy cùng giao diện.
 
-## E2E trình duyệt — Issue #40 (đang chuẩn bị)
+## E2E trình duyệt — Issue #40
 
 Cấu hình Playwright tại `apps/web/playwright.config.ts`, test trong
 `apps/web/tests/e2e/`; hướng dẫn PowerShell/Linux, stack Compose riêng và cách xem
@@ -378,13 +378,11 @@ sửa theo API/UI A2, không nhập lịch sử Git A1 hoặc chép response gi�
   bấm giao diện #56; có chế độ API thật tạm thời theo bàn giao nhóm trưởng.
 - Cả hai lệnh cần **stack test riêng** đã healthy theo hướng dẫn. Không chạy
   trên database/volume đồ án. `-- --list` chỉ liệt kê test, chưa chứng minh chạy qua.
-- Chưa nghiệm thu E2E-T01: cần checkout #57 đã ghép; UI nhân viên cần #56. Sau khi
-  đủ phụ thuộc, ghép main, rà selector và build lại stack rồi chạy desktop/mobile.
-  Không skip bước thiếu để báo xanh; chưa thêm job E2E vào CI hiện tại.
-- Bản ghép local 14/11/2026: **4/4 E2E qua trên Docker đủ web/API/database**,
-  desktop/mobile, sau bản sửa xóa giỏ `32cf6f0` đã vào main `eb3ab5d` qua #57.
-  UI nhân viên dùng admin #56 `23ec7e2` chưa merge; nhánh E2E không chứa code admin
-  đó. Chờ #56 vào main để ghép và nghiệm thu bản đủ phụ thuộc; xem chi tiết ở hướng dẫn.
+- Xác nhận cuối: **4/4 qua desktop + mobile, UI nhân viên, Compose, 14/11/2026,
+  trên code main `eb3ab5d` + #56**. Main `578136b` đã merge #56; code và dependency
+  trùng lượt chạy này, được nhóm trưởng chấp nhận dùng report/ảnh đã lưu làm minh chứng.
+- Không triển khai CI E2E riêng theo thống nhất của nhóm. CI api/web/integration
+  hiện có giữ nguyên; PR vẫn cần review/approve trước khi merge.
 
 ## Integration test API tạo đơn và thanh toán — Task 5.2 Đợt 2 (Issue #38)
 

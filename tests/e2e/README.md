@@ -1,14 +1,16 @@
 # E2E trình duyệt thật — Issue #40
 
 **Trạng thái:** đã triển khai trên nhánh `feature/task-5-2-e2e`, cập nhật main
-`eb3ab5d` sau khi #57 merge. Ngày 14/11/2026, **4/4 bài browser qua** trên Compose
-đủ web/api/db của bản ghép riêng với admin #56 `23ec7e2`. #56 chưa merge vào main;
-cần ghép và kiểm tra trên main đủ phụ thuộc trước khi nghiệm thu/merge #40.
+`578136b` sau khi #56 merge. Nhóm trưởng chấp nhận lượt **4/4 bài browser qua**
+ngày 14/11/2026 trên code main `eb3ab5d` + admin #56 `23ec7e2` + E2E làm xác nhận
+cuối: lúc merge #56 chỉ giải quyết README/traceability, không đổi code nghiệp vụ.
+Đã đối chiếu code và dependency với main mới; không ghi nhận một lượt browser mới.
 
-## Kết quả kiểm tra bản ghép local — 14/11/2026
+## Kết quả xác nhận cuối — 14/11/2026
 
-Bản ghép riêng `a18b15b` gồm main `eb3ab5d`, bản sửa checkout `32cf6f0`, admin #56
-`23ec7e2` và phần E2E. Không đưa code admin chưa merge vào nhánh E2E để push.
+Bản chạy `a18b15b` gồm main `eb3ab5d`, bản sửa checkout `32cf6f0`, admin #56
+`23ec7e2` và phần E2E. Code nghiệp vụ/dependency trùng với main `578136b` đã merge
+#56; report và ảnh của chính lượt chạy này được giữ làm minh chứng ngoài Git.
 
 | Bài kiểm tra | Desktop / mobile | Kết quả |
 |---|---|---|
@@ -101,8 +103,8 @@ Chạy phần chuẩn bị đã có trên main, **sau khi stack test riêng đã
 npm --prefix apps/web run test:e2e:prepare
 ```
 
-Checkout #57 đã merge. Sau khi admin #56 merge: ghép main mới vào nhánh test,
-build lại stack từ source đã review rồi chạy toàn bộ:
+Checkout #57 và admin #56 đã merge. Khi cần chạy lại: ghép main mới vào nhánh
+test, build stack từ source đã review rồi chạy toàn bộ:
 
 ```powershell
 npm --prefix apps/web run test:e2e
@@ -125,8 +127,8 @@ không có route thì báo thiếu phụ thuộc, không bỏ qua test.
 
 ### Chế độ nhân viên gọi API tạm thời
 
-Theo bàn giao của nhóm trưởng, sau khi #57 vào main mà #56 chưa vào, có thể kiểm
-tra phần khách với API xác nhận thật #34. Chế độ này được ghi rõ bằng annotation
+Để kiểm tra riêng phần khách, có thể dùng API xác nhận thật #34. Chế độ này được
+ghi rõ bằng annotation
 `staff-confirmation: api` trong report; không chứng minh thao tác UI admin:
 
 ```powershell
@@ -150,18 +152,19 @@ Database test tmpfs mất khi dừng; giữ image để chạy lại. Lệnh nà
 container hoặc xóa dữ liệu của stack đồ án khác. Không dùng lệnh `down -v`
 trên project đồ án để chuẩn bị E2E.
 
-## Điều kiện hoàn thành còn chờ
+## Kiểm tra hoàn thành
 
 - [x] Cấu hình/fixtures/selector bám API và UI A2 đã có; hai project browser.
 - [x] Viết E2E-T01/T02 và unit test chặn dùng sai stack.
 - [x] Compose config: ba service riêng, không cổng/volume dự án.
 - [x] Checkout #57 đã ghép từ main, xác nhận hook xóa giỏ sau bản sửa `32cf6f0`.
-- [x] Build stack mới, E2E-T01/T02 qua desktop/mobile bằng UI nhân viên trên bản ghép #56, lưu kết quả.
-- [ ] Admin #56 merge vào main; ghép lại và kiểm tra bản đủ phụ thuộc để nghiệm thu.
+- [x] E2E-T01/T02 qua desktop/mobile bằng UI nhân viên trên Compose; giữ report/ảnh của lượt 14/11.
+- [x] Admin #56 đã merge; ghép main mới và đối chiếu code/dependency với lượt 4/4 được nhóm trưởng chấp nhận.
 - [ ] PR được Hiếu review/approve, CI xanh, merge commit; không tự merge.
 
-CI E2E riêng là tùy chọn của #40, chưa thêm trong PR này. CI api/web/integration
-hiện có vẫn chạy bình thường; kết quả local không được dùng thay cho CI hoặc review.
+Không triển khai job CI E2E riêng theo thống nhất của nhóm trưởng. CI
+api/web/integration hiện có giữ nguyên; kết quả browser local không thay cho CI
+hoặc review/approve trước khi merge.
 
 Tham khảo công cụ: [Playwright configuration](https://playwright.dev/docs/test-configuration),
 [test.step](https://playwright.dev/docs/api/class-test#test-step),
