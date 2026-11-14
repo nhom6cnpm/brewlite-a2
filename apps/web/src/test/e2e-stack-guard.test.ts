@@ -46,6 +46,34 @@ function stack() {
   }));
 }
 describe("WEB-T110 prevent browser writes against a project/shared database", () => {
+  it("accepts Docker Engine tmpfs metadata in HostConfig when Mounts is null", () => {
+    const rows = stack();
+    expect(() =>
+      assertTestStack([
+        rows[0],
+        rows[1],
+        {
+          ...rows[2],
+          Mounts: null,
+          HostConfig: { Tmpfs: { "/var/lib/postgresql/data": "rw,size=192m" } },
+        },
+      ]),
+    ).not.toThrow();
+  });
+  it("a tmpfs declaration must not mask a persistent PostgreSQL mount", () => {
+    const rows = stack();
+    expect(() =>
+      assertTestStack([
+        rows[0],
+        rows[1],
+        {
+          ...rows[2],
+          Mounts: [{ Type: "volume", Destination: "/var/lib/postgresql/data" }],
+          HostConfig: { Tmpfs: { "/var/lib/postgresql/data": "rw,size=192m" } },
+        },
+      ]),
+    ).toThrow("tmpfs");
+  });
   it("accepts only the disposable labeled 3-service stack", () =>
     expect(() => assertTestStack(stack())).not.toThrow());
   it("refuses an A1/shared project even with matching ports", () => {

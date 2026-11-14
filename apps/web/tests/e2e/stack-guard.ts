@@ -3,7 +3,8 @@ import { E2E } from "./environment";
 interface Container {
   Config: { Labels: Record<string, string>; Env: string[] };
   State: { Running: boolean; Health?: { Status: string } };
-  Mounts: { Type: string; Destination: string }[];
+  Mounts?: { Type: string; Destination: string }[] | null;
+  HostConfig?: { Tmpfs?: Record<string, string> | null };
   NetworkSettings: {
     Ports: Record<string, { HostIp: string; HostPort: string }[] | null>;
   };
@@ -55,14 +56,20 @@ export function assertTestStack(containers: Container[]): void {
         return [line.slice(0, at), line.slice(at + 1)];
       }),
     );
+    const mounts = container.Mounts ?? [];
+    const tmpfs = container.HostConfig?.Tmpfs ?? {};
     if (
       service === "postgres" &&
       (env.POSTGRES_DB !== E2E.database ||
-        !container.Mounts.some(
-          (m) =>
-            m.Type === "tmpfs" && m.Destination === "/var/lib/postgresql/data",
+        !(
+          Object.hasOwn(tmpfs, "/var/lib/postgresql/data") ||
+          mounts.some(
+            (m) =>
+              m.Type === "tmpfs" &&
+              m.Destination === "/var/lib/postgresql/data",
+          )
         ) ||
-        container.Mounts.some(
+        mounts.some(
           (m) =>
             m.Type !== "tmpfs" &&
             m.Destination.startsWith("/var/lib/postgresql"),
