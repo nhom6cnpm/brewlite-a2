@@ -149,6 +149,40 @@
         ]
       }
     },
+    "/admin/ingredients": {
+      "get": {
+        "description": "Nguyên liệu chỉ đủ dưới lowStockCups ly bị đánh dấu low (sắp hết).",
+        "operationId": "AdminInventoryController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryOverviewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải ADMIN"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Tồn kho nguyên liệu, phần đang giữ cho đơn và số ly còn bán",
+        "tags": [
+          "Admin Inventory"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
         "operationId": "AuthController_register",
@@ -581,6 +615,446 @@
         "summary": "Gửi yêu cầu hủy đơn đã có tiền về hoặc PAID",
         "tags": [
           "Orders"
+        ]
+      }
+    },
+    "/admin/orders/history": {
+      "get": {
+        "operationId": "AdminOrdersController_historyList",
+        "parameters": [
+          {
+            "required": false,
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "PAID",
+                "PAYMENT_FAILED",
+                "PREPARING",
+                "READY",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "description": "Mã đơn hoặc email khách (tìm một phần, không phân biệt hoa thường).",
+            "required": false,
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "required": false,
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderPageDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc chuyển trạng thái không hợp lệ."
+          },
+          "401": {
+            "description": "Cần JWT hợp lệ."
+          },
+          "403": {
+            "description": "Chỉ ADMIN được thao tác."
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng."
+          },
+          "409": {
+            "description": "Yêu cầu đã đổi/đã xử lý, đơn hết hạn hoặc chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Lịch sử mọi đơn: lọc trạng thái, tìm mã/email, phân trang",
+        "tags": [
+          "Admin Orders"
+        ]
+      }
+    },
+    "/admin/orders/{id}/detail": {
+      "get": {
+        "operationId": "AdminOrdersController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOrderDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc chuyển trạng thái không hợp lệ."
+          },
+          "401": {
+            "description": "Cần JWT hợp lệ."
+          },
+          "403": {
+            "description": "Chỉ ADMIN được thao tác."
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng."
+          },
+          "409": {
+            "description": "Yêu cầu đã đổi/đã xử lý, đơn hết hạn hoặc chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Snapshot đơn, người duyệt hủy và mọi phiên thanh toán; sao kê dùng GET /admin/bank-transactions",
+        "tags": [
+          "Admin Orders"
+        ]
+      }
+    },
+    "/admin/orders": {
+      "get": {
+        "operationId": "AdminOrdersController_list",
+        "parameters": [
+          {
+            "required": false,
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "example": "PAID,PREPARING,READY",
+              "type": "string"
+            }
+          },
+          {
+            "required": false,
+            "name": "cancelRequestStatus",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerOrderViewDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc chuyển trạng thái không hợp lệ."
+          },
+          "401": {
+            "description": "Cần JWT hợp lệ."
+          },
+          "403": {
+            "description": "Chỉ ADMIN được thao tác."
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng."
+          },
+          "409": {
+            "description": "Yêu cầu đã đổi/đã xử lý, đơn hết hạn hoặc chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Danh sách yêu cầu hủy PENDING hoặc bảng pha chế (cũ nhất trước)",
+        "tags": [
+          "Admin Orders"
+        ]
+      }
+    },
+    "/admin/orders/{id}/status": {
+      "patch": {
+        "description": "Khóa đơn, chặn nhảy bước và đơn đang chờ duyệt hủy; gửi lặp cùng trạng thái an toàn.",
+        "operationId": "AdminOrdersController_advance",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvancePreparationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc chuyển trạng thái không hợp lệ."
+          },
+          "401": {
+            "description": "Cần JWT hợp lệ."
+          },
+          "403": {
+            "description": "Chỉ ADMIN được thao tác."
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng."
+          },
+          "409": {
+            "description": "Yêu cầu đã đổi/đã xử lý, đơn hết hạn hoặc chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Pha chế: PAID → PREPARING → READY → COMPLETED",
+        "tags": [
+          "Admin Orders"
+        ]
+      }
+    },
+    "/admin/orders/{id}/cancel": {
+      "post": {
+        "operationId": "AdminOrdersController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveCancellationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc chuyển trạng thái không hợp lệ."
+          },
+          "401": {
+            "description": "Cần JWT hợp lệ."
+          },
+          "403": {
+            "description": "Chỉ ADMIN được thao tác."
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng."
+          },
+          "409": {
+            "description": "Yêu cầu đã đổi/đã xử lý, đơn hết hạn hoặc chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Duyệt đúng yêu cầu hủy: hoàn tiền, trả kho/voucher, thu hồi điểm trong một giao dịch",
+        "tags": [
+          "Admin Orders"
+        ]
+      }
+    },
+    "/admin/orders/{id}/cancel-request/reject": {
+      "post": {
+        "operationId": "AdminOrdersController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectCancellationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc chuyển trạng thái không hợp lệ."
+          },
+          "401": {
+            "description": "Cần JWT hợp lệ."
+          },
+          "403": {
+            "description": "Chỉ ADMIN được thao tác."
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng."
+          },
+          "409": {
+            "description": "Yêu cầu đã đổi/đã xử lý, đơn hết hạn hoặc chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Từ chối đúng yêu cầu hủy; bắt buộc lý do, giữ nguyên tiền/kho/điểm",
+        "tags": [
+          "Admin Orders"
+        ]
+      }
+    },
+    "/admin/bank-transactions": {
+      "get": {
+        "description": "IN = tiền vào (khách chuyển khoản hoặc thẻ tại quầy khi xác nhận), REFUND = quán hoàn tiền.",
+        "operationId": "AdminBankController_list",
+        "parameters": [
+          {
+            "name": "orderId",
+            "required": false,
+            "in": "query",
+            "description": "Chỉ lấy giao dịch của một đơn",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BankTransactionDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải ADMIN"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Sao kê ngân hàng giả lập của quán (mới nhất trước, tối đa 200 dòng)",
+        "tags": [
+          "Admin Payments"
         ]
       }
     },
@@ -1027,6 +1501,116 @@
         },
         "required": [
           "items"
+        ]
+      },
+      "IngredientOverviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "coffee"
+          },
+          "name": {
+            "type": "string",
+            "example": "Cà phê"
+          },
+          "unit": {
+            "type": "string",
+            "example": "g"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 1896,
+            "description": "Còn trong kho (đã trừ phần giữ)"
+          },
+          "reserved": {
+            "type": "number",
+            "example": 104,
+            "description": "Đang giữ cho đơn chờ thanh toán"
+          },
+          "cupsLeft": {
+            "type": "number",
+            "nullable": true,
+            "example": 105
+          },
+          "low": {
+            "type": "boolean"
+          },
+          "usedBy": {
+            "example": [
+              "Americano",
+              "Bạc xỉu"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "unit",
+          "quantity",
+          "reserved",
+          "cupsLeft",
+          "low",
+          "usedBy"
+        ]
+      },
+      "ProductStockDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "p1"
+          },
+          "name": {
+            "type": "string",
+            "example": "Americano"
+          },
+          "sellableCups": {
+            "type": "number",
+            "example": 105,
+            "description": "Size S, không topping"
+          },
+          "limitingIngredientId": {
+            "type": "string",
+            "nullable": true,
+            "example": "coffee"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sellableCups",
+          "limitingIngredientId"
+        ]
+      },
+      "InventoryOverviewDto": {
+        "type": "object",
+        "properties": {
+          "lowStockCups": {
+            "type": "number",
+            "example": 10
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngredientOverviewDto"
+            }
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductStockDto"
+            }
+          }
+        },
+        "required": [
+          "lowStockCups",
+          "ingredients",
+          "products"
         ]
       },
       "RegisterDto": {
@@ -1809,6 +2393,523 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "AdminOrderViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "discount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
+          "voucherCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "voucherTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ],
+            "nullable": true
+          },
+          "refundedAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "transferReceived": {
+            "type": "boolean"
+          },
+          "canPay": {
+            "type": "boolean"
+          },
+          "canCancelImmediately": {
+            "type": "boolean"
+          },
+          "canRequestCancellation": {
+            "type": "boolean"
+          },
+          "cancelRequest": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomerCancelRequestDto"
+              }
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerOrderItemDto"
+            }
+          },
+          "benefitsPolicyVersion": {
+            "type": "number",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "pointsEarned": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pointsReversed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pointsAwardedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "pointsReversedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "subtotal",
+          "discount",
+          "total",
+          "voucherCode",
+          "voucherTitle",
+          "createdAt",
+          "expiresAt",
+          "serverTime",
+          "cancelledAt",
+          "cancelReason",
+          "paymentMethod",
+          "refundedAmount",
+          "transferReceived",
+          "canPay",
+          "canCancelImmediately",
+          "canRequestCancellation",
+          "cancelRequest",
+          "items",
+          "benefitsPolicyVersion",
+          "pointsEarned",
+          "pointsReversed",
+          "pointsAwardedAt",
+          "pointsReversedAt",
+          "customerEmail"
+        ]
+      },
+      "AdminOrderPageDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminOrderViewDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
+          "page": {
+            "type": "number",
+            "minimum": 1
+          },
+          "pageSize": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pageSize"
+        ]
+      },
+      "AdminPaymentRecordDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "TRANSFER_RECEIVED",
+              "SUCCESS",
+              "FAILED"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedByEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "paymentId",
+          "method",
+          "status",
+          "amount",
+          "createdAt",
+          "receivedAt",
+          "reviewedAt",
+          "reviewedByEmail",
+          "reviewNote"
+        ]
+      },
+      "AdminOrderDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "discount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
+          "voucherCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "voucherTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ],
+            "nullable": true
+          },
+          "refundedAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "transferReceived": {
+            "type": "boolean"
+          },
+          "canPay": {
+            "type": "boolean"
+          },
+          "canCancelImmediately": {
+            "type": "boolean"
+          },
+          "canRequestCancellation": {
+            "type": "boolean"
+          },
+          "cancelRequest": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomerCancelRequestDto"
+              }
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerOrderItemDto"
+            }
+          },
+          "benefitsPolicyVersion": {
+            "type": "number",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "pointsEarned": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pointsReversed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pointsAwardedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "pointsReversedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelReviewedByEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPaymentRecordDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "subtotal",
+          "discount",
+          "total",
+          "voucherCode",
+          "voucherTitle",
+          "createdAt",
+          "expiresAt",
+          "serverTime",
+          "cancelledAt",
+          "cancelReason",
+          "paymentMethod",
+          "refundedAmount",
+          "transferReceived",
+          "canPay",
+          "canCancelImmediately",
+          "canRequestCancellation",
+          "cancelRequest",
+          "items",
+          "benefitsPolicyVersion",
+          "pointsEarned",
+          "pointsReversed",
+          "pointsAwardedAt",
+          "pointsReversedAt",
+          "customerEmail",
+          "cancelReviewedByEmail",
+          "payments"
+        ]
+      },
+      "AdvancePreparationDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PREPARING",
+              "READY",
+              "COMPLETED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "ApproveCancellationDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Định danh yêu cầu hủy đang được duyệt, không phải mã đơn."
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "requestId"
+        ]
+      },
+      "RejectCancellationDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "example": "Khách xác nhận tiếp tục nhận món."
+          }
+        },
+        "required": [
+          "requestId",
+          "reason"
+        ]
+      },
+      "BankTransactionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "TXN-3f2a…"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "IN",
+              "REFUND"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "example": 84000,
+            "description": "Luôn dương (VNĐ)"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "ORD-6f1c…"
+          },
+          "paymentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "content": {
+            "type": "string",
+            "example": "ORD-6f1c…",
+            "description": "Nội dung chuyển khoản"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "amount",
+          "orderId",
+          "paymentId",
+          "content",
+          "createdAt"
         ]
       },
       "CreatePaymentDto": {
