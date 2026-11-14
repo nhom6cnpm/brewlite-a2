@@ -1,0 +1,966 @@
+{
+  "info": {
+    "_postman_id": "brewlite-a2-api-collection",
+    "name": "BrewLite A2 - Complete API Collection",
+    "description": "Bộ sưu tập Postman Collection hoàn chỉnh cho BrewLite (Assignment 2 - Công nghệ Phần mềm, Trường Đại học Sài Gòn). Bao gồm toàn bộ luồng Auth, Menu, Kho nguyên liệu, Voucher, Tạo đơn Idempotent, Thanh toán Ví/Thẻ, Ngân hàng giả lập và Quản trị viên đối soát.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string",
+      "description": "URL API Backend (Local: http://localhost:3001 hoặc Production: https://brewlite-a2-api-ked5.onrender.com)"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT Bearer token của khách hàng (lấy từ POST /auth/login hoặc /auth/register)"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT Bearer token của quản trị viên (admin@brewlite.vn / admin123)"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string",
+      "description": "ID đơn hàng vừa tạo"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "string",
+      "description": "ID phiên thanh toán vừa tạo"
+    },
+    {
+      "key": "voucherCode",
+      "value": "THU5K",
+      "type": "string",
+      "description": "Mã giảm giá mẫu (THU5K, BREW10, NHOM15K, NHAP7K)"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Health Check",
+      "item": [
+        {
+          "name": "Health Check (API & Database Status)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Kiểm tra trạng thái hoạt động của NestJS API và kết nối Managed PostgreSQL. Trả về status: ok, database: up và commit SHA."
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Auth & Profiles",
+      "item": [
+        {
+          "name": "Register Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('token', json.access_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer_test@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Đăng ký tài khoản khách hàng mới. Trả về thông tin tài khoản và access_token."
+          }
+        },
+        {
+          "name": "Login Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('token', json.access_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer_test@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập khách hàng. Tự động lưu access_token vào biến collection {{token}}."
+          }
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.access_token) {",
+                  "        pm.collectionVariables.set('adminToken', json.access_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@brewlite.vn\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Đăng nhập quản trị viên mặc định (admin@brewlite.vn). Tự động lưu access_token vào biến collection {{adminToken}}."
+          }
+        },
+        {
+          "name": "Get Current Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Xem thông tin tài khoản hiện tại, email, vai trò (role) và điểm tích lũy thành viên (loyaltyPoints)."
+          }
+        },
+        {
+          "name": "List Users (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            },
+            "description": "Xem danh sách toàn bộ người dùng trong hệ thống (chỉ dành cho ADMIN)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Products & Availability",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ]
+            },
+            "description": "Lấy danh sách 6 món cà phê chuẩn A2 (p1..p6)."
+          }
+        },
+        {
+          "name": "Get Product Detail by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/p1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "p1"
+              ]
+            },
+            "description": "Lấy thông tin chi tiết một sản phẩm theo ID (ví dụ sản phẩm 1)."
+          }
+        },
+        {
+          "name": "Product Availability with Options",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/p1/availability?size=L&toppingIds=cream,pearls",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "p1",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "L"
+                },
+                {
+                  "key": "toppingIds",
+                  "value": "cream,pearls"
+                }
+              ]
+            },
+            "description": "Kiểm tra tồn kho số ly có thể làm được cho sản phẩm 1 với size L và 2 loại topping."
+          }
+        },
+        {
+          "name": "Check Cart Availability (Shared Ingredients)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"M\", \"toppingIds\": [\"cream\"], \"qty\": 2 },\n    { \"productId\": \"p2\", \"size\": \"L\", \"toppingIds\": [], \"qty\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/availability",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products",
+                "availability"
+              ]
+            },
+            "description": "Kiểm tra khả năng đáp ứng nguyên liệu chung của toàn giỏ hàng."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Vouchers & Pricing",
+      "item": [
+        {
+          "name": "Get Public Vouchers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vouchers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers"
+              ]
+            },
+            "description": "Lấy danh sách mã giảm giá đang kích hoạt (THU5K, BREW10, NHOM15K)."
+          }
+        },
+        {
+          "name": "Quote Cart (No Voucher)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 2 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vouchers/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers",
+                "quote"
+              ]
+            },
+            "description": "Tính toán giá giỏ hàng không áp dụng mã voucher."
+          }
+        },
+        {
+          "name": "Quote Cart with Voucher Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"M\", \"toppingIds\": [\"cream\"], \"qty\": 2 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vouchers/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers",
+                "quote"
+              ]
+            },
+            "description": "Báo giá giỏ hàng kèm voucher THU5K, kiểm tra giảm giá hợp lệ."
+          }
+        },
+        {
+          "name": "Quote Cart with JWT (Check User Quota)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 1 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vouchers/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vouchers",
+                "quote"
+              ]
+            },
+            "description": "Báo giá giỏ hàng có JWT để kiểm tra giới hạn 3 lượt dùng/khách hàng của mã voucher."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Orders & Idempotency",
+      "item": [
+        {
+          "name": "Create Order (Idempotency-Key)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('idempotencyKey', 'order-key-' + Date.now() + '-' + Math.random().toString(36).substring(7));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('orderId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": \"p1\", \"size\": \"S\", \"toppingIds\": [], \"qty\": 1 }\n  ],\n  \"voucherCode\": \"{{voucherCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "Tạo đơn hàng PENDING. Khóa nguyên liệu kho, lưu snapshot giá, hạn 15 phút, lưu Idempotency-Key chống tạo trùng."
+          }
+        },
+        {
+          "name": "Get My Orders (Customer History)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "me"
+              ]
+            },
+            "description": "Lấy danh sách lịch sử đơn hàng của tài khoản đang đăng nhập."
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}"
+              ]
+            },
+            "description": "Xem chi tiết đơn hàng theo ID, trạng thái đơn, danh sách món và hạn thanh toán."
+          }
+        },
+        {
+          "name": "Cancel Order (Before Transfer Received)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Khách đổi ý muốn đặt món khác\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "cancel"
+              ]
+            },
+            "description": "Hủy ngay đơn hàng PENDING khi chưa có tiền về. Hoàn lại nguyên liệu kho và lượt voucher."
+          }
+        },
+        {
+          "name": "Request Order Cancellation (After Paid/Transfer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Đặt nhầm món, yêu cầu hủy đơn hoàn tiền\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{orderId}}/cancel-request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{orderId}}",
+                "cancel-request"
+              ]
+            },
+            "description": "Gửi yêu cầu hủy đơn khi đơn đã thanh toán hoặc đã chuyển khoản, chờ nhân viên duyệt."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Payments",
+      "item": [
+        {
+          "name": "Create Payment Session (Wallet - QR)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('payKey', 'pay-key-' + Date.now() + '-' + Math.random().toString(36).substring(7));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.id) {",
+                  "        pm.collectionVariables.set('paymentId', json.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{payKey}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"method\": \"WALLET\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
+            },
+            "description": "Tạo phiên thanh toán bằng Ví. Server tự lấy tổng tiền từ đơn hàng, sinh mã thanh toán và lưu paymentId."
+          }
+        },
+        {
+          "name": "Create Payment Session (Card at Counter)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "card-key-{{$guid}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\",\n  \"method\": \"CARD\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments"
+              ]
+            },
+            "description": "Tạo phiên thanh toán bằng Thẻ tại quầy."
+          }
+        },
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{paymentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{paymentId}}"
+              ]
+            },
+            "description": "Xem trạng thái phiên thanh toán (PENDING, TRANSFER_RECEIVED, SUCCESS, FAILED)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Mock Bank (Giả lập ngân hàng)",
+      "item": [
+        {
+          "name": "Mock Bank - Get Transfer Info (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-bank/payments/{{paymentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-bank",
+                "payments",
+                "{{paymentId}}"
+              ]
+            },
+            "description": "API công khai không cần token: lấy thông tin chuyển khoản ngân hàng (số tài khoản, số tiền cố định, nội dung)."
+          }
+        },
+        {
+          "name": "Mock Bank - Transfer Money (Simulation)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-bank/payments/{{paymentId}}/transfer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-bank",
+                "payments",
+                "{{paymentId}}",
+                "transfer"
+              ]
+            },
+            "description": "Mô phỏng khách bấm nút chuyển tiền: ghi nhận giao dịch IN vào sổ sao kê ngân hàng. Phiên chuyển sang TRANSFER_RECEIVED, đơn vẫn giữ PENDING chờ nhân viên đối soát."
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. Admin Payments & Review",
+      "item": [
+        {
+          "name": "Admin - List Pending Payments (ACTIVE)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments"
+              ]
+            },
+            "description": "Danh sách các phiên thanh toán chờ nhân viên xác nhận (ưu tiên phiên đã có tiền TRANSFER_RECEIVED lên đầu)."
+          }
+        },
+        {
+          "name": "Admin - Confirm Payment (PAID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Đã nhận đúng số tiền\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "{{paymentId}}",
+                "confirm"
+              ]
+            },
+            "description": "Nhân viên xác nhận tiền về: phiên chuyển SUCCESS, đơn hàng chuyển PAID, tích điểm thưởng cho khách."
+          }
+        },
+        {
+          "name": "Admin - Reject Payment (Refund & FAILED)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Khách yêu cầu hủy chuyển khoản\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments/{{paymentId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments",
+                "{{paymentId}}",
+                "reject"
+              ]
+            },
+            "description": "Nhân viên từ chối phiên thanh toán: phiên chuyển FAILED, đơn chuyển PAYMENT_FAILED, ghi nhận giao dịch REFUND hoàn tiền đúng 1 lần."
+          }
+        },
+        {
+          "name": "Admin - Customer Forbidden Access (Test 403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "payments"
+              ]
+            },
+            "description": "Kiểm thử bảo mật: Khách hàng thường gọi API của Admin bị chặn ngay với HTTP 403 Forbidden."
+          }
+        }
+      ]
+    },
+    {
+      "name": "09. Admin Bank Statement & Ingredients (A1 & Admin Tab)",
+      "item": [
+        {
+          "name": "Admin - Bank Statement by Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/bank-transactions?orderId={{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "bank-transactions"
+              ],
+              "query": [
+                {
+                  "key": "orderId",
+                  "value": "{{orderId}}"
+                }
+              ]
+            },
+            "description": "Tra cứu sao kê ngân hàng giả lập theo orderId (các giao dịch IN / REFUND)."
+          }
+        },
+        {
+          "name": "Admin - Ingredient Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "ingredients"
+              ]
+            },
+            "description": "Xem bảng tổng quan nguyên liệu tồn kho, số lượng đang giữ chỗ (reserved), cảnh báo sắp hết và số ly còn bán."
+          }
+        }
+      ]
+    }
+  ]
+}

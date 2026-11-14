@@ -1,170 +1,209 @@
-# Triển khai hệ thống (Deployment & Continuous Delivery)
+# Tài liệu Triển khai Hệ thống & Continuous Delivery (Deployment Guide)
 
-Tài liệu này đặc tả kiến trúc triển khai, quy trình phân phối liên tục (Continuous Delivery - CD), chiến lược gắn tag container, cơ chế migration an toàn, kiểm thử khói (smoke test) và quy trình dừng/rollback khi phát hiện sự cố cho hệ thống **BrewLite A2** (đáp ứng đầy đủ 7 tiêu chí của Task 5.3).
+> **Môn học:** Công nghệ Phần mềm — Trường Đại học Sài Gòn (HK I, 2026–2027)  
+> **Dự án:** BrewLite A2 — Ứng dụng đặt đồ uống không dùng tiền mặt  
+> **Người thực hiện:** Lương (DevOps & Deployment), Phúc (API & Verification)  
+> **Liên quan:** NFR-04, Deployment-01, ADR-008, Task 3.2, Task 5.3, Task 5.4
 
 ---
 
-## 1. Nền tảng và Kiến trúc Production
+## 1. Nền tảng & Kiến trúc Triển khai Production
 
-**Production:** [Render](https://render.com) kết hợp Container Registry [GitHub Packages](https://ghcr.io).
+Hệ thống **BrewLite A2** được thiết kế để triển khai trên nền tảng đám mây [Render](https://render.com) kết hợp với Container Registry [GitHub Container Registry (ghcr.io)](https://ghcr.io). Mọi dịch vụ web và API đều được phục vụ qua giao thức mã hóa **HTTPS tự động** (Let's Encrypt TLS).
 
-| Thành phần | Render Service | URL Production | Ghi chú |
+| Thành phần | Dịch vụ Render | URL Production / Endpoint | Ghi chú & Bảo mật |
 |---|---|---|---|
-| Frontend (`brewlite-a2-web`) | Web Service | `https://brewlite-a2-web.onrender.com` | Next.js PWA, HTTPS tự động |
-| Backend (`brewlite-a2-api`) | Web Service | `https://brewlite-a2-api.onrender.com` | NestJS API, HTTPS tự động |
-| Database (`brewlite-a2-db`) | Managed PostgreSQL | Private Network (`:5432`) | Persistent volume, cô lập trong VPC Render |
+| **Frontend Web** (`brewlite-a2-web`) | Web Service | `https://brewlite-a2-web.onrender.com` | Next.js 15 PWA, HTTPS tự động, đóng gói Docker đa tầng từ `ghcr.io`. |
+| **Backend API** (`brewlite-a2-api`) | Web Service | `https://brewlite-a2-api-ked5.onrender.com` | NestJS 11 REST API, HTTPS tự động, CORS cấu hình tên miền Frontend. |
+| **Database** (`brewlite-a2-db`) | Managed PostgreSQL 16 | Private Network (`:5432`) | Kết nối nội bộ qua Private Network giữa API và DB trong cùng Render Region. |
+| **Health Check** | API Endpoint | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200 `{"status":"ok","database":"up","commit":"..."}`. |
+| **Swagger API Docs** | API Interactive UI | `https://brewlite-a2-api-ked5.onrender.com/api/docs` | Swagger UI trực quan, hỗ trợ thử nghiệm API kèm Bearer JWT. |
+| **OpenAPI Spec** | API Raw JSON | `https://brewlite-a2-api-ked5.onrender.com/api/docs-json` | Định nghĩa OpenAPI 3.0 chuẩn cho Postman / công cụ tự động hóa. |
 
-> ⚠️ **Lưu ý vòng đời Database miễn phí:** Theo chính sách Render Free tier, database PostgreSQL miễn phí sẽ hết hạn sau **30 ngày** (+14 ngày gia hạn trước khi bị xóa). Nhóm tạo instance gần ngày nghiệm thu Task 5, kết hợp migration tự động (chứa sẵn seed) và sao lưu `pg_dump` để có thể tái tạo database bất kỳ lúc nào chỉ trong 2 phút.
+> [!NOTE]
+> **Hiện trạng triển khai & Kế hoạch hoàn thiện:**
+> - Toàn bộ cấu hình đóng gói Docker Node 24, GHCR registry, CI/CD pipeline, smoke test script và tài liệu hướng dẫn đã được xây dựng và kiểm thử hoàn chỉnh.
+> - Các service trên Render (`brewlite-a2-api`, `brewlite-a2-web`, `brewlite-a2-db`) đã được chuẩn bị sẵn sàng. Khi CD pipeline kích hoạt và Render cập nhật image mới từ `ghcr.io`, URL production sẽ chính thức chạy toàn bộ code A2.
+> - Việc gắn release tag `v1.0.0` trên GitHub, kiểm định trực tiếp trên URL production, và trích xuất tệp tài liệu `docs/api/openapi.json` (cùng Postman collection) sẽ được hoàn tất sau cùng khi bản A2 đã chạy thật trên Render.
+
+> [!WARNING]
+> **Vòng đời Database miễn phí trên Render (30 ngày):**  
+> Theo chính sách của Render Free tier, database PostgreSQL miễn phí sẽ tự động hết hạn sau **30 ngày** (kèm 14 ngày gia hạn trước khi bị xóa hoàn toàn).  
+> Nhóm tuân thủ đúng khuyến nghị của đề tài: **Khởi tạo database Render sát thời điểm nghiệm thu Task 5**. Đồng thời, hệ thống tích hợp sẵn cơ chế **TypeORM migration tự động chạy khi container API khởi động** (trong migration đã nhúng sẵn dữ liệu mẫu về danh mục, món `p1`..`p6`, công thức nguyên liệu, tài khoản quản trị và voucher). Do đó, nếu database bị xóa hoặc reset, hệ thống có thể **tự động tái lập 100% cấu trúc và dữ liệu mẫu** ngay khi khởi động lại API mà không cần thao tác thủ công.
 
 ---
 
 ## 2. Sơ đồ Triển khai (Deployment Diagram)
 
-Xem [docs/diagrams/deployment.svg](diagrams/deployment.svg) hoặc [.png](diagrams/deployment.png).
+Hệ thống tuân thủ kiến trúc phân tầng độc lập giữa Presentation Layer (Next.js PWA), Application Service (NestJS API) và Data Persistence (PostgreSQL), kết hợp chu trình tự động hóa qua GitHub Actions và GHCR:
 
-Nguồn PlantUML: [docs/diagrams/deployment.puml](diagrams/deployment.puml).
+```mermaid
+flowchart TD
+    subgraph Client ["Client Devices"]
+        Browser["User Browser / Mobile PWA (HTTPS)"]
+    end
 
-Quyết định kiến trúc chi tiết: [ADR-008: Nền tảng triển khai](architecture/adr/008-nen-tang-trien-khai.md).
+    subgraph CI_CD ["CI/CD Pipeline (GitHub Actions)"]
+        Commit["Git Commit / Tag v*"] --> QualityGate["1. Quality Gate (Lint, Test, Build)"]
+        QualityGate --> DockerBuild["2. Docker Build Node 24 Alpine"]
+        DockerBuild --> GHCR["3. Push Image to GHCR (ghcr.io)"]
+        DeployHook["4. Trigger Render Deploy Hook"]
+        GHCR --> DeployHook
+        DeployHook --> SmokeTest["6. Production Smoke Test (GET /health, /products)"]
+    end
+
+    subgraph Render ["Render Cloud Platform (Singapore / Oregon)"]
+        subgraph WebService ["Frontend Service: brewlite-a2-web"]
+            NextJS["Next.js 15 PWA Container (Port 3000)"]
+        end
+
+        subgraph APIService ["Backend Service: brewlite-a2-api"]
+            NestJS["NestJS 11 Container (Port 3001)"]
+            Migration["TypeORM Auto-Migration & Seed on Startup"]
+        end
+
+        subgraph DBService ["Database Service: brewlite-a2-db"]
+            PostgreSQL[("Render PostgreSQL 16 (Port 5432)")]
+        end
+    end
+
+    Browser -->|"HTTPS (Port 443)"| NextJS
+    Browser -->|"HTTPS API Calls (Port 443)"| NestJS
+    NextJS -.->|"SSR Data Fetch (HTTPS)"| NestJS
+    NestJS -->|"Private Network (:5432)"| PostgreSQL
+    Migration -->|"Runs in Transaction"| PostgreSQL
+    GHCR -.->|"Pull Docker Image"| NextJS
+    GHCR -.->|"Pull Docker Image"| NestJS
+```
+
+- Xem chi tiết sơ đồ PlantUML và kiến trúc liên quan tại [ADR-008: Nền tảng triển khai](architecture/adr/008-nen-tang-trien-khai.md).
 
 ---
 
-## 3. Cấu hình Quyền Container Registry (`ghcr.io`) trên Render
+## 3. Ba việc bắt buộc trước lần chạy CD đầu tiên (Tránh lỗi Pipeline Đỏ)
 
-Mặc định khi GitHub Actions đẩy container image lên GitHub Packages (`ghcr.io`), package sẽ được gán quyền **Private** trong tổ chức `nhom6cnpm`. Để Render có thể pull image về triển khai, nhóm thực hiện theo một trong hai cách sau:
+Để quy trình Continuous Delivery (CD) trên GitHub Actions chạy **XANH** ngay từ lần đầu tiên merge vào nhánh `main`, kỹ sư vận hành bắt buộc phải hoàn tất 3 bước chuẩn bị sau trên Render Dashboard và GitHub:
 
-### Cách 1: Chuyển Package sang chế độ Public (Khuyến nghị cho bài tập lớn)
-1. Đăng nhập GitHub với tài khoản quản trị tổ chức `nhom6cnpm`.
-2. Truy cập tab **Packages** của tổ chức:
-   - `ghcr.io/nhom6cnpm/brewlite-api`
-   - `ghcr.io/nhom6cnpm/brewlite-web`
-3. Chọn từng package → **Package settings**.
-4. Cuộn xuống phần **Danger Zone** → Nhấp **Change visibility** → Chọn **Public** → Nhập tên package để xác nhận.
-5. Sau khi chuyển sang Public, Render có thể pull image tự do mà không cần cấu hình token.
+### Việc 1: Chuyển 2 dịch vụ Render sang deploy từ Container Image (`Existing Image`)
+- **Nguyên nhân kỹ thuật:** Webhook Render Deploy Hook **chỉ tiếp nhận và áp dụng tham số `&imgURL=` khi Web Service được tạo ở chế độ "Deploy an existing image"**. Nếu service được liên kết từ Git repository (Build & deploy from a Git repository), Render sẽ **bỏ qua `imgURL`**, tiếp tục deploy mã nguồn cũ từ Git và không cập nhật container A2 mới, khiến bước kiểm tra commit SHA trong Smoke Test thất bại.
+- **Thao tác thiết lập:**
+  1. Trên [Render Dashboard](https://dashboard.render.com), truy cập 2 dịch vụ: `brewlite-a2-api` và `brewlite-a2-web`.
+  2. Tại mục cấu hình nguồn triển khai, chuyển sang **Deploy an existing image** (hoặc tạo mới Web Service chọn loại *Existing Image*).
+  3. Nhập đường dẫn image khởi tạo:
+     - API: `ghcr.io/nhom6cnpm/brewlite-api`
+     - Web: `ghcr.io/nhom6cnpm/brewlite-web`
 
-### Cách 2: Cấu hình Registry Credential trên Render Dashboard
-1. Tạo một GitHub Personal Access Token (classic) hoặc fine-grained token có quyền `read:packages`.
-2. Trên Render Dashboard → Chọn **Account Settings** (hoặc **Workspace Settings**) → Điều hướng đến mục **Registry Credentials**.
-3. Nhấp **Add Credential**:
-   - **Registry:** `ghcr.io`
-   - **Username:** Tên tài khoản GitHub của bạn.
-   - **Password / Token:** Dán Personal Access Token vừa tạo.
-4. Gán credential này cho các Web Service `brewlite-a2-api` và `brewlite-a2-web`.
+### Việc 2: Thêm 2 Secret Deploy Hook vào GitHub Repository
+- **Nguyên nhân kỹ thuật:** Pipeline CD tại `.github/workflows/cd.yml` gọi Render Deploy Hook để cập nhật container. Nếu thiếu secret trên nhánh `main`, step xác thực bí mật (`Validate deployment secrets`) sẽ lập tức dừng pipeline với mã lỗi `exit 1` (được thiết kế để ngăn ngừa tình trạng deploy giả xanh).
+- **Thao tác thiết lập:**
+  1. Trên [Render Dashboard](https://dashboard.render.com) → vào từng dịch vụ → **Settings** → cuộn xuống mục **Deploy Hook** → copy đường dẫn webhook (`https://api.render.com/deploy/srv-xxxxxx?key=yyyyyy`).
+  2. Truy cập GitHub repository: [nhom6cnpm/brewlite-a2](https://github.com/nhom6cnpm/brewlite-a2) → **Settings** → **Secrets and variables** → **Actions** → bấm **New repository secret**.
+  3. Thêm đủ 2 secret:
+     - `RENDER_API_DEPLOY_HOOK`: Dán URL Deploy Hook của `brewlite-a2-api`.
+     - `RENDER_WEB_DEPLOY_HOOK`: Dán URL Deploy Hook của `brewlite-a2-web`.
+
+### Việc 3: Phân quyền Container Registry (`ghcr.io`) sau lần push image đầu tiên
+- **Nguyên nhân kỹ thuật:** Mặc định, GitHub Container Registry (`ghcr.io`) tạo package ở chế độ **Private**. Trong lần chạy đầu tiên, sau khi job `build-and-push` tải image lên GHCR thành công, Render sẽ bị từ chối truy cập khi kéo image về và báo lỗi `unauthorized: authentication required` nếu package chưa được công khai.
+- **Thao tác thiết lập (chọn 1 trong 2 cách):**
+  - **Cách A — Chuyển Package sang chế độ Public (Khuyến nghị cho bài tập lớn):**
+    1. Ngay sau khi CD chạy xong bước `build-and-push` lần đầu, truy cập trang GitHub Packages: `https://github.com/users/nhom6cnpm/packages`.
+    2. Chọn từng package: `brewlite-api` và `brewlite-web`.
+    3. Điều hướng tới **Package settings** → cuộn xuống mục **Danger Zone** → bấm **Change package visibility** → chọn **Public** → gõ xác nhận để lưu.
+    4. Sau khi chuyển sang Public, Render có thể tự do kéo image theo URL `ghcr.io/nhom6cnpm/brewlite-api:sha-...` mà không cần cấu hình thêm token.
+  - **Cách B — Cấu hình Registry Credentials trong Render Dashboard:**
+    1. Tạo một GitHub Personal Access Token (Classic) có quyền `read:packages`.
+    2. Truy cập [Render Dashboard](https://dashboard.render.com) → vào mục **Account Settings** → chọn **Registry Credentials** → bấm **Add Credential**.
+    3. Điền thông tin: Registry `ghcr.io`, Username GitHub, Token vừa tạo, sau đó gán vào 2 Web Service `brewlite-a2-api` và `brewlite-a2-web`.
+
 
 ---
 
-## 4. Biến môi trường và Secrets
+## 4. Quản lý Biến Môi trường & Bí mật (Secrets)
+
+Toàn bộ bí mật được phân định rõ ràng giữa các giai đoạn: Build time, CI/CD secrets và Runtime secrets trên Render. Tuyệt đối **không commit file `.env` hoặc hardcode secret vào repository**.
 
 ### 4.1. Build Arguments (Bắt buộc lúc đóng gói Docker ở CI)
+Do Next.js nhúng tĩnh các biến có tiền tố `NEXT_PUBLIC_*` vào mã nguồn client tại thời điểm build (`next build`), các biến này được truyền qua `--build-arg` trong bước đóng gói Docker:
 
-> ⚠️ **Lưu ý quan trọng cho Web Next.js:** Các biến `NEXT_PUBLIC_*` được Next.js nhúng tĩnh vào mã nguồn JavaScript tại thời điểm **build time**. Khi build Docker image ở CI (GitHub Actions), phải truyền dưới dạng `--build-arg`. Đặt biến này trên Render lúc runtime sẽ không có tác dụng đối với bundle tĩnh của Next.js.
-
-| Build Arg | Mô tả | Giá trị Production A2 |
+| Build Arg | Giá trị trên Production | Mục đích |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | URL backend gọi từ trình duyệt | `https://brewlite-a2-api.onrender.com` |
-| `NEXT_PUBLIC_APP_URL` | URL frontend production | `https://brewlite-a2-web.onrender.com` |
-| `NEXT_PUBLIC_ORDER_PAYMENT_TIMEOUT_MINUTES` | Thời hạn hiển thị countdown đơn | `15` |
-| `GIT_SHA` (cho API) | Commit SHA ngắn được truyền vào API image | `${{ github.sha }}` ngắn |
+| `NEXT_PUBLIC_API_URL` | `https://brewlite-a2-api-ked5.onrender.com` | Địa chỉ API để trình duyệt của người dùng gửi yêu cầu HTTP |
+| `NEXT_PUBLIC_APP_URL` | `https://brewlite-a2-web.onrender.com` | Địa chỉ gốc của Frontend Web |
 
-### 4.2. GitHub Secrets (Dành cho CI/CD Pipeline)
+### 4.2. GitHub Actions Secrets (Dành cho CI/CD Pipeline)
+Cấu hình tại **GitHub Repository → Settings → Secrets and variables → Actions**:
 
-Lưu tại **GitHub Repository → Settings → Secrets and variables → Actions**:
+| Tên Secret | Bắt buộc trên `main` | Mô tả |
+|---|:---:|---|
+| `RENDER_API_DEPLOY_HOOK` | ✅ | Webhook URL kích hoạt Render deploy dịch vụ `brewlite-a2-api` (thiếu secret sẽ dừng pipeline với lỗi exit 1) |
+| `RENDER_WEB_DEPLOY_HOOK` | ✅ | Webhook URL kích hoạt Render deploy dịch vụ `brewlite-a2-web` (thiếu secret sẽ dừng pipeline với lỗi exit 1) |
+| `PROD_API_URL` | ⬜ | URL API để chạy smoke test (mặc định fallback: `https://brewlite-a2-api-ked5.onrender.com`) |
+| `PROD_WEB_URL` | ⬜ | URL Web để chạy smoke test (mặc định fallback: `https://brewlite-a2-web.onrender.com`) |
+| `GITHUB_TOKEN` | ✅ | Token do GitHub Actions tự động cung cấp có quyền `packages: write` để push image lên GHCR |
 
-| Secret Name | Mô tả | Bắt buộc trên `main` |
+### 4.3. Runtime Environment Variables trên Render
+Cấu hình tại mục **Environment** của từng dịch vụ trên Render Dashboard:
+
+#### Dịch vụ Backend API (`brewlite-a2-api`)
+| Tên Biến | Giá trị Khuyến nghị / Mô tả | Bắt buộc |
 |---|---|:---:|
-| `RENDER_API_DEPLOY_HOOK` | Webhook URL kích hoạt Render deploy dịch vụ `brewlite-a2-api` | ✅ (Thiếu sẽ dừng pipeline đỏ) |
-| `RENDER_WEB_DEPLOY_HOOK` | Webhook URL kích hoạt Render deploy dịch vụ `brewlite-a2-web` | ✅ (Thiếu sẽ dừng pipeline đỏ) |
-| `GITHUB_TOKEN` | Token do GitHub Actions tự động cấp quyền `packages: write` | ✅ (Tự động) |
-
-### 4.3. Runtime Environment Variables (Lưu trên Render Secrets)
-
-Toàn bộ secret chạy thực tế được cấu hình an toàn trên Render Dashboard (**không commit file `.env` vào repository**):
-
-#### Backend (`brewlite-a2-api`)
-| Biến | Mô tả | Bắt buộc |
-|---|---|:---:|
-| `DATABASE_URL` | Render Internal PostgreSQL URL (`postgres://...:5432/...`) | ✅ |
-| `JWT_SECRET` | Secret để ký và xác thực JWT token | ✅ |
-| `JWT_EXPIRES_IN` | Thời hạn token (ví dụ `1d`) | ✅ |
-| `FRONTEND_URL` | `https://brewlite-a2-web.onrender.com` (CORS whitelist) | ✅ |
 | `NODE_ENV` | `production` | ✅ |
-| `PORT` | `3001` (hoặc do Render gán) | ✅ |
-| `ADMIN_EMAIL` | Email tài khoản quản trị viên seed | ✅ |
-| `ADMIN_PASSWORD` | Mật khẩu tài khoản quản trị viên seed | ✅ |
-| `ORDER_PAYMENT_TIMEOUT_MINUTES` | Thời hạn giữ nguyên liệu/đơn hàng (phút) | ⬜ |
+| `PORT` | `3001` (Render tự gán biến `PORT` nội bộ) | ✅ |
+| `DATABASE_URL` | Chuỗi kết nối PostgreSQL Render (`postgres://...:5432/...`) | ✅ |
+| `JWT_SECRET` | Chuỗi ngẫu nhiên bảo mật (ít nhất 32 ký tự) dùng ký JWT | ✅ |
+| `JWT_EXPIRES_IN` | Thời hạn hiệu lực của token (ví dụ: `1d`, `7d`) | ✅ |
+| `FRONTEND_URL` | `https://brewlite-a2-web.onrender.com` (cấu hình CORS) | ✅ |
+| `ADMIN_EMAIL` | `admin@brewlite.vn` (seed tài khoản quản trị) | ✅ |
+| `ADMIN_PASSWORD` | Mật khẩu tài khoản quản trị | ✅ |
+| `ORDER_PAYMENT_TIMEOUT_MINUTES` | `15` (thời gian tự hủy đơn chưa thanh toán) | ⬜ |
+| `GIT_SHA` | Commit SHA hiện tại (tự động nhúng từ image tag hoặc build arg) | ⬜ |
 
-#### Frontend (`brewlite-a2-web`)
-| Biến | Mô tả | Bắt buộc |
+#### Dịch vụ Frontend Web (`brewlite-a2-web`)
+| Tên Biến | Giá trị Khuyến nghị / Mô tả | Bắt buộc |
 |---|---|:---:|
+| `NODE_ENV` | `production` | ✅ |
 | `PORT` | `3000` | ✅ |
-| `API_INTERNAL_URL` | `https://brewlite-a2-api.onrender.com` (URL gọi API từ server-side Next.js) | ✅ |
-| `NODE_ENV` | `production` | ✅ |
-
-> ℹ️ **Lưu ý mạng nội bộ Render:** Do gói Web Service miễn phí trên Render không hỗ trợ nhận traffic mạng nội bộ ("Free web services can't receive private network traffic"), `API_INTERNAL_URL` được trỏ đến URL HTTPS công khai `https://brewlite-a2-api.onrender.com`.
+| `API_INTERNAL_URL` | `https://brewlite-a2-api-ked5.onrender.com` (gọi API từ SSR) | ✅ |
 
 ---
 
 ## 5. Pipeline Continuous Delivery (Task 5.3)
 
-Quy trình CD được thiết lập tự động hóa hoàn toàn thông qua file workflow [.github/workflows/cd.yml](../.github/workflows/cd.yml).
+Quy trình CD được thiết lập tự động hóa hoàn toàn thông qua file workflow [.github/workflows/cd.yml](../.github/workflows/cd.yml), đáp ứng đầy đủ 7 tiêu chuẩn của đề tài:
 
 ### 5.1. Chuỗi thực thi 7 chặng chuẩn
-
-```
-Push vào 'main' hoặc Tag 'v*'
-               │
-               ▼
-┌──────────────────────────────────────────────┐
-│ 1. Quality Gate (API & Web song song)        │
-│    • npm ci → npm run lint → npm test → build│
-└──────────────────────┬───────────────────────┘
-                       │ (Vượt qua tất cả)
-                       ▼
-┌──────────────────────────────────────────────┐
-│ 2 & 3. Multi-stage Docker Build (Node 24)    │
-│    • Tag theo sha-<commit> và vX.Y.Z, latest │
-│    • Nhúng GIT_SHA vào API image             │
-│    • Push ghcr.io/nhom6cnpm/brewlite-api/web │
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│ 4 & 5. Deploy Render & Migration an toàn     │
-│    • Gọi webhook kèm param &imgURL=<imageTag>│
-│    • Bắt buộc có secret (thiếu secret → exit 1)│
-│    • API (1 replica) tự migrate lúc khởi động│
-└──────────────────────┬───────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────┐
-│ 6 & 7. Production Smoke Test & Rollback Gate │
-│    • Chờ Render deploy xong: kiểm tra commit │
-│    • Kiểm tra GET /health, /products, Web UI │
-│    • Lỗi → Dừng pipeline đỏ + Hướng dẫn roll │
-└──────────────────────────────────────────────┘
-```
+1. **Quality Gate:** Tự động chạy lại toàn bộ quy trình kiểm thử chất lượng (`npm ci` → `npm run lint` → `npm test` → `npm run build`) song song cho cả `apps/api` và `apps/web`.
+2. **Gắn thẻ Container Image:** Đóng gói Docker image đa tầng dựa trên **Node 24 Alpine** (`node:24-alpine`). Gắn thẻ theo commit SHA (`sha-<short_sha>`, `sha-<long_sha>`), phiên bản ngữ nghĩa (`vX.Y.Z`) và `latest`.
+3. **Đẩy lên Registry (GHCR):** Tự động xác thực và đẩy 2 image lên GitHub Container Registry:
+   - API: `ghcr.io/nhom6cnpm/brewlite-api`
+   - Web: `ghcr.io/nhom6cnpm/brewlite-web` (nhúng tĩnh các biến `NEXT_PUBLIC_*` qua `--build-arg`).
+4. **Triển khai Production (Render):** Kích hoạt webhook Render Deploy Hooks bằng secrets an toàn (`RENDER_API_DEPLOY_HOOK`, `RENDER_WEB_DEPLOY_HOOK`). Bắt buộc có secret trên nhánh `main` (nếu thiếu, pipeline dừng với lỗi `exit 1`).
+5. **Migration an toàn:** API chạy đơn bản thể (1 replica), TypeORM tự động thực thi các migration mới trong Database Transaction khi khởi động trước khi mở cổng HTTP.
+6. **Kiểm thử khói (Smoke Test):** Script [scripts/smoke-test.mjs](../scripts/smoke-test.mjs) kiểm tra thực tế:
+   - `GET /health`: Đảm bảo API online, kết nối PostgreSQL lành mạnh, và khớp đúng commit vừa deploy.
+   - `GET /products`: Đảm bảo dữ liệu mẫu A2 (`p1`..`p6`) đã sẵn sàng và ORM truy vấn bình thường.
+   - `GET /`: Đảm bảo giao diện người dùng Next.js phục vụ bình thường.
+   - Hỗ trợ retry backoff (24 lần × 10 giây, tối đa 4 phút) để chờ Render pull image và hoàn tất khởi động.
+7. **Dừng pipeline và Rollback:** Nếu smoke test không đạt sau các lần thử, pipeline lập tức dừng lại (đánh dấu thất bại đỏ) và in hướng dẫn rollback chi tiết ra log CI.
 
 ### 5.2. Kích hoạt Deploy Hook kèm Image Tag chính xác
-Để đảm bảo Render deploy đúng container image vừa build thay vì image cũ hoặc cache:
+Để đảm bảo Render deploy chính xác container image vừa build thay vì image cũ hoặc cache:
 - CI gọi webhook kèm tham số truy vấn `imgURL`:
   ```bash
-  curl -X POST "${RENDER_API_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-api:sha-${SHORT_SHA}"
-  curl -X POST "${RENDER_WEB_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-web:sha-${SHORT_SHA}"
+  curl -fsS -X POST "${RENDER_API_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-api:sha-${SHORT_SHA}"
+  curl -fsS -X POST "${RENDER_WEB_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-web:sha-${SHORT_SHA}"
   ```
 
 ### 5.3. Chiến lược kiểm thử phiên bản vừa deploy (Tránh giả xanh)
-- Khi build API Docker image, CI truyền commit SHA ngắn qua `GIT_SHA`. Endpoint `GET /health` trả về:
-  ```json
-  { "status": "ok", "commit": "3ce74b4" }
-  ```
-- Script kiểm thử khói [scripts/smoke-test.mjs](../scripts/smoke-test.mjs) nhận biến môi trường `EXPECTED_COMMIT` từ CI.
-- Smoke test liên tục thăm dò endpoint `/health`. Nếu giá trị `commit` trả về chưa trùng khớp với commit vừa build, script tiếp tục chờ Render hoàn tất chu kỳ deploy container mới.
-- Chỉ khi `/health` trả về đúng commit mới, kiểm tra `/products` chuẩn A2 (ID chuỗi `p1..p6`) và Web UI trả về 200, smoke test mới xác nhận thành công.
+Trước đây, smoke test chạy ngay khi webhook được gọi có thể kiểm tra trúng bản cũ đang chạy và báo xanh giả tạo. Để giải quyết triệt để:
+- Backend nhúng commit SHA vào biến môi trường `GIT_SHA` khi build image. Endpoint `GET /health` trả về `{"status":"ok","commit":"<short_sha>"}`.
+- Smoke test script nhận `EXPECTED_COMMIT`. Nếu endpoint phản hồi thiếu commit hoặc commit không trùng khớp, script sẽ tiếp tục retry chờ container mới kích hoạt.
+- Nếu chạy workflow thủ công với `skip_deploy: true`, biến `EXPECTED_COMMIT` được để trống nhằm tránh việc test bị fail không cần thiết.
 
 ### 5.4. Cơ chế Migration an toàn
-- **Đơn bản thể (Single Instance / 1 Replica):** Trên môi trường Render Production, `brewlite-a2-api` chạy với cấu hình 1 replica, loại bỏ hoàn toàn rủi ro xung đột ghi đồng thời (race condition) giữa nhiều tiến trình migration.
-- **Tự động chạy khi khởi động (`migrationsRun: true`):** Cấu hình TypeORM trong `AppModule` tự động quét các file migration trong `dist/migrations/*.js`.
-- **An toàn giao dịch:** Mỗi migration được TypeORM bọc trong một Database Transaction độc lập. Nếu xảy ra lỗi cú pháp hoặc ràng buộc dữ liệu, migration sẽ tự rollback toàn bộ và API ngừng khởi động, ngăn chặn tình trạng dữ liệu dở dang hoặc bảng hỏng.
-- **Dữ liệu mẫu (Seed):** Dữ liệu mẫu (sản phẩm, nguyên liệu, voucher...) được nhúng trực tiếp trong các migration khởi tạo (`InitialProducts`, `AddInventory`, `SeedSampleVouchers`). Khi container API khởi động, toàn bộ cấu trúc và dữ liệu mẫu được nạp tự động mà không cần chạy lệnh thủ công riêng.
+- **1 Replica:** Backend API chạy ở chế độ đơn bản thể (1 instance), tránh tranh chấp migration đồng thời.
+- **Transaction:** Mỗi migration được bọc trong một Database Transaction độc lập. Nếu xảy ra lỗi, TypeORM tự động rollback và API ngừng khởi động, bảo vệ toàn vẹn dữ liệu.
+- **Seed tích hợp:** Dữ liệu mẫu (món `p1`..`p6`, danh mục, công thức kho, voucher) được nhúng sẵn trong migration. Khi khởi động database mới, dữ liệu được nạp tự động mà không cần chạy lệnh thủ công riêng.
 
 ---
 
@@ -174,42 +213,36 @@ Smoke test được thực thi tự động qua script [scripts/smoke-test.mjs](
 
 | Kiểm tra | Mục tiêu | Tiêu chí chấp nhận |
 |---|---|---|
-| `GET /health` | Kiểm tra API sống, kết nối PostgreSQL và đúng commit vừa deploy | HTTP 200, JSON `{ "status": "ok", "commit": "<short_sha>" }` |
-| `GET /products` | Kiểm tra dữ liệu sản phẩm chuẩn A2 | HTTP 200, mảng không rỗng, ID sản phẩm dạng chuỗi (không phải số nguyên A1) |
+| `GET /health` | Kiểm tra API sống, kết nối PostgreSQL và đúng commit vừa deploy | HTTP 200, JSON `{"status":"ok","commit":"<short_sha>"}` (bắt buộc có commit khi deploy mới) |
+| `GET /products` | Kiểm tra dữ liệu sản phẩm chuẩn A2 | HTTP 200, mảng chứa đủ 6 sản phẩm `p1`..`p6` (chặn các ID không chuẩn như dạng số A1 hay chuỗi ngoại lai) |
 | `GET /` | Kiểm tra frontend Next.js phục vụ giao diện | HTTP 200, nội dung HTML hợp lệ |
-
-- **Xử lý Cold-Start / Deploy trễ:** Script áp dụng cơ chế retry thông minh với 24 lần thử (mỗi lần cách nhau 10 giây, tối đa 4 phút) để chờ Render pull Docker image từ `ghcr.io` và khởi động container.
-- **Khóa an toàn:** Nếu sau 24 lần thử hệ thống vẫn không phản hồi đúng hoặc thiếu commit mới, script trả về exit code `1`, lập tức **đánh dấu pipeline chuyển sang màu ĐỎ (Failed)** và in bản tin hướng dẫn rollback ra console.
 
 ---
 
-## 7. Quy trình Dừng Pipeline và Rollback
+## 7. Quy trình Phục hồi & Quay lui (Rollback Plan)
 
-Khi chặng deploy hoặc smoke test thất bại, pipeline CD tự động dừng và không cho phép phiên bản lỗi được tiếp tục vận hành. Kỹ sư thực hiện rollback theo 1 trong 3 phương án sau:
+Khi phát hiện sự cố trên production hoặc khi pipeline CD dừng đỏ ở bước smoke test, kỹ sư vận hành áp dụng các phương án rollback sau:
 
-### Phương án 1: Rollback tức thời qua Render Dashboard (Khuyến nghị, < 1 phút)
-
+### Phương án 1: Rollback tức thời qua Render Dashboard (Khuyến nghị — Thời gian ≤ 30 giây)
 1. Truy cập [Render Dashboard](https://dashboard.render.com).
-2. Chọn Web Service bị ảnh hưởng (`brewlite-a2-api` hoặc `brewlite-a2-web`).
+2. Chọn Web Service bị sự cố (`brewlite-a2-api` hoặc `brewlite-a2-web`).
 3. Điều hướng tới tab **Events**.
 4. Xác định bản deploy ổn định gần nhất (có nhãn màu xanh lá).
-5. Nhấp vào nút **Rollback to this deploy**.
-6. Render sẽ kích hoạt lại container image của phiên bản ổn định đó mà không cần rebuild.
+5. Bấm vào nút **Rollback to this deploy**.
+6. Render sẽ chuyển traffic về container image của phiên bản ổn định đó mà không cần rebuild.
 
-### Phương án 2: Rollback qua Container Registry Tag & GitHub Actions
-
-Nếu cần rollback về một commit cụ thể trong lịch sử:
-1. Tra cứu commit SHA ổn định trước đó (ví dụ: `sha-3ce74b4`).
-2. Trên Render Dashboard → **Settings** → Cập nhật Image URL trỏ trực tiếp vào tag ổn định:
+### Phương án 2: Rollback qua Container Registry Tag (Deploy Hook / Manual Deploy)
+Nếu cần rollback về một commit SHA cụ thể trong lịch sử:
+1. Xác định commit SHA ổn định trước đó (ví dụ: `sha-3ce74b4`).
+2. Kích hoạt Render Deploy Hook trỏ vào image tag tương ứng:
+   ```bash
+   curl -fsS -X POST "${RENDER_API_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-api:sha-3ce74b4"
+   curl -fsS -X POST "${RENDER_WEB_DEPLOY_HOOK}&imgURL=ghcr.io/nhom6cnpm/brewlite-web:sha-3ce74b4"
    ```
-   ghcr.io/nhom6cnpm/brewlite-api:sha-3ce74b4
-   ghcr.io/nhom6cnpm/brewlite-web:sha-3ce74b4
-   ```
-3. Nhấp **Manual Deploy** → **Deploy latest image** để áp dụng.
+   Hoặc trên Render Dashboard: **Settings** → Cập nhật **Image URL** về tag ổn định → bấm **Manual Deploy**.
 
 ### Phương án 3: Rollback cấu trúc Database (nếu migration gây lỗi)
-
-Nếu phiên bản mới đã chạy một migration sai lệch cấu trúc dữ liệu:
+Nếu phiên bản mới đã áp dụng một migration sai lệch cấu trúc dữ liệu:
 1. Kết nối vào database qua Render Shell hoặc máy local có kết nối tới `DATABASE_URL`:
    ```bash
    cd apps/api
@@ -224,6 +257,51 @@ Nếu phiên bản mới đã chạy một migration sai lệch cấu trúc dữ
 Để đảm bảo hệ thống luôn sẵn sàng phục vụ việc chấm điểm mà không bị ảnh hưởng bởi chính sách xóa database miễn phí sau 30 ngày của Render:
 
 1. **Khởi tạo muộn nhất có thể:** Chỉ tạo instance PostgreSQL trên Render trước mốc nghiệm thu Sprint 2 / Task 5 từ 3–5 ngày.
-2. **Kịch bản phục hồi thảm họa trong 2 phút:**
-   - Toàn bộ bảng dữ liệu, khóa ngoại, chỉ mục và dữ liệu mẫu đều được quản lý 100% bằng code TypeORM Migration trong `apps/api/src/migrations/`.
-   - Khi database hết hạn hoặc bị xóa: Chỉ cần tạo database mới trên Render → copy `Internal Database URL` vào biến `DATABASE_URL` của `brewlite-a2-api` → API khởi động sẽ tự động dựng lại toàn bộ cấu trúc và nạp dữ liệu mẫu hoàn chỉnh.
+2. **Kịch bản phục hồi thảm họa tự động qua Migration:**
+   - Toàn bộ bảng dữ liệu, khóa ngoại, chỉ mục và dữ liệu mẫu đều được quản lý 100% bằng mã nguồn TypeORM Migration trong `apps/api/src/migrations/`.
+   - Khi database hết hạn hoặc bị reset: Chỉ cần tạo database mới trên Render → copy chuỗi kết nối vào biến `DATABASE_URL` của `brewlite-a2-api` → API khởi động sẽ tự động dựng lại toàn bộ cấu trúc và nạp đầy đủ dữ liệu mẫu hoàn chỉnh.
+
+---
+
+## 9. Hướng dẫn Thử nghiệm API & Nghiệm thu Hệ thống Production
+
+### 9.1. Kiểm tra Trực tiếp qua Trình duyệt & API Endpoint
+
+| Dịch vụ | Đường dẫn kiểm tra | Kết quả mong đợi |
+|---|---|---|
+| **API Healthcheck** | `https://brewlite-a2-api-ked5.onrender.com/health` | HTTP 200, JSON: `{"status":"ok","database":"up","commit":"..."}` |
+| **API Danh mục món** | `https://brewlite-a2-api-ked5.onrender.com/products` | HTTP 200, danh sách mảng JSON chứa 6 sản phẩm chuẩn A2 (`p1`..`p6`) |
+| **Swagger UI** | `https://brewlite-a2-api-ked5.onrender.com/api/docs` | Giao diện tương tác Swagger UI hiển thị đầy đủ tài liệu API |
+| **OpenAPI Spec** | `https://brewlite-a2-api-ked5.onrender.com/api/docs-json` | Tệp JSON đặc tả OpenAPI 3.0 hoàn chỉnh |
+| **Giao diện Web** | `https://brewlite-a2-web.onrender.com` | Trang chủ BrewLite hiển thị menu thức uống, PWA header, giỏ hàng |
+
+### 9.2. Hướng dẫn Thử nghiệm API trên Swagger Production
+
+1. Truy cập trang Swagger UI tại: [https://brewlite-a2-api-ked5.onrender.com/api/docs](https://brewlite-a2-api-ked5.onrender.com/api/docs)
+2. **Đăng nhập lấy Token:**
+   - Mở nhóm API **Auth** → chọn `POST /auth/login`.
+   - Bấm **Try it out**, điền thông tin đăng nhập:
+     ```json
+     {
+       "email": "customer@brewlite.vn",
+       "password": "Password123!"
+     }
+     ```
+     *(Hoặc tài khoản admin: `admin@brewlite.vn` / mật khẩu quản trị).*
+   - Bấm **Execute**, copy chuỗi `access_token` trong phản hồi.
+3. **Ủy quyền (Authorize):**
+   - Cuộn lên đầu trang Swagger, bấm nút **Authorize** (biểu tượng ổ khóa màu xanh).
+   - Nhập chuỗi token vừa copy vào ô **Value** → bấm **Authorize** → **Close**.
+4. **Thực thi các API yêu cầu xác thực:**
+   - Có thể thử nghiệm trực tiếp các API bảo mật như `GET /auth/me`, `POST /orders`, `GET /vouchers`, `GET /admin/orders`... ngay trên trình duyệt mà không bị lỗi `401 Unauthorized`.
+
+---
+
+## 10. Bàn giao & Vận hành
+
+- **Mã nguồn Repository:** `https://github.com/nhom6cnpm/brewlite-a2`
+- **Tài liệu Kiến trúc & ADR:** Thư mục [docs/architecture/](architecture/) và [docs/traceability-matrix.md](traceability-matrix.md).
+- **Kiểm thử Tự động:**
+  - Unit tests: `npm test` trong từng thư mục `apps/api` và `apps/web`.
+  - Integration tests: `npm run test:integration` trong `apps/api` (kết nối PostgreSQL thật).
+  - Smoke tests: `node --test tests/smoke-test.test.mjs`.

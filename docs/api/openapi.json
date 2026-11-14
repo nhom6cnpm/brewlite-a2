@@ -1,0 +1,2034 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/products": {
+      "get": {
+        "operationId": "ProductsController_getAllProducts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Danh sách sản phẩm thành công"
+          }
+        },
+        "summary": "Lấy danh sách tất cả sản phẩm",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/{id}/availability": {
+      "get": {
+        "operationId": "ProductsController_getSelectionAvailability",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Mã định danh sản phẩm (ví dụ: p1, p2)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "description": "Kích thước ly",
+            "schema": {
+              "example": "S",
+              "type": "string",
+              "enum": [
+                "S",
+                "M",
+                "L"
+              ]
+            }
+          },
+          {
+            "name": "toppingIds",
+            "required": false,
+            "in": "query",
+            "description": "Danh sách topping kèm theo",
+            "schema": {
+              "example": [
+                "cream",
+                "pearls"
+              ],
+              "type": "string",
+              "enum": [
+                "cream",
+                "pearls"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trả về thông tin khả dụng của sản phẩm."
+          },
+          "400": {
+            "description": "Size/topping không hợp lệ."
+          },
+          "404": {
+            "description": "Không tìm thấy sản phẩm."
+          }
+        },
+        "summary": "Kiểm tra khả dụng và số lượng tối đa của một sản phẩm",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/availability": {
+      "post": {
+        "operationId": "ProductsController_getCartAvailability",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartAvailabilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trả về trạng thái khả dụng của các mục trong giỏ hàng."
+          },
+          "400": {
+            "description": "Dữ liệu đầu vào không hợp lệ."
+          }
+        },
+        "summary": "Kiểm tra khả dụng hàng loạt cho giỏ hàng",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "operationId": "ProductsController_getProductById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Mã định danh sản phẩm (ví dụ: p1, p2)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin chi tiết sản phẩm"
+          },
+          "404": {
+            "description": "Không tìm thấy sản phẩm"
+          }
+        },
+        "summary": "Lấy thông tin chi tiết một sản phẩm theo ID",
+        "tags": [
+          "Products"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Đăng ký thành công"
+          },
+          "400": {
+            "description": "Dữ liệu đầu vào không hợp lệ"
+          },
+          "409": {
+            "description": "Email đã tồn tại trong hệ thống"
+          }
+        },
+        "summary": "Đăng ký tài khoản khách hàng mới",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công trả về access_token và profile"
+          },
+          "401": {
+            "description": "Email hoặc mật khẩu không chính xác"
+          }
+        },
+        "summary": "Đăng nhập hệ thống nhận JWT token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Thông tin người dùng hiện tại"
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token không hợp lệ"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Lấy thông tin tài khoản đang đăng nhập",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/users": {
+      "get": {
+        "operationId": "AuthController_getAllUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Danh sách tài khoản hệ thống"
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token không hợp lệ"
+          },
+          "403": {
+            "description": "Không đủ quyền truy cập (Yêu cầu tài khoản ADMIN)"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Xem danh sách toàn bộ tài khoản trong hệ thống (Chỉ ADMIN)",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/vouchers": {
+      "get": {
+        "operationId": "VouchersController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicVoucherDto"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Không truy cập được dữ liệu voucher"
+          }
+        },
+        "summary": "Danh sách voucher công khai còn hiệu lực",
+        "tags": [
+          "vouchers"
+        ]
+      }
+    },
+    "/vouchers/quote": {
+      "post": {
+        "description": "Không có token: báo giá khách, usage null. Có JWT hợp lệ: kiểm tra tối đa 3 lượt/mã theo tài khoản. Token sai/hết hạn: 401. Chỉ báo giá, không giữ nguyên liệu hoặc lượt voucher.",
+        "operationId": "VouchersController_quote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteVoucherDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoucherQuoteDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Giỏ/mã không hợp lệ, món không tồn tại hoặc voucher không đủ điều kiện."
+          },
+          "401": {
+            "description": "Token sai/hết hạn hoặc tài khoản không còn hợp lệ."
+          },
+          "409": {
+            "description": "Đã hết lượt mã hoặc các lượt còn lại đang giữ cho đơn chờ thanh toán."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Báo giá voucher theo giỏ và lượt dùng của tài khoản",
+        "tags": [
+          "vouchers"
+        ]
+      }
+    },
+    "/orders": {
+      "post": {
+        "description": "Server tính lại giá, giữ nguyên liệu và lượt voucher trong cùng giao dịch. Đơn tự hủy nếu không thanh toán trước expiresAt.",
+        "operationId": "OrdersController_create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chuỗi 1–128 ký tự (ví dụ UUID). Gửi lại cùng key + cùng giỏ trả về đơn cũ.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Đã tạo đơn (hoặc trả lại đơn của cùng Idempotency-Key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrderResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu Idempotency-Key, dữ liệu sai, món không tồn tại, hết nguyên liệu hoặc voucher không dùng được"
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token hết hạn"
+          },
+          "409": {
+            "description": "Idempotency-Key đã dùng cho giỏ khác, hoặc tồn kho đang thay đổi"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Tạo đơn PENDING từ giỏ hàng",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/orders/me": {
+      "get": {
+        "operationId": "OrdersController_mine",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Danh sách đơn kèm món",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerOrderViewDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token hết hạn"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Danh sách đơn của tôi (mới nhất trước)",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "operationId": "OrdersController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết đơn",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderViewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token hết hạn"
+          },
+          "404": {
+            "description": "Không có đơn này hoặc đơn của người khác"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Chi tiết một đơn của tôi",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/orders/{id}/cancel": {
+      "post": {
+        "description": "Khóa đơn, kiểm tra quyền sở hữu và trạng thái. Trả nguyên liệu/lượt voucher đúng một lần; không cho khách hủy ngay đơn PAID/đã có tiền về.",
+        "operationId": "CustomerOrderCancellationController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "ORD-6f1c2a4e-1b7d-4c55-9a3e-2d1f0b9c8e77",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOrderViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc đơn đã bắt đầu pha chế/hoàn tất/hủy."
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc tài khoản không hợp lệ."
+          },
+          "404": {
+            "description": "Không có đơn này hoặc đơn không thuộc tài khoản."
+          },
+          "409": {
+            "description": "Quyền hủy đã thay đổi, đơn hết hạn hoặc đang chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Hủy ngay đơn của tôi khi chưa có tiền về",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/orders/{id}/cancel-request": {
+      "post": {
+        "description": "Đơn chưa bị hủy, chưa hoàn tiền. Nhân viên xử lý ở #39. Gửi lặp khi đang chờ giữ nguyên yêu cầu đầu tiên.",
+        "operationId": "CustomerOrderCancellationController_request",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "ORD-6f1c2a4e-1b7d-4c55-9a3e-2d1f0b9c8e77",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestCancellationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOrderViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu sai hoặc đơn đã bắt đầu pha chế/hoàn tất/hủy."
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc tài khoản không hợp lệ."
+          },
+          "404": {
+            "description": "Không có đơn này hoặc đơn không thuộc tài khoản."
+          },
+          "409": {
+            "description": "Quyền hủy đã thay đổi, đơn hết hạn hoặc đang chờ duyệt hủy."
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Gửi yêu cầu hủy đơn đã có tiền về hoặc PAID",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/payments": {
+      "post": {
+        "description": "Số tiền lấy từ đơn hàng. Đơn vẫn PENDING: chỉ nhân viên xác nhận mới thành PAID. Đơn PAYMENT_FAILED được thử lại (về PENDING, giữ nguyên hạn).",
+        "operationId": "PaymentsController_createPayment",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "required": true,
+            "in": "header",
+            "description": "Chuỗi 1–128 ký tự; gửi lại cùng key trả về cùng phiên.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Thiếu Idempotency-Key, key đã dùng cho yêu cầu khác, đơn hết hạn/hủy hoặc không còn chờ thanh toán"
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token hết hạn"
+          },
+          "403": {
+            "description": "Đơn của người khác"
+          },
+          "404": {
+            "description": "Không có đơn hàng"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Mở phiên thanh toán Ví (QR) hoặc Thẻ (tại quầy) cho đơn",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/{id}": {
+      "get": {
+        "operationId": "PaymentsController_getPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentViewDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập hoặc token hết hạn"
+          },
+          "403": {
+            "description": "Phiên của người khác"
+          },
+          "404": {
+            "description": "Không có phiên này"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Trạng thái phiên thanh toán (khách hỏi lại)",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/admin/payments": {
+      "get": {
+        "description": "Mặc định ACTIVE (PENDING + TRANSFER_RECEIVED còn hạn); phiên đã có tiền về lên đầu.",
+        "operationId": "AdminPaymentsController_list",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "ACTIVE",
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "ALL",
+                "PENDING",
+                "TRANSFER_RECEIVED",
+                "SUCCESS",
+                "FAILED"
+              ]
+            }
+          },
+          {
+            "name": "orderId",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo mã đơn (quét QR của khách)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentViewDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải ADMIN"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Phiên thanh toán cho nhân viên đối chiếu",
+        "tags": [
+          "Admin Payments"
+        ]
+      }
+    },
+    "/admin/payments/{id}/confirm": {
+      "post": {
+        "description": "Thẻ tại quầy (chưa có tiền trong sao kê) được ghi tiền vào sao kê khi xác nhận.",
+        "operationId": "AdminPaymentsController_confirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Đơn hết hạn/hủy hoặc không còn chờ xác nhận"
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải ADMIN"
+          },
+          "404": {
+            "description": "Không có phiên này"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Xác nhận đã nhận tiền: phiên SUCCESS, đơn PAID",
+        "tags": [
+          "Admin Payments"
+        ]
+      }
+    },
+    "/admin/payments/{id}/reject": {
+      "post": {
+        "operationId": "AdminPaymentsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentViewDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Đơn hết hạn/hủy hoặc không còn chờ xác nhận"
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không phải ADMIN"
+          },
+          "404": {
+            "description": "Không có phiên này"
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Từ chối: phiên FAILED, đơn PAYMENT_FAILED, hoàn tiền đã nhận",
+        "tags": [
+          "Admin Payments"
+        ]
+      }
+    },
+    "/mock-bank/payments/{id}": {
+      "get": {
+        "operationId": "MockBankController_info",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferInfoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không có phiên này"
+          }
+        },
+        "summary": "Thông tin chuyển khoản (số tiền, nội dung, tài khoản quán)",
+        "tags": [
+          "Mock Bank"
+        ]
+      }
+    },
+    "/mock-bank/payments/{id}/transfer": {
+      "post": {
+        "description": "Đơn vẫn PENDING cho tới khi nhân viên xác nhận. Bấm lặp không ghi tiền lần hai.",
+        "operationId": "MockBankController_transfer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferInfoDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Phiên thẻ, đơn hết hạn/hủy, hoặc phiên không còn chờ chuyển tiền"
+          },
+          "404": {
+            "description": "Không có phiên này"
+          }
+        },
+        "summary": "Khách bấm \"Chuyển tiền\": tiền vào sao kê, phiên TRANSFER_RECEIVED",
+        "tags": [
+          "Mock Bank"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "BrewLite API",
+    "description": "Tài liệu và công cụ kiểm thử API cho hệ thống đặt thức uống không dùng tiền mặt BrewLite",
+    "version": "2.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "https://brewlite-a2-api-ked5.onrender.com",
+      "description": "Production Server (Render)"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Nhập JWT access_token để xác thực",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "AvailabilityLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "example": "p1",
+            "description": "Mã sản phẩm (ví: p1 đến p6)"
+          },
+          "size": {
+            "type": "string",
+            "example": "S",
+            "description": "Kích thước ly",
+            "enum": [
+              "S",
+              "M",
+              "L"
+            ]
+          },
+          "toppingIds": {
+            "type": "string",
+            "example": [
+              "cream",
+              "pearls"
+            ],
+            "description": "Danh sách topping kèm theo",
+            "enum": [
+              "cream",
+              "pearls"
+            ]
+          },
+          "qty": {
+            "type": "number",
+            "example": 1,
+            "description": "Số lượng sản phẩm"
+          }
+        },
+        "required": [
+          "productId",
+          "size",
+          "qty"
+        ]
+      },
+      "CartAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "Danh sách các mục sản phẩm trong giỏ hàng cần kiểm tra tồn kho",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityLineDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "customer@brewlite.com",
+            "description": "Địa chỉ email người dùng"
+          },
+          "password": {
+            "type": "string",
+            "example": "123456",
+            "description": "Mật khẩu độ dài từ 6 đến 72 ký tự",
+            "minLength": 6,
+            "maxLength": 72
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "customer@brewlite.com",
+            "description": "Địa chỉ email người dùng"
+          },
+          "password": {
+            "type": "string",
+            "example": "123456",
+            "description": "Mật khẩu đăng nhập"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "PublicVoucherDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "BREW10"
+          },
+          "title": {
+            "type": "string",
+            "example": "Giảm 10%, tối đa 10.000đ"
+          },
+          "discountType": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "PERCENT"
+            ]
+          },
+          "discountValue": {
+            "type": "number",
+            "example": 10
+          },
+          "minSubtotal": {
+            "type": "number",
+            "example": 50000
+          },
+          "maxDiscount": {
+            "type": "number",
+            "nullable": true,
+            "example": 10000
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "isPublic": {
+            "type": "boolean",
+            "example": true
+          },
+          "maxUsesPerUser": {
+            "type": "number",
+            "example": 3,
+            "maximum": 3
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "discountType",
+          "discountValue",
+          "minSubtotal",
+          "maxDiscount",
+          "startsAt",
+          "endsAt",
+          "isActive",
+          "isPublic",
+          "maxUsesPerUser"
+        ]
+      },
+      "VoucherCartItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "example": "p1",
+            "maxLength": 64
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "S",
+              "M",
+              "L"
+            ]
+          },
+          "toppingIds": {
+            "type": "array",
+            "example": [
+              "cream"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "cream",
+                "pearls"
+              ]
+            }
+          },
+          "qty": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 99,
+            "example": 1
+          }
+        },
+        "required": [
+          "productId",
+          "size",
+          "toppingIds",
+          "qty"
+        ]
+      },
+      "QuoteVoucherDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoucherCartItemDto"
+            }
+          },
+          "voucherCode": {
+            "type": "string",
+            "example": "NHAP7K",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "VoucherUsageDto": {
+        "type": "object",
+        "properties": {
+          "maxUsesPerUser": {
+            "type": "number",
+            "example": 3
+          },
+          "reservedUses": {
+            "type": "number",
+            "example": 0
+          },
+          "usedUses": {
+            "type": "number",
+            "example": 0
+          },
+          "availableUses": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "maxUsesPerUser",
+          "reservedUses",
+          "usedUses",
+          "availableUses"
+        ]
+      },
+      "VoucherOptionDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "BREW10"
+          },
+          "title": {
+            "type": "string",
+            "example": "Giảm 10%, tối đa 10.000đ"
+          },
+          "discountType": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "PERCENT"
+            ]
+          },
+          "discountValue": {
+            "type": "number",
+            "example": 10
+          },
+          "minSubtotal": {
+            "type": "number",
+            "example": 50000
+          },
+          "maxDiscount": {
+            "type": "number",
+            "nullable": true,
+            "example": 10000
+          },
+          "startsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "endsAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "maxUsesPerUser": {
+            "type": "number",
+            "example": 3,
+            "maximum": 3
+          },
+          "unavailableReason": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "discount": {
+            "type": "number",
+            "example": 5000
+          },
+          "usage": {
+            "nullable": true,
+            "description": "null khi chưa có danh tính đã xác thực.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VoucherUsageDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "code",
+          "title",
+          "discountType",
+          "discountValue",
+          "minSubtotal",
+          "maxDiscount",
+          "startsAt",
+          "endsAt",
+          "maxUsesPerUser",
+          "unavailableReason",
+          "discount",
+          "usage"
+        ]
+      },
+      "VoucherQuoteDto": {
+        "type": "object",
+        "properties": {
+          "subtotal": {
+            "type": "number",
+            "example": 60000
+          },
+          "discount": {
+            "type": "number",
+            "example": 5000
+          },
+          "total": {
+            "type": "number",
+            "example": 55000
+          },
+          "voucherCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "THU5K"
+          },
+          "voucherTitle": {
+            "type": "string",
+            "nullable": true,
+            "example": "Giảm 5.000đ"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "vouchers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoucherOptionDto"
+            }
+          },
+          "voucherUsage": {
+            "nullable": true,
+            "description": "null khi chưa chọn mã hoặc chưa đăng nhập; có JWT hợp lệ thì trả lượt riêng của tài khoản.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VoucherUsageDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "subtotal",
+          "discount",
+          "total",
+          "voucherCode",
+          "voucherTitle",
+          "serverTime",
+          "vouchers",
+          "voucherUsage"
+        ]
+      },
+      "OrderItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "example": "p2",
+            "description": "Mã món (GET /products)"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "S",
+              "M",
+              "L"
+            ],
+            "example": "M"
+          },
+          "toppingIds": {
+            "type": "array",
+            "example": [
+              "pearls"
+            ],
+            "description": "Không trùng topping, có thể rỗng",
+            "items": {
+              "type": "string",
+              "enum": [
+                "cream",
+                "pearls"
+              ]
+            }
+          },
+          "qty": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 99,
+            "example": 2
+          }
+        },
+        "required": [
+          "productId",
+          "size",
+          "toppingIds",
+          "qty"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "voucherCode": {
+            "type": "string",
+            "example": "THU5K",
+            "description": "Mã giảm giá (không phân biệt hoa thường)"
+          },
+          "items": {
+            "description": "1–100 dòng",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "CreateOrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Tạo đơn hàng thành công"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "ORD-6f1c2a4e-1b7d-4c55-9a3e-2d1f0b9c8e77"
+          },
+          "total": {
+            "type": "number",
+            "example": 55000,
+            "description": "Tổng tiền sau giảm (VNĐ)"
+          },
+          "subtotal": {
+            "type": "number",
+            "example": 60000,
+            "description": "Tạm tính do server tính lại"
+          },
+          "discount": {
+            "type": "number",
+            "example": 5000
+          },
+          "voucherCode": {
+            "type": "string",
+            "nullable": true,
+            "example": "THU5K"
+          },
+          "voucherTitle": {
+            "type": "string",
+            "nullable": true,
+            "example": "Giảm 5.000đ"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "PENDING"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Hạn thanh toán (mặc định 15 phút)"
+          }
+        },
+        "required": [
+          "message",
+          "orderId",
+          "total",
+          "subtotal",
+          "discount",
+          "voucherCode",
+          "voucherTitle",
+          "status",
+          "createdAt",
+          "expiresAt"
+        ]
+      },
+      "CustomerCancelRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "EXPIRED"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "requestedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "reviewedBy": {
+            "type": "string",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "reason",
+          "requestedAt",
+          "reviewedAt",
+          "reviewedBy",
+          "reviewNote"
+        ]
+      },
+      "CustomerOrderItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "S",
+              "M",
+              "L"
+            ]
+          },
+          "toppingIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "qty": {
+            "type": "number",
+            "minimum": 1
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lineTotal": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "productId",
+          "name",
+          "imageUrl",
+          "size",
+          "toppingIds",
+          "qty",
+          "unitPrice",
+          "lineTotal"
+        ]
+      },
+      "CustomerOrderViewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "discount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
+          "voucherCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "voucherTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ],
+            "nullable": true
+          },
+          "refundedAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "transferReceived": {
+            "type": "boolean"
+          },
+          "canPay": {
+            "type": "boolean"
+          },
+          "canCancelImmediately": {
+            "type": "boolean"
+          },
+          "canRequestCancellation": {
+            "type": "boolean"
+          },
+          "cancelRequest": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CustomerCancelRequestDto"
+              }
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerOrderItemDto"
+            }
+          },
+          "benefitsPolicyVersion": {
+            "type": "number",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "pointsEarned": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pointsReversed": {
+            "type": "number",
+            "minimum": 0
+          },
+          "pointsAwardedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "pointsReversedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "subtotal",
+          "discount",
+          "total",
+          "voucherCode",
+          "voucherTitle",
+          "createdAt",
+          "expiresAt",
+          "serverTime",
+          "cancelledAt",
+          "cancelReason",
+          "paymentMethod",
+          "refundedAmount",
+          "transferReceived",
+          "canPay",
+          "canCancelImmediately",
+          "canRequestCancellation",
+          "cancelRequest",
+          "items",
+          "benefitsPolicyVersion",
+          "pointsEarned",
+          "pointsReversed",
+          "pointsAwardedAt",
+          "pointsReversedAt"
+        ]
+      },
+      "CancelOrderDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CancelOrderViewDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "orderId",
+          "status",
+          "cancelReason",
+          "cancelledAt",
+          "expiresAt"
+        ]
+      },
+      "RequestCancellationDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "example": "Tôi cần đổi lịch nhận món."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "CreatePaymentDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "example": "ORD-6f1c2a4e-1b7d-4c55-9a3e-2d1f0b9c8e77"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ],
+            "description": "WALLET = quét QR ngân hàng giả lập, CARD = quẹt thẻ tại quầy"
+          }
+        },
+        "required": [
+          "orderId",
+          "method"
+        ]
+      },
+      "PaymentViewDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string",
+            "example": "PAY-2b1f…"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "ORD-6f1c…"
+          },
+          "amount": {
+            "type": "number",
+            "example": 79000,
+            "description": "VNĐ, bằng tổng đơn"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "TRANSFER_RECEIVED",
+              "SUCCESS",
+              "FAILED"
+            ]
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "reviewNote": {
+            "type": "string",
+            "nullable": true,
+            "example": "Chưa nhận được tiền"
+          },
+          "cancellationPending": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "orderStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "nullable": true
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paymentId",
+          "orderId",
+          "amount",
+          "method",
+          "status",
+          "receivedAt",
+          "reviewNote",
+          "cancellationPending",
+          "createdAt",
+          "orderStatus",
+          "expiresAt",
+          "serverTime"
+        ]
+      },
+      "ReviewPaymentDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "example": "Chưa nhận được tiền",
+            "maxLength": 255
+          }
+        }
+      },
+      "ShopBankAccountDto": {
+        "type": "object",
+        "properties": {
+          "bankName": {
+            "type": "string",
+            "example": "BrewLite Bank (giả lập)"
+          },
+          "accountNumber": {
+            "type": "string",
+            "example": "0123 456 789"
+          },
+          "accountName": {
+            "type": "string",
+            "example": "BREWLITE COFFEE"
+          }
+        },
+        "required": [
+          "bankName",
+          "accountNumber",
+          "accountName"
+        ]
+      },
+      "TransferInfoDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number",
+            "example": 79000
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "CARD"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "TRANSFER_RECEIVED",
+              "SUCCESS",
+              "FAILED"
+            ]
+          },
+          "orderStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "PAID",
+              "PAYMENT_FAILED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "nullable": true
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "transferContent": {
+            "type": "string",
+            "description": "Nội dung chuyển khoản = mã đơn"
+          },
+          "account": {
+            "$ref": "#/components/schemas/ShopBankAccountDto"
+          },
+          "serverTime": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "paymentId",
+          "orderId",
+          "amount",
+          "method",
+          "status",
+          "orderStatus",
+          "expiresAt",
+          "receivedAt",
+          "transferContent",
+          "account",
+          "serverTime"
+        ]
+      }
+    }
+  }
+}
